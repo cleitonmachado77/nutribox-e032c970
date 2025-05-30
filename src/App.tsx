@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,11 +12,8 @@ import Kanban from "./pages/Kanban";
 import Conversas from "./pages/Conversas";
 import NutriboxIA from "./pages/NutriboxIA";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -25,7 +21,7 @@ const App = () => (
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto bg-teal-950">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/leads" element={<Leads />} />
@@ -40,7 +36,5 @@ const App = () => (
         </SidebarProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
-);
-
+  </QueryClientProvider>;
 export default App;

@@ -1,87 +1,66 @@
-
 import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Upload, 
-  Users, 
-  UserPlus, 
-  Calendar,
-  Eye
-} from "lucide-react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import { Plus, Search, Filter, Download, Upload, Users, UserPlus, Calendar, Eye } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
-
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
 
   // Mock data
-  const mockLeads = [
-    {
-      id: 1,
-      nome: "Maria Silva",
-      telefone: "(11) 99123-4567",
-      email: "maria@email.com",
-      objetivo: "Perda de Peso",
-      cidade: "São Paulo",
-      estado: "SP",
-      status: "Novo",
-      cadastro: "06/12/2024",
-      ultimaResposta: "Hoje"
-    },
-    {
-      id: 2,
-      nome: "João Santos",
-      telefone: "(21) 98765-4321",
-      email: "joao@email.com",
-      objetivo: "Ganho de Massa",
-      cidade: "Rio de Janeiro",
-      estado: "RJ",
-      status: "Qualificado",
-      cadastro: "05/12/2024",
-      ultimaResposta: "Ontem"
-    },
-    {
-      id: 3,
-      nome: "Ana Costa",
-      telefone: "(31) 97654-3210",
-      email: "ana@email.com",
-      objetivo: "Manutenção",
-      cidade: "Belo Horizonte",
-      estado: "MG",
-      status: "Consulta Agendada",
-      cadastro: "04/12/2024",
-      ultimaResposta: "10/12/2024, 15:00"
-    }
-  ];
-
+  const mockLeads = [{
+    id: 1,
+    nome: "Maria Silva",
+    telefone: "(11) 99123-4567",
+    email: "maria@email.com",
+    objetivo: "Perda de Peso",
+    cidade: "São Paulo",
+    estado: "SP",
+    status: "Novo",
+    cadastro: "06/12/2024",
+    ultimaResposta: "Hoje"
+  }, {
+    id: 2,
+    nome: "João Santos",
+    telefone: "(21) 98765-4321",
+    email: "joao@email.com",
+    objetivo: "Ganho de Massa",
+    cidade: "Rio de Janeiro",
+    estado: "RJ",
+    status: "Qualificado",
+    cadastro: "05/12/2024",
+    ultimaResposta: "Ontem"
+  }, {
+    id: 3,
+    nome: "Ana Costa",
+    telefone: "(31) 97654-3210",
+    email: "ana@email.com",
+    objetivo: "Manutenção",
+    cidade: "Belo Horizonte",
+    estado: "MG",
+    status: "Consulta Agendada",
+    cadastro: "04/12/2024",
+    ultimaResposta: "10/12/2024, 15:00"
+  }];
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Novo": return "bg-blue-500";
-      case "Qualificado": return "bg-green-500";
-      case "Consulta Agendada": return "bg-purple-500";
-      case "Perdido": return "bg-red-500";
-      default: return "bg-gray-500";
+      case "Novo":
+        return "bg-blue-500";
+      case "Qualificado":
+        return "bg-green-500";
+      case "Consulta Agendada":
+        return "bg-purple-500";
+      case "Perdido":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
-
-  return (
-    <div className="p-6 space-y-6">
+  return <div className="p-6 space-y-6 bg-teal-950">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
@@ -136,10 +115,7 @@ const Leads = () => {
       {/* Ações */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex gap-2">
-          <Button 
-            onClick={() => setShowNewLeadDialog(true)}
-            className="bg-primary hover:bg-primary/90"
-          >
+          <Button onClick={() => setShowNewLeadDialog(true)} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
             Novo Lead
           </Button>
@@ -156,12 +132,7 @@ const Leads = () => {
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar leads..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
+            <Input placeholder="Buscar leads..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 w-64" />
           </div>
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />
@@ -190,8 +161,7 @@ const Leads = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockLeads.map((lead) => (
-                <TableRow key={lead.id}>
+              {mockLeads.map(lead => <TableRow key={lead.id}>
                   <TableCell className="font-medium">{lead.nome}</TableCell>
                   <TableCell>{lead.estado}</TableCell>
                   <TableCell>
@@ -212,19 +182,13 @@ const Leads = () => {
                       <Eye className="w-4 h-4" />
                     </Button>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      <NewLeadDialog 
-        open={showNewLeadDialog} 
-        onOpenChange={setShowNewLeadDialog} 
-      />
-    </div>
-  );
+      <NewLeadDialog open={showNewLeadDialog} onOpenChange={setShowNewLeadDialog} />
+    </div>;
 };
-
 export default Leads;
