@@ -83,7 +83,7 @@ const Dashboard = () => {
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-slate-100">Dashboard</h1>
           <p className="text-muted-foreground">Visão geral do seu negócio</p>
         </div>
       </div>
