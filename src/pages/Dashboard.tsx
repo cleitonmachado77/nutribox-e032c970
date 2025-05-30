@@ -97,7 +97,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#00594F]">248</div>
-            <p className="text-xs text-[#CEDC00]">+12% vs período anterior</p>
+            <p className="text-xs text-emerald-950">+12% vs período anterior</p>
           </CardContent>
         </Card>
 
@@ -108,7 +108,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#00594F]">104</div>
-            <p className="text-xs text-[#CEDC00]">+8% vs período anterior</p>
+            <p className="text-xs text-green-950">+8% vs período anterior</p>
           </CardContent>
         </Card>
 
@@ -119,7 +119,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#00594F]">78</div>
-            <p className="text-xs text-[#CEDC00]">+5% vs período anterior</p>
+            <p className="text-xs text-emerald-950">+5% vs período anterior</p>
           </CardContent>
         </Card>
 
@@ -130,7 +130,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#00594F]">68</div>
-            <p className="text-xs text-[#CEDC00]">+10% vs período anterior</p>
+            <p className="text-xs text-emerald-950">+10% vs período anterior</p>
           </CardContent>
         </Card>
       </div>
@@ -143,7 +143,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-[#00594F]">41.9%</div>
-            <p className="text-sm text-[#CEDC00]">+3.2% vs mês anterior</p>
+            <p className="text-sm text-emerald-950">+3.2% vs mês anterior</p>
           </CardContent>
         </Card>
 
@@ -163,7 +163,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-[#00594F]">87.2%</div>
-            <p className="text-sm text-[#CEDC00]">+2.4% vs mês anterior</p>
+            <p className="text-sm text-emerald-950">+2.4% vs mês anterior</p>
           </CardContent>
         </Card>
 
@@ -173,7 +173,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-[#00594F]">27.4%</div>
-            <p className="text-sm text-[#CEDC00]">+1.8% vs mês anterior</p>
+            <p className="text-sm text-emerald-950">+1.8% vs mês anterior</p>
           </CardContent>
         </Card>
       </div>
