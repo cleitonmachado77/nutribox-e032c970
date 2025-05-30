@@ -1,5 +1,5 @@
 
-import { Home, Users, User, Kanban, Settings } from "lucide-react";
+import { Home, Users, User, Kanban, MessageCircle, Bot } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -34,6 +34,16 @@ const menuItems = [
     url: "/kanban",
     icon: Kanban,
   },
+  {
+    title: "Conversas",
+    url: "/conversas",
+    icon: MessageCircle,
+  },
+  {
+    title: "Nutribox IA",
+    url: "/nutribox-ia",
+    icon: Bot,
+  },
 ];
 
 export function AppSidebar() {
@@ -43,10 +53,11 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-            <span className="text-purple-600 font-bold text-lg">N</span>
-          </div>
-          <span className="text-xl font-bold text-white">nutribox</span>
+          <img 
+            src="/lovable-uploads/dcff5867-fff0-4337-a8e2-a0324a818ccf.png" 
+            alt="Nutribox Logo" 
+            className="w-32 h-auto"
+          />
         </div>
       </SidebarHeader>
       <SidebarContent>

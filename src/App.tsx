@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
 import Pacientes from "./pages/Pacientes";
 import Kanban from "./pages/Kanban";
+import Conversas from "./pages/Conversas";
+import NutriboxIA from "./pages/NutriboxIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
                 <Route path="/leads" element={<Leads />} />
                 <Route path="/pacientes" element={<Pacientes />} />
                 <Route path="/kanban" element={<Kanban />} />
+                <Route path="/conversas" element={<Conversas />} />
+                <Route path="/nutribox-ia" element={<NutriboxIA />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
