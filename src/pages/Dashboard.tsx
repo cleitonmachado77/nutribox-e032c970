@@ -1,44 +1,85 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Users, UserCheck, Calendar, CheckCircle, TrendingUp } from "lucide-react";
-
 const Dashboard = () => {
   // Mock data for charts
-  const monthlyData = [
-    { month: 'Jan', leads: 45, consultas: 28 },
-    { month: 'Fev', leads: 52, consultas: 31 },
-    { month: 'Mar', leads: 38, consultas: 22 },
-    { month: 'Abr', leads: 61, consultas: 45 },
-    { month: 'Mai', leads: 58, consultas: 41 },
-    { month: 'Jun', leads: 67, consultas: 52 },
-  ];
-
-  const objetivosData = [
-    { name: 'Perda de Peso', value: 45, color: '#00594F' },
-    { name: 'Ganho de Massa', value: 30, color: '#00352F' },
-    { name: 'Manutenção', value: 15, color: '#CEDC00' },
-    { name: 'Outros', value: 10, color: '#8FB6B0' },
-  ];
-
-  const estadosData = [
-    { estado: 'SP', pacientes: 120 },
-    { estado: 'RJ', pacientes: 85 },
-    { estado: 'MG', pacientes: 65 },
-    { estado: 'PR', pacientes: 45 },
-    { estado: 'SC', pacientes: 38 },
-  ];
-
-  const motivosAbandonoData = [
-    { name: 'Preço', value: 35, color: '#00352F' },
-    { name: 'Falta de Tempo', value: 25, color: '#00594F' },
-    { name: 'Sem Interesse', value: 20, color: '#CEDC00' },
-    { name: 'Problemas Pessoais', value: 20, color: '#8FB6B0' },
-  ];
-
-  return (
-    <div className="p-6 space-y-6">
+  const monthlyData = [{
+    month: 'Jan',
+    leads: 45,
+    consultas: 28
+  }, {
+    month: 'Fev',
+    leads: 52,
+    consultas: 31
+  }, {
+    month: 'Mar',
+    leads: 38,
+    consultas: 22
+  }, {
+    month: 'Abr',
+    leads: 61,
+    consultas: 45
+  }, {
+    month: 'Mai',
+    leads: 58,
+    consultas: 41
+  }, {
+    month: 'Jun',
+    leads: 67,
+    consultas: 52
+  }];
+  const objetivosData = [{
+    name: 'Perda de Peso',
+    value: 45,
+    color: '#00594F'
+  }, {
+    name: 'Ganho de Massa',
+    value: 30,
+    color: '#00352F'
+  }, {
+    name: 'Manutenção',
+    value: 15,
+    color: '#CEDC00'
+  }, {
+    name: 'Outros',
+    value: 10,
+    color: '#8FB6B0'
+  }];
+  const estadosData = [{
+    estado: 'SP',
+    pacientes: 120
+  }, {
+    estado: 'RJ',
+    pacientes: 85
+  }, {
+    estado: 'MG',
+    pacientes: 65
+  }, {
+    estado: 'PR',
+    pacientes: 45
+  }, {
+    estado: 'SC',
+    pacientes: 38
+  }];
+  const motivosAbandonoData = [{
+    name: 'Preço',
+    value: 35,
+    color: '#00352F'
+  }, {
+    name: 'Falta de Tempo',
+    value: 25,
+    color: '#00594F'
+  }, {
+    name: 'Sem Interesse',
+    value: 20,
+    color: '#CEDC00'
+  }, {
+    name: 'Problemas Pessoais',
+    value: 20,
+    color: '#8FB6B0'
+  }];
+  return <div className="p-6 space-y-6 bg-[sidebar-primary-foreground] bg-teal-950">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
@@ -166,17 +207,11 @@ const Dashboard = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie
-                  data={objetivosData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {objetivosData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                <Pie data={objetivosData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({
+                name,
+                percent
+              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                  {objetivosData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -210,17 +245,11 @@ const Dashboard = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie
-                  data={motivosAbandonoData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {motivosAbandonoData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                <Pie data={motivosAbandonoData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({
+                name,
+                percent
+              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                  {motivosAbandonoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -228,8 +257,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
