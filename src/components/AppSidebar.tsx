@@ -31,7 +31,7 @@ export function AppSidebar() {
   return <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="p-6 my-0 mx-[35px] px-[28px]">
         <div className="flex items-center gap-2">
-          <img src="/lovable-uploads/07806ab8-72d7-4140-b6d6-977826fced95.png" alt="Nutribox Logo" className="w-32 h-auto" />
+          <img alt="Nutribox Logo" src="/lovable-uploads/0c7ee1c1-87b4-49df-8eee-40f277737752.png" className="w-32 h-auto object-scale-down" />
         </div>
       </SidebarHeader>
       <SidebarContent>
