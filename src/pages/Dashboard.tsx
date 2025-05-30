@@ -183,7 +183,7 @@ const Dashboard = () => {
         {/* Gráfico de Barras - Leads vs Consultas */}
         <Card>
           <CardHeader>
-            <CardTitle>Leads vs Consultas (6 meses)</CardTitle>
+            <CardTitle>Leads x Consultas</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
