@@ -14,7 +14,7 @@ const Pacientes = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Mock data com pacientes convertidos de leads
+  // Mock data com pacientes convertidos de leads incluindo estados
   const mockPatients = [
     {
       id: 1,
@@ -115,6 +115,66 @@ const Pacientes = () => {
       planoAlimentar: "Plano para ganho de peso saudável com aumento gradual de calorias e proteínas.",
       anotacoes: "Paciente com dificuldades para aderir ao plano. Última consulta há mais de 3 semanas.",
       progresso: 45
+    },
+    {
+      id: 6,
+      nome: "Roberto Mendes",
+      telefone: "(41) 97555-4444",
+      email: "roberto@email.com",
+      objetivo: "Perda de Peso",
+      status: "Em acompanhamento",
+      foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+      cidade: "Curitiba",
+      estado: "PR",
+      dataConversao: "12/11/2024",
+      ultimaConsulta: "29/11/2024",
+      proximaConsulta: "06/12/2024",
+      peso: "92kg",
+      altura: "1.80m",
+      imc: "28.4",
+      planoAlimentar: "Protocolo low carb com foco em proteínas e vegetais. Redução gradual de carboidratos refinados.",
+      anotacoes: "Paciente executivo, com rotina corrida. Adaptando plano para facilitar a aderência.",
+      progresso: 67
+    },
+    {
+      id: 7,
+      nome: "Juliana Reis",
+      telefone: "(51) 96333-2222",
+      email: "juliana@email.com",
+      objetivo: "Manutenção",
+      status: "Consulta agendada",
+      foto: "https://images.unsplash.com/photo-1494790108755-2616b612b002?w=200&h=200&fit=crop&crop=face",
+      cidade: "Porto Alegre",
+      estado: "RS",
+      dataConversao: "18/11/2024",
+      ultimaConsulta: "26/11/2024",
+      proximaConsulta: "12/12/2024",
+      peso: "58kg",
+      altura: "1.63m",
+      imc: "21.8",
+      planoAlimentar: "Dieta equilibrada para manutenção com foco em antioxidantes e alimentos anti-inflamatórios.",
+      anotacoes: "Paciente atleta recreativa, busca otimização da performance e recuperação muscular.",
+      progresso: 88
+    },
+    {
+      id: 8,
+      nome: "Diego Ferreira",
+      telefone: "(62) 95222-1111",
+      email: "diego@email.com",
+      objetivo: "Ganho de Massa",
+      status: "Em acompanhamento",
+      foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+      cidade: "Goiânia",
+      estado: "GO",
+      dataConversao: "08/11/2024",
+      ultimaConsulta: "27/11/2024",
+      proximaConsulta: "04/12/2024",
+      peso: "70kg",
+      altura: "1.76m",
+      imc: "22.6",
+      planoAlimentar: "Dieta hipercalórica estruturada com 6 refeições diárias. Suplementação específica para ganho de massa.",
+      anotacoes: "Paciente jovem, muito motivado. Excelente resposta ao protocolo de ganho de massa.",
+      progresso: 91
     }
   ];
 

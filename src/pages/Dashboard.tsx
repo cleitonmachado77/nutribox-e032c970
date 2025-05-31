@@ -1,4 +1,3 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -51,21 +50,31 @@ const Dashboard = () => {
     color: '#FFA07A' // Salmão claro para outros
   }];
   
+  // Updated states data based on actual patient distribution
   const estadosData = [{
     estado: 'SP',
-    pacientes: 120
+    pacientes: 1
   }, {
     estado: 'RJ',
-    pacientes: 85
+    pacientes: 1
   }, {
     estado: 'MG',
-    pacientes: 65
+    pacientes: 1
   }, {
-    estado: 'PR',
-    pacientes: 45
+    estado: 'CE',
+    pacientes: 1
   }, {
     estado: 'SC',
-    pacientes: 38
+    pacientes: 1
+  }, {
+    estado: 'PR',
+    pacientes: 1
+  }, {
+    estado: 'RS',
+    pacientes: 1
+  }, {
+    estado: 'GO',
+    pacientes: 1
   }];
   
   const motivosAbandonoData = [{
@@ -221,7 +230,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Gráfico de Barras Horizontal - Estados */}
+        {/* Gráfico de Barras Horizontal - Estados Atualizado */}
         <Card>
           <CardHeader>
             <CardTitle>Pacientes por Estado</CardTitle>
