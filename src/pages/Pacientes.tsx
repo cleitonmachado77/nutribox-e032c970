@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,53 +5,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
-  Search, 
-  Filter, 
-  FileText,
-  Camera,
-  Video,
-  ShoppingCart,
-  StickyNote
-} from "lucide-react";
+import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, ShoppingCart, StickyNote } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 const Pacientes = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Mock data
-  const mockPatients = [
-    {
-      id: 1,
-      nome: "Maria Silva",
-      telefone: "(11) 99123-4567",
-      email: "maria@email.com",
-      objetivo: "Perda de Peso",
-      status: "Em acompanhamento",
-      foto: null,
-      planoAlimentar: "Dieta de 1500 calorias com foco em proteínas...",
-      anotacoes: "Paciente muito dedicada, seguindo bem as orientações..."
-    },
-    {
-      id: 2,
-      nome: "João Santos", 
-      telefone: "(21) 98765-4321",
-      email: "joao@email.com",
-      objetivo: "Ganho de Massa",
-      status: "Em acompanhamento",
-      foto: null,
-      planoAlimentar: "Dieta hipercalórica com 2800 calorias...",
-      anotacoes: "Paciente ativo, pratica musculação 5x por semana..."
-    }
-  ];
-
-  return (
-    <div className="p-6 space-y-6">
+  const mockPatients = [{
+    id: 1,
+    nome: "Maria Silva",
+    telefone: "(11) 99123-4567",
+    email: "maria@email.com",
+    objetivo: "Perda de Peso",
+    status: "Em acompanhamento",
+    foto: null,
+    planoAlimentar: "Dieta de 1500 calorias com foco em proteínas...",
+    anotacoes: "Paciente muito dedicada, seguindo bem as orientações..."
+  }, {
+    id: 2,
+    nome: "João Santos",
+    telefone: "(21) 98765-4321",
+    email: "joao@email.com",
+    objetivo: "Ganho de Massa",
+    status: "Em acompanhamento",
+    foto: null,
+    planoAlimentar: "Dieta hipercalórica com 2800 calorias...",
+    anotacoes: "Paciente ativo, pratica musculação 5x por semana..."
+  }];
+  return <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
@@ -75,7 +57,7 @@ const Pacientes = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Acompanhamento</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-500">Em Acompanhamento</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -102,12 +84,7 @@ const Pacientes = () => {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar pacientes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+                <Input placeholder="Buscar pacientes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
               <Button variant="outline" size="icon">
                 <Filter className="w-4 h-4" />
@@ -115,14 +92,7 @@ const Pacientes = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {mockPatients.map((patient) => (
-              <Card 
-                key={patient.id} 
-                className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-                  selectedPatient?.id === patient.id ? 'ring-2 ring-primary' : ''
-                }`}
-                onClick={() => setSelectedPatient(patient)}
-              >
+            {mockPatients.map(patient => <Card key={patient.id} className={`p-4 cursor-pointer transition-all hover:shadow-md ${selectedPatient?.id === patient.id ? 'ring-2 ring-primary' : ''}`} onClick={() => setSelectedPatient(patient)}>
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={patient.foto} />
@@ -136,8 +106,7 @@ const Pacientes = () => {
                     </Badge>
                   </div>
                 </div>
-              </Card>
-            ))}
+              </Card>)}
           </CardContent>
         </Card>
 
@@ -149,8 +118,7 @@ const Pacientes = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedPatient ? (
-              <Tabs defaultValue="geral" className="w-full">
+            {selectedPatient ? <Tabs defaultValue="geral" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="geral">Geral</TabsTrigger>
                   <TabsTrigger value="plano">Plano Alimentar</TabsTrigger>
@@ -175,11 +143,7 @@ const Pacientes = () => {
                     
                     <div>
                       <h3 className="font-semibold mb-2">Anotações</h3>
-                      <Textarea 
-                        placeholder="Adicione suas anotações sobre o paciente..."
-                        value={selectedPatient.anotacoes}
-                        className="min-h-32"
-                      />
+                      <Textarea placeholder="Adicione suas anotações sobre o paciente..." value={selectedPatient.anotacoes} className="min-h-32" />
                       <Button className="mt-2" size="sm">
                         <StickyNote className="w-4 h-4 mr-2" />
                         Salvar Anotações
@@ -206,11 +170,7 @@ const Pacientes = () => {
                       </Button>
                     </div>
                   </div>
-                  <Textarea 
-                    value={selectedPatient.planoAlimentar}
-                    className="min-h-64"
-                    placeholder="Digite o plano alimentar do paciente..."
-                  />
+                  <Textarea value={selectedPatient.planoAlimentar} className="min-h-64" placeholder="Digite o plano alimentar do paciente..." />
                   <Button>Salvar Plano</Button>
                 </TabsContent>
 
@@ -257,18 +217,13 @@ const Pacientes = () => {
                     </p>
                   </Card>
                 </TabsContent>
-              </Tabs>
-            ) : (
-              <div className="text-center py-12">
+              </Tabs> : <div className="text-center py-12">
                 <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Selecione um paciente para ver detalhes</p>
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Pacientes;
