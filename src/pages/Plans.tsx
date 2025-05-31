@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +78,7 @@ const Plans = () => {
               </Link>
             </Button>
             <div className="flex items-center space-x-2">
-              <img src="/lovable-uploads/9ab9f459-9eda-4a07-8911-e8691b811bf4.png" alt="Nutribox Logo" className="w-16 h-16" />
+              <img src="/lovable-uploads/9ab9f459-9eda-4a07-8911-e8691b811bf4.png" alt="Nutribox Logo" className="w-12 h-12 object-contain" />
             </div>
           </div>
           <div className="flex gap-3">
@@ -240,7 +239,7 @@ const Plans = () => {
       <footer className="border-t border-purple-800/20 bg-slate-900/50 py-8 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <img src="/lovable-uploads/9ab9f459-9eda-4a07-8911-e8691b811bf4.png" alt="Nutribox Logo" className="w-12 h-12" />
+            <img src="/lovable-uploads/9ab9f459-9eda-4a07-8911-e8691b811bf4.png" alt="Nutribox Logo" className="w-10 h-10 object-contain" />
           </div>
           <p className="text-gray-400">
             © 2024 Nutribox. Todos os direitos reservados.
