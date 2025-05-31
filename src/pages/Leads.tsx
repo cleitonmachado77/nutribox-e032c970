@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,7 +165,7 @@ const Leads = () => {
                   <TableCell className="font-medium">{lead.nome}</TableCell>
                   <TableCell>{lead.estado}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{lead.objetivo}</Badge>
+                    <Badge variant="secondary" className="bg-red-500">{lead.objetivo}</Badge>
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(lead.status)}>
