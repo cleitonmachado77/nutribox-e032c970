@@ -1,7 +1,8 @@
+
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck } from "lucide-react";
+import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck, CheckCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 
 const Dashboard = () => {
