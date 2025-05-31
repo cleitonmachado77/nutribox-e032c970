@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +22,7 @@ const App = () => <QueryClientProvider client={queryClient}>
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
-            <main className="flex-1 overflow-auto bg-teal-950">
+            <main className="flex-1 overflow-auto bg-purple-900">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/leads" element={<Leads />} />

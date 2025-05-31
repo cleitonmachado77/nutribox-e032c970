@@ -1,3 +1,4 @@
+
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -32,19 +33,19 @@ const Dashboard = () => {
   const objetivosData = [{
     name: 'Perda de Peso',
     value: 45,
-    color: '#00594F'
+    color: '#6B46C1'
   }, {
     name: 'Ganho de Massa',
     value: 30,
-    color: '#00352F'
+    color: '#8B5CF6'
   }, {
     name: 'Manutenção',
     value: 15,
-    color: '#CEDC00'
+    color: '#A78BFA'
   }, {
     name: 'Outros',
     value: 10,
-    color: '#8FB6B0'
+    color: '#C4B5FD'
   }];
   const estadosData = [{
     estado: 'SP',
@@ -65,21 +66,21 @@ const Dashboard = () => {
   const motivosAbandonoData = [{
     name: 'Preço',
     value: 35,
-    color: '#00352F'
+    color: '#6B46C1'
   }, {
     name: 'Falta de Tempo',
     value: 25,
-    color: '#00594F'
+    color: '#8B5CF6'
   }, {
     name: 'Sem Interesse',
     value: 20,
-    color: '#CEDC00'
+    color: '#A78BFA'
   }, {
     name: 'Problemas Pessoais',
     value: 20,
-    color: '#8FB6B0'
+    color: '#C4B5FD'
   }];
-  return <div className="p-6 space-y-6 bg-[sidebar-primary-foreground] bg-teal-950">
+  return <div className="p-6 space-y-6 bg-purple-900">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
@@ -96,8 +97,8 @@ const Dashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00594F]">248</div>
-            <p className="text-xs text-emerald-950">+12% vs período anterior</p>
+            <div className="text-2xl font-bold text-[#6B46C1]">248</div>
+            <p className="text-xs text-purple-950">+12% vs período anterior</p>
           </CardContent>
         </Card>
 
@@ -107,8 +108,8 @@ const Dashboard = () => {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00594F]">104</div>
-            <p className="text-xs text-green-950">+8% vs período anterior</p>
+            <div className="text-2xl font-bold text-[#6B46C1]">104</div>
+            <p className="text-xs text-purple-950">+8% vs período anterior</p>
           </CardContent>
         </Card>
 
@@ -118,8 +119,8 @@ const Dashboard = () => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00594F]">78</div>
-            <p className="text-xs text-emerald-950">+5% vs período anterior</p>
+            <div className="text-2xl font-bold text-[#6B46C1]">78</div>
+            <p className="text-xs text-purple-950">+5% vs período anterior</p>
           </CardContent>
         </Card>
 
@@ -129,8 +130,8 @@ const Dashboard = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00594F]">68</div>
-            <p className="text-xs text-emerald-950">+10% vs período anterior</p>
+            <div className="text-2xl font-bold text-[#6B46C1]">68</div>
+            <p className="text-xs text-purple-950">+10% vs período anterior</p>
           </CardContent>
         </Card>
       </div>
@@ -142,8 +143,8 @@ const Dashboard = () => {
             <CardTitle className="text-lg">Leads → Qualificados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#00594F]">41.9%</div>
-            <p className="text-sm text-emerald-950">+3.2% vs mês anterior</p>
+            <div className="text-3xl font-bold text-[#6B46C1]">41.9%</div>
+            <p className="text-sm text-purple-950">+3.2% vs mês anterior</p>
           </CardContent>
         </Card>
 
@@ -152,8 +153,8 @@ const Dashboard = () => {
             <CardTitle className="text-lg">Qualificados → Agendados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#00594F]">75.0%</div>
-            <p className="text-sm text-[#00352F]">-1.2% vs mês anterior</p>
+            <div className="text-3xl font-bold text-[#6B46C1]">75.0%</div>
+            <p className="text-sm text-[#8B5CF6]">-1.2% vs mês anterior</p>
           </CardContent>
         </Card>
 
@@ -162,8 +163,8 @@ const Dashboard = () => {
             <CardTitle className="text-lg">Agendados → Realizados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#00594F]">87.2%</div>
-            <p className="text-sm text-emerald-950">+2.4% vs mês anterior</p>
+            <div className="text-3xl font-bold text-[#6B46C1]">87.2%</div>
+            <p className="text-sm text-purple-950">+2.4% vs mês anterior</p>
           </CardContent>
         </Card>
 
@@ -172,8 +173,8 @@ const Dashboard = () => {
             <CardTitle className="text-lg">Leads → Realizados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#00594F]">27.4%</div>
-            <p className="text-sm text-emerald-950">+1.8% vs mês anterior</p>
+            <div className="text-3xl font-bold text-[#6B46C1]">27.4%</div>
+            <p className="text-sm text-purple-950">+1.8% vs mês anterior</p>
           </CardContent>
         </Card>
       </div>
@@ -192,8 +193,8 @@ const Dashboard = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="leads" fill="#00594F" name="Leads" />
-                <Bar dataKey="consultas" fill="#CEDC00" name="Consultas" />
+                <Bar dataKey="leads" fill="#6B46C1" name="Leads" />
+                <Bar dataKey="consultas" fill="#8B5CF6" name="Consultas" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -231,7 +232,7 @@ const Dashboard = () => {
                 <XAxis type="number" />
                 <YAxis dataKey="estado" type="category" width={50} />
                 <Tooltip />
-                <Bar dataKey="pacientes" fill="#00594F" />
+                <Bar dataKey="pacientes" fill="#6B46C1" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

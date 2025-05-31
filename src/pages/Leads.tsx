@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,16 +52,16 @@ const Leads = () => {
       case "Novo":
         return "bg-blue-500";
       case "Qualificado":
-        return "bg-green-500";
+        return "bg-purple-600";
       case "Consulta Agendada":
-        return "bg-purple-500";
+        return "bg-violet-600";
       case "Perdido":
         return "bg-red-500";
       default:
         return "bg-gray-500";
     }
   };
-  return <div className="p-6 space-y-6 bg-teal-950">
+  return <div className="p-6 space-y-6 bg-purple-900">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
@@ -115,7 +116,7 @@ const Leads = () => {
       {/* Ações */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="flex gap-2">
-          <Button onClick={() => setShowNewLeadDialog(true)} className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => setShowNewLeadDialog(true)} className="bg-purple-600 hover:bg-purple-700">
             <Plus className="w-4 h-4 mr-2" />
             Novo Lead
           </Button>
