@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { QrCode, Smartphone, Wifi, RefreshCw } from "lucide-react";
+import { QrCode, Smartphone, Wifi, RefreshCw, AlertCircle } from "lucide-react";
 import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
 import { useWhatsApp } from "@/contexts/WhatsAppContext";
 
@@ -21,56 +21,61 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
   const [connectionStep, setConnectionStep] = useState(1);
   const [error, setError] = useState("");
 
-  // Gerar QR code real
+  // Gerar QR code real do WhatsApp
   const handleGenerateQRCode = async () => {
     try {
       setIsConnecting(true);
       setConnectionStep(1);
       setError("");
       
-      console.log('Generating QR code...');
+      console.log('Gerando QR code real do WhatsApp...');
       const qrCodeData = await generateQRCode();
-      console.log('QR code generated:', qrCodeData);
+      console.log('QR code do WhatsApp gerado:', qrCodeData);
       
-      setQrCode(qrCodeData);
-      setConnectionStep(2);
-      setIsConnecting(false);
+      if (qrCodeData) {
+        setQrCode(qrCodeData);
+        setConnectionStep(2);
+        setIsConnecting(false);
 
-      // Verificar conexão periodicamente
-      const checkInterval = setInterval(async () => {
-        try {
-          const isConnected = await checkConnection();
-          console.log('Connection status:', isConnected);
-          
-          if (isConnected) {
-            clearInterval(checkInterval);
-            setConnectionStep(3);
-            setIsConnected(true);
+        // Verificar conexão periodicamente
+        const checkInterval = setInterval(async () => {
+          try {
+            const isConnected = await checkConnection();
+            console.log('Status de conexão WhatsApp:', isConnected);
             
-            setTimeout(() => {
-              onConnectionSuccess();
-              onOpenChange(false);
-              setConnectionStep(1);
-              setQrCode("");
-            }, 2000);
+            if (isConnected) {
+              clearInterval(checkInterval);
+              setConnectionStep(3);
+              setIsConnected(true);
+              
+              setTimeout(() => {
+                onConnectionSuccess();
+                onOpenChange(false);
+                setConnectionStep(1);
+                setQrCode("");
+              }, 2000);
+            }
+          } catch (error) {
+            console.error('Erro ao verificar conexão:', error);
           }
-        } catch (error) {
-          console.error('Error checking connection:', error);
-        }
-      }, 3000); // Verificar a cada 3 segundos
+        }, 3000); // Verificar a cada 3 segundos
 
-      // Limpar intervalo após 5 minutos
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        if (connectionStep === 2) {
-          setError("QR Code expirado. Gere um novo código.");
-          setConnectionStep(1);
-        }
-      }, 300000); // 5 minutos
+        // Limpar intervalo após 5 minutos (tempo limite do QR code)
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          if (connectionStep === 2) {
+            setError("QR Code expirado. Gere um novo código.");
+            setConnectionStep(1);
+            setQrCode("");
+          }
+        }, 300000); // 5 minutos
+      } else {
+        throw new Error("Falha ao gerar QR code");
+      }
 
     } catch (error) {
-      console.error('Error generating QR code:', error);
-      setError("Erro ao gerar QR Code. Tente novamente.");
+      console.error('Erro ao gerar QR code:', error);
+      setError("Erro ao gerar QR Code do WhatsApp. Tente novamente.");
       setIsConnecting(false);
       setConnectionStep(1);
     }
@@ -90,8 +95,8 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
   const steps = [
     {
       number: 1,
-      title: "Gerando QR Code",
-      description: "Aguarde enquanto geramos seu código QR...",
+      title: "Iniciando WhatsApp",
+      description: "Conectando com o WhatsApp Web...",
       icon: RefreshCw,
       active: connectionStep === 1
     },
@@ -104,8 +109,8 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
     },
     {
       number: 3,
-      title: "Conectando",
-      description: "Estabelecendo conexão com WhatsApp Web...",
+      title: "Conectado",
+      description: "WhatsApp Web conectado com sucesso!",
       icon: Wifi,
       active: connectionStep === 3
     }
@@ -124,7 +129,10 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
           {/* Error Message */}
           {error && (
             <div className="bg-red-600/20 border border-red-600 rounded-lg p-3">
-              <p className="text-red-400 text-sm text-center">{error}</p>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
             </div>
           )}
 
@@ -164,15 +172,19 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
                       </div>
                       <div className="flex items-center gap-2">
                         <QrCode className="w-4 h-4" />
-                        <span>2. Toque em "Mais opções" ou "Configurações"</span>
+                        <span>2. Toque em "Mais opções" (⋮) ou "Configurações"</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Wifi className="w-4 h-4" />
-                        <span>3. Selecione "WhatsApp Web"</span>
+                        <span>3. Selecione "Dispositivos conectados"</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <QrCode className="w-4 h-4" />
-                        <span>4. Escaneie este código QR</span>
+                        <span>4. Toque em "Conectar um dispositivo"</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <QrCode className="w-4 h-4" />
+                        <span>5. Escaneie este código QR</span>
                       </div>
                     </div>
                   </div>
@@ -188,7 +200,7 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
                 <Wifi className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-white font-semibold mb-2">Conectado com sucesso!</h3>
-              <p className="text-gray-300 text-sm">Seu WhatsApp está agora conectado. Você pode gerenciar suas conversas.</p>
+              <p className="text-gray-300 text-sm">Seu WhatsApp Web está agora conectado. Você pode gerenciar suas conversas.</p>
             </div>
           )}
 
@@ -208,7 +220,7 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isConnecting ? 'animate-spin' : ''}`} />
-                {error ? 'Tentar Novamente' : 'Gerar QR Code'}
+                {error ? 'Tentar Novamente' : isConnecting ? 'Conectando...' : 'Gerar QR Code'}
               </Button>
             )}
             {connectionStep === 2 && !error && (
