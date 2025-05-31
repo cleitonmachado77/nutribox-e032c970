@@ -1,4 +1,3 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -178,7 +177,11 @@ const Dashboard = () => {
     }, {} as Record<string, number>);
 
     return Object.entries(estadosCount)
-      .map(([estado, pacientes]) => ({ estado, pacientes }))
+      .map(([estado, pacientes]) => ({ 
+        estado, 
+        pacientes,
+        name: estado // Adding name property for better chart compatibility
+      }))
       .sort((a, b) => b.pacientes - a.pacientes);
   };
 
@@ -389,12 +392,28 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={estadosData} layout="horizontal">
+              <BarChart 
+                data={estadosData} 
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
                 <XAxis type="number" />
-                <YAxis dataKey="estado" type="category" width={50} />
-                <Tooltip />
-                <Bar dataKey="pacientes" fill="#8B5CF6" />
+                <YAxis 
+                  dataKey="estado" 
+                  type="category" 
+                  width={50}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip 
+                  formatter={([value]) => [`${value} pacientes`, 'Quantidade']}
+                  labelFormatter={(label) => `Estado: ${label}`}
+                />
+                <Bar 
+                  dataKey="pacientes" 
+                  fill="#8B5CF6" 
+                  radius={[0, 4, 4, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
