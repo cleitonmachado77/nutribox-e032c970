@@ -1,8 +1,10 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { CheckCircle, Users, Calendar, TrendingUp, MessageSquare, Brain, Star, ArrowRight, Zap, Shield, Target, BarChart3, FileText, Clock } from "lucide-react";
+
 const Home = () => {
   return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -313,4 +315,5 @@ const Home = () => {
       </footer>
     </div>;
 };
+
 export default Home;
