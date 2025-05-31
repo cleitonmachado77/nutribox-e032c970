@@ -1,45 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink, Maximize2, Minimize2, AlertTriangle } from "lucide-react";
+import { ExternalLink, Maximize2, Minimize2, AlertTriangle, Smartphone, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export const WhatsAppWebFrame = () => {
-  const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
-
-  const handleLoad = () => {
-    setIsLoading(false);
-    setHasError(false);
-    toast({
-      title: "WhatsApp Web carregado!",
-      description: "Escaneie o QR code com seu telefone para conectar",
-    });
-  };
-
-  const handleError = () => {
-    setIsLoading(false);
-    setHasError(true);
-    toast({
-      title: "Erro ao carregar WhatsApp Web",
-      description: "Use o botão 'Abrir em nova aba' para acessar diretamente",
-      variant: "destructive",
-    });
-  };
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    setHasError(false);
-    setRefreshKey(prev => prev + 1);
-    toast({
-      title: "Recarregando WhatsApp Web...",
-      description: "Por favor, aguarde",
-    });
-  };
 
   const openInNewTab = () => {
     window.open('https://web.whatsapp.com', '_blank');
@@ -49,17 +17,14 @@ export const WhatsAppWebFrame = () => {
     });
   };
 
-  // Detecta se o iframe foi bloqueado após um tempo
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isLoading) {
-        setHasError(true);
-        setIsLoading(false);
-      }
-    }, 10000); // 10 segundos timeout
-
-    return () => clearTimeout(timer);
-  }, [refreshKey, isLoading]);
+  const openInNewWindow = () => {
+    const features = 'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no';
+    window.open('https://web.whatsapp.com', 'whatsapp', features);
+    toast({
+      title: "WhatsApp Web aberto em nova janela",
+      description: "Uma janela dedicada foi aberta para o WhatsApp",
+    });
+  };
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -77,23 +42,6 @@ export const WhatsAppWebFrame = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={openInNewTab}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
               className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
@@ -102,59 +50,85 @@ export const WhatsAppWebFrame = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className={`relative ${isExpanded ? 'h-[800px]' : 'h-[600px]'} transition-all duration-300`}>
-          {isLoading && (
-            <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
-              <div className="text-center">
-                <RefreshCw className="w-8 h-8 text-green-500 animate-spin mx-auto mb-4" />
-                <h3 className="text-white font-semibold mb-2">Carregando WhatsApp Web...</h3>
-                <p className="text-gray-400 text-sm">
-                  Aguarde enquanto carregamos a interface do WhatsApp
+      <CardContent className="p-6">
+        <div className={`space-y-6 ${isExpanded ? 'min-h-[600px]' : ''}`}>
+          {/* Informação sobre limitação */}
+          <div className="bg-yellow-600/20 border border-yellow-600 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-yellow-400 font-medium mb-1">Limitação de Segurança</h4>
+                <p className="text-yellow-200 text-sm">
+                  O WhatsApp Web não permite ser carregado dentro de outros sites por questões de segurança. 
+                  Use os botões abaixo para acessar o WhatsApp em uma nova aba ou janela.
                 </p>
               </div>
             </div>
-          )}
-          
-          {hasError && (
-            <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
-              <div className="text-center max-w-md mx-auto p-6">
-                <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-white font-semibold mb-2">Não foi possível carregar o WhatsApp Web</h3>
-                <p className="text-gray-400 text-sm mb-4">
-                  O WhatsApp Web não permite ser carregado dentro de outros sites por questões de segurança.
-                </p>
-                <div className="space-y-2">
-                  <Button
-                    onClick={openInNewTab}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Abrir WhatsApp Web em Nova Aba
-                  </Button>
-                  <Button
-                    onClick={handleRefresh}
-                    variant="outline"
-                    className="w-full border-gray-600 text-gray-300 hover:bg-gray-700"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Tentar Novamente
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
 
-          <iframe
-            key={refreshKey}
-            src="https://web.whatsapp.com"
-            className="w-full h-full border-0 rounded-b-lg"
-            onLoad={handleLoad}
-            onError={handleError}
-            title="WhatsApp Web"
-            allow="camera; microphone"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-top-navigation"
-          />
+          {/* Botões de acesso */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Button
+              onClick={openInNewTab}
+              className="h-20 bg-green-600 hover:bg-green-700 text-white flex flex-col gap-2"
+            >
+              <ExternalLink className="w-6 h-6" />
+              <div className="text-center">
+                <div className="font-medium">Abrir em Nova Aba</div>
+                <div className="text-xs opacity-90">Recomendado</div>
+              </div>
+            </Button>
+
+            <Button
+              onClick={openInNewWindow}
+              variant="outline"
+              className="h-20 border-gray-600 text-gray-300 hover:bg-gray-700 flex flex-col gap-2"
+            >
+              <Maximize2 className="w-6 h-6" />
+              <div className="text-center">
+                <div className="font-medium">Abrir em Janela</div>
+                <div className="text-xs opacity-90">Dedicada</div>
+              </div>
+            </Button>
+          </div>
+
+          {/* Instruções de uso */}
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+              <QrCode className="w-4 h-4" />
+              Como conectar seu WhatsApp:
+            </h4>
+            <div className="space-y-2 text-sm text-gray-300">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-green-400" />
+                <span>1. Abra o WhatsApp no seu celular</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-green-400" />
+                <span>2. Toque em "Mais opções" (⋮) → "Dispositivos conectados"</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-green-400" />
+                <span>3. Toque em "Conectar um dispositivo"</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-green-400" />
+                <span>4. Escaneie o QR code que aparece na nova aba/janela</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Vantagens da solução */}
+          <div className="bg-blue-600/20 border border-blue-600 rounded-lg p-4">
+            <h4 className="text-blue-400 font-medium mb-2">Vantagens desta solução:</h4>
+            <ul className="text-blue-200 text-sm space-y-1">
+              <li>• Interface original e completa do WhatsApp Web</li>
+              <li>• Todas as funcionalidades disponíveis (envio de arquivos, áudio, etc.)</li>
+              <li>• Sincronização em tempo real com seu telefone</li>
+              <li>• Segurança mantida pelo WhatsApp</li>
+              <li>• Não requer configurações adicionais</li>
+            </ul>
+          </div>
         </div>
       </CardContent>
     </Card>
