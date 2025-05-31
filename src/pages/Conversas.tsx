@@ -1,4 +1,3 @@
-
 import { Search, Filter, Plus, Send, MoreVertical, QrCode, Phone, Video, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { WhatsAppQRModal } from "@/components/WhatsAppQRModal";
 import { useState, useEffect } from "react";
+import { useWhatsApp } from "@/contexts/WhatsAppContext";
 
 const conversations = [
   {
@@ -93,11 +93,16 @@ const chatMessages = [
 ];
 
 export default function Conversas() {
-  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
+  const { isConnected, setIsConnected, resetUnreadCount } = useWhatsApp();
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Reset unread count when entering conversations page
+  useEffect(() => {
+    resetUnreadCount();
+  }, [resetUnreadCount]);
 
   // Simula verificação de conectividade
   useEffect(() => {
@@ -111,7 +116,7 @@ export default function Conversas() {
   }, []);
 
   const handleWhatsAppConnection = () => {
-    setIsWhatsAppConnected(true);
+    setIsConnected(true);
   };
 
   const handleSendMessage = () => {
@@ -131,7 +136,7 @@ export default function Conversas() {
       <Header title="Conversas" description="Gerencie suas conversas com pacientes via WhatsApp" />
       
       {/* WhatsApp Connection Status & QR */}
-      {!isWhatsAppConnected && (
+      {!isConnected && (
         <Card className="bg-gradient-to-r from-green-600 to-green-700 border-green-500">
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -329,18 +334,18 @@ export default function Conversas() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                disabled={!isWhatsAppConnected}
+                disabled={!isConnected}
               />
               <Button 
                 onClick={handleSendMessage}
-                disabled={!isWhatsAppConnected || !newMessage.trim()}
+                disabled={!isConnected || !newMessage.trim()}
                 className="bg-green-600 hover:bg-green-700"
               >
                 <Send className="w-4 h-4 mr-2" />
                 Enviar
               </Button>
             </div>
-            {!isWhatsAppConnected && (
+            {!isConnected && (
               <p className="text-xs text-gray-400 mt-2">
                 Conecte seu WhatsApp para enviar mensagens
               </p>
