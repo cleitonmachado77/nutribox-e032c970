@@ -67,7 +67,7 @@ const Pacientes = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sem Interação</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-500">Sem Interação</CardTitle>
             <UserX className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
