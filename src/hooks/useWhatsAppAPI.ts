@@ -60,7 +60,6 @@ export const useWhatsAppAPI = () => {
 
       if (error) throw error;
       
-      // Type assertion para garantir que sender_type seja do tipo correto
       return (data || []).map(message => ({
         ...message,
         sender_type: message.sender_type as 'user' | 'contact'
@@ -82,7 +81,10 @@ export const useWhatsAppAPI = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from function:', error);
+        throw error;
+      }
       return data;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -90,33 +92,83 @@ export const useWhatsAppAPI = () => {
     }
   };
 
-  // Gerar QR Code
+  // Gerar QR Code - versão melhorada
   const generateQRCode = async () => {
     try {
+      console.log('Calling whatsapp-session function to generate QR...');
+      
       const { data, error } = await supabase.functions.invoke('whatsapp-session', {
-        body: { action: 'generate_qr' }
+        body: { action: 'generate_qr' },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (error) throw error;
-      return data.qr_code;
-    } catch (error) {
+      console.log('Response from function:', { data, error });
+
+      if (error) {
+        console.error('Function error:', error);
+        throw new Error(error.message || 'Erro na função de geração de QR');
+      }
+
+      if (!data) {
+        throw new Error('Resposta vazia da função');
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      if (!data.qr_code) {
+        throw new Error('QR code não encontrado na resposta');
+      }
+
+      console.log('QR code gerado com sucesso');
+      return data;
+    } catch (error: any) {
       console.error('Error generating QR code:', error);
-      throw error;
+      throw new Error(error.message || 'Erro desconhecido ao gerar QR code');
     }
   };
 
-  // Verificar conexão
+  // Verificar conexão - versão melhorada
   const checkConnection = async () => {
     try {
+      console.log('Checking WhatsApp connection...');
+      
       const { data, error } = await supabase.functions.invoke('whatsapp-session', {
-        body: { action: 'check_connection' }
+        body: { action: 'check_connection' },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (error) throw error;
-      return data.connected;
+      console.log('Connection check response:', { data, error });
+
+      if (error) {
+        console.error('Connection check error:', error);
+        return false;
+      }
+
+      return data?.connected || false;
     } catch (error) {
       console.error('Error checking connection:', error);
       return false;
+    }
+  };
+
+  // Desconectar
+  const disconnect = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-session', {
+        body: { action: 'disconnect' }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      throw error;
     }
   };
 
@@ -166,7 +218,7 @@ export const useWhatsAppAPI = () => {
           table: 'whatsapp_messages'
         },
         () => {
-          loadConversations(); // Recarregar conversas quando nova mensagem chegar
+          loadConversations();
         }
       )
       .on(
@@ -194,6 +246,7 @@ export const useWhatsAppAPI = () => {
     sendMessage,
     generateQRCode,
     checkConnection,
+    disconnect,
     markAsRead,
     loadConversations
   };
