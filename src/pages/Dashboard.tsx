@@ -32,23 +32,25 @@ const Dashboard = () => {
     leads: 67,
     consultas: 52
   }];
+  
   const objetivosData = [{
     name: 'Perda de Peso',
     value: 45,
-    color: '#6B46C1'
+    color: '#EF4444' // Red for weight loss
   }, {
     name: 'Ganho de Massa',
     value: 30,
-    color: '#8B5CF6'
+    color: '#10B981' // Green for muscle gain
   }, {
     name: 'Manutenção',
     value: 15,
-    color: '#A78BFA'
+    color: '#3B82F6' // Blue for maintenance
   }, {
     name: 'Outros',
     value: 10,
-    color: '#C4B5FD'
+    color: '#F59E0B' // Orange for others
   }];
+  
   const estadosData = [{
     estado: 'SP',
     pacientes: 120
@@ -65,23 +67,25 @@ const Dashboard = () => {
     estado: 'SC',
     pacientes: 38
   }];
+  
   const motivosAbandonoData = [{
     name: 'Preço',
     value: 35,
-    color: '#6B46C1'
+    color: '#DC2626' // Dark red for price issues
   }, {
     name: 'Falta de Tempo',
     value: 25,
-    color: '#8B5CF6'
+    color: '#F97316' // Orange for time issues
   }, {
     name: 'Sem Interesse',
     value: 20,
-    color: '#A78BFA'
+    color: '#EAB308' // Yellow for lack of interest
   }, {
     name: 'Problemas Pessoais',
     value: 20,
-    color: '#C4B5FD'
+    color: '#8B5CF6' // Purple for personal issues
   }];
+
   return (
     <div className="p-6 space-y-6">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
@@ -190,8 +194,8 @@ const Dashboard = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="leads" fill="#6B46C1" name="Leads" />
-                <Bar dataKey="consultas" fill="#8B5CF6" name="Consultas" />
+                <Bar dataKey="leads" fill="#3B82F6" name="Leads" />
+                <Bar dataKey="consultas" fill="#10B981" name="Consultas" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -229,7 +233,7 @@ const Dashboard = () => {
                 <XAxis type="number" />
                 <YAxis dataKey="estado" type="category" width={50} />
                 <Tooltip />
-                <Bar dataKey="pacientes" fill="#6B46C1" />
+                <Bar dataKey="pacientes" fill="#8B5CF6" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
