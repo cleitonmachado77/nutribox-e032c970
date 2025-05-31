@@ -1,4 +1,3 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -80,7 +79,7 @@ const Dashboard = () => {
     value: 20,
     color: '#C4B5FD'
   }];
-  return <div className="p-6 space-y-6 bg-purple-900">
+  return <div className="p-6 space-y-6 bg-slate-900">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
