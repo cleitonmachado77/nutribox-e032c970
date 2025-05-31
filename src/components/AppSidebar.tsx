@@ -1,5 +1,3 @@
-
-
 import { Calendar, Home, Users, MessageSquare, Brain, KanbanSquare, UserCheck, LogOut } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -59,7 +57,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center justify-center">
-          <img src="/lovable-uploads/2091936e-7c9b-4b1e-949f-7711dbcda4d4.png" alt="Nutribox Logo" className="w-16 h-12 object-contain" />
+          <img src="/lovable-uploads/83d718e0-f178-4131-ae80-27b184b0402a.png" alt="Nutribox Logo" className="h-12 w-auto object-contain" />
         </div>
       </SidebarHeader>
       <SidebarContent>
