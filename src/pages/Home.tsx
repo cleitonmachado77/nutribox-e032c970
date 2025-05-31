@@ -7,9 +7,9 @@ const Home = () => {
   return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <header className="border-b border-purple-800/20 bg-slate-900/50 backdrop-blur-sm">
-        <div className="container flex items-center justify-between px-[30px] py-[17px] mx-0 my-0">
+        <div className="container flex items-center justify-between py-[17px] my-0 mx-[2px] px-[16px]">
           <div className="flex items-center space-x-2">
-            <img src="/lovable-uploads/2091936e-7c9b-4b1e-949f-7711dbcda4d4.png" alt="Nutribox Logo" className="w-20 h-16 object-contain" />
+            
           </div>
           <div className="flex gap-3">
             <Button variant="outline" asChild className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white">
