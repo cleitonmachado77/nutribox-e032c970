@@ -8,6 +8,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
 import Pacientes from "./pages/Pacientes";
@@ -27,8 +28,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/*" element={
+            <Route path="/dashboard/*" element={
               <ProtectedRoute>
                 <SidebarProvider>
                   <div className="min-h-screen flex w-full bg-background">
@@ -48,6 +50,7 @@ const App = () => (
                 </SidebarProvider>
               </ProtectedRoute>
             } />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
