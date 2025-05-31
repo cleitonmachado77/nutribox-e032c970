@@ -27,7 +27,7 @@ const Home = () => {
       <header className="border-b border-purple-800/20 bg-slate-900/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg"></div>
+            <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-8 h-8" />
             <span className="text-2xl font-bold text-white">Nutribox</span>
           </div>
           <div className="flex gap-3">
@@ -329,7 +329,7 @@ const Home = () => {
       <footer className="border-t border-purple-800/20 bg-slate-900/50 py-8 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded"></div>
+            <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-6 h-6" />
             <span className="text-xl font-bold text-white">Nutribox</span>
           </div>
           <p className="text-gray-400">

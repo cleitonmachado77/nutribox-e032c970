@@ -58,7 +58,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg"></div>
+          <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-8 h-8" />
           <span className="text-xl font-bold text-white">Nutribox</span>
         </div>
       </SidebarHeader>
