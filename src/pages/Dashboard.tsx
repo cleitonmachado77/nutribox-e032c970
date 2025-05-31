@@ -406,7 +406,7 @@ const Dashboard = () => {
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
-                  formatter={([value]) => [`${value} pacientes`, 'Quantidade']}
+                  formatter={(value) => [`${value} pacientes`, 'Quantidade']}
                   labelFormatter={(label) => `Estado: ${label}`}
                 />
                 <Bar 
