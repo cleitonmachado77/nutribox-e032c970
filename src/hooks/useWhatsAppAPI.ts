@@ -59,7 +59,12 @@ export const useWhatsAppAPI = () => {
         .order('timestamp', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      
+      // Type assertion para garantir que sender_type seja do tipo correto
+      return (data || []).map(message => ({
+        ...message,
+        sender_type: message.sender_type as 'user' | 'contact'
+      }));
     } catch (error) {
       console.error('Error loading messages:', error);
       return [];
