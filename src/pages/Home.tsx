@@ -14,7 +14,10 @@ import {
   ArrowRight,
   Zap,
   Shield,
-  Target
+  Target,
+  BarChart3,
+  FileText,
+  Clock
 } from "lucide-react";
 
 const Home = () => {
@@ -27,11 +30,18 @@ const Home = () => {
             <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg"></div>
             <span className="text-2xl font-bold text-white">Nutribox</span>
           </div>
-          <Button asChild className="bg-purple-600 hover:bg-purple-700">
-            <Link to="/auth">
-              Começar Agora
-            </Link>
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" asChild className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white">
+              <Link to="/auth">
+                Entrar
+              </Link>
+            </Button>
+            <Button asChild className="bg-purple-600 hover:bg-purple-700">
+              <Link to="/auth">
+                Começar Grátis
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -39,43 +49,45 @@ const Home = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto text-center max-w-6xl">
           <Badge className="mb-6 bg-purple-100 text-purple-800 border-purple-200">
-            🚀 Plataforma #1 para Nutricionistas
+            🚀 Sistema #1 para Gestão de Pacientes
           </Badge>
           
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-            Transforme sua
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Carreira </span>
-            em Nutrição
+            Gerencie seus
+            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Pacientes </span>
+            com Inteligência
           </h1>
           
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Sistema completo de gestão para nutricionistas que querem crescer profissionalmente. 
-            Gerencie pacientes, crie planos alimentares personalizados e aumente sua receita com IA.
+            Plataforma completa para nutricionistas que querem organizar consultas, acompanhar evolução dos pacientes 
+            e criar planos alimentares personalizados com tecnologia de IA.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <Button size="lg" asChild className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-6">
               <Link to="/auth">
-                Começar Grátis
+                Começar Gratuitamente
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white text-lg px-8 py-6">
-              Ver Demonstração
+            <Button size="lg" asChild variant="outline" className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white text-lg px-8 py-6">
+              <Link to="/plans">
+                Ver Planos
+              </Link>
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-3xl font-bold text-white">1000+</div>
+              <div className="text-3xl font-bold text-white">2500+</div>
               <div className="text-gray-400">Nutricionistas Ativos</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">50k+</div>
-              <div className="text-gray-400">Pacientes Atendidos</div>
+              <div className="text-3xl font-bold text-white">150k+</div>
+              <div className="text-gray-400">Pacientes Gerenciados</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">95%</div>
+              <div className="text-3xl font-bold text-white">98%</div>
               <div className="text-gray-400">Satisfação dos Usuários</div>
             </div>
           </div>
@@ -87,40 +99,50 @@ const Home = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">
-              Por que escolher o Nutribox?
+              Tudo que você precisa para gerenciar seus pacientes
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Desenvolvido especificamente para profissionais da nutrição que buscam excelência
+              Ferramentas profissionais desenvolvidas especificamente para nutricionistas
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
               <CardHeader>
-                <Zap className="w-12 h-12 text-purple-400 mb-4" />
-                <CardTitle className="text-white">IA Avançada</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Crie planos alimentares personalizados em segundos com nossa IA especializada em nutrição
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
-              <CardHeader>
                 <Users className="w-12 h-12 text-purple-400 mb-4" />
-                <CardTitle className="text-white">Gestão Completa</CardTitle>
+                <CardTitle className="text-white">Gestão de Pacientes</CardTitle>
                 <CardDescription className="text-gray-300">
-                  Organize todos seus pacientes, consultas e históricos em um só lugar
+                  Organize fichas, histórico médico e dados antropométricos em um só lugar
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
               <CardHeader>
-                <TrendingUp className="w-12 h-12 text-purple-400 mb-4" />
-                <CardTitle className="text-white">Aumente sua Receita</CardTitle>
+                <Calendar className="w-12 h-12 text-purple-400 mb-4" />
+                <CardTitle className="text-white">Agendamento Inteligente</CardTitle>
                 <CardDescription className="text-gray-300">
-                  Ferramentas de marketing e automação para escalar seu consultório
+                  Calendário integrado com lembretes automáticos via WhatsApp
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
+              <CardHeader>
+                <Brain className="w-12 h-12 text-purple-400 mb-4" />
+                <CardTitle className="text-white">IA para Cardápios</CardTitle>
+                <CardDescription className="text-gray-300">
+                  Crie planos alimentares personalizados em segundos com nossa IA
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
+              <CardHeader>
+                <BarChart3 className="w-12 h-12 text-purple-400 mb-4" />
+                <CardTitle className="text-white">Relatórios de Evolução</CardTitle>
+                <CardDescription className="text-gray-300">
+                  Acompanhe o progresso dos pacientes com gráficos e métricas detalhadas
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -130,27 +152,17 @@ const Home = () => {
                 <MessageSquare className="w-12 h-12 text-purple-400 mb-4" />
                 <CardTitle className="text-white">WhatsApp Integrado</CardTitle>
                 <CardDescription className="text-gray-300">
-                  Comunique-se diretamente com pacientes via WhatsApp automatizado
+                  Comunique-se diretamente com pacientes e envie lembretes automáticos
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
               <CardHeader>
-                <Shield className="w-12 h-12 text-purple-400 mb-4" />
-                <CardTitle className="text-white">100% Seguro</CardTitle>
+                <FileText className="w-12 h-12 text-purple-400 mb-4" />
+                <CardTitle className="text-white">Prontuários Digitais</CardTitle>
                 <CardDescription className="text-gray-300">
-                  Dados protegidos com criptografia de nível bancário e LGPD compliant
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-slate-800/50 border-purple-800/20 hover:border-purple-600/50 transition-all">
-              <CardHeader>
-                <Target className="w-12 h-12 text-purple-400 mb-4" />
-                <CardTitle className="text-white">Resultados Comprovados</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Nutricionistas aumentam em média 40% seus resultados em 3 meses
+                  Mantenha todos os dados dos pacientes seguros e organizados
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -166,7 +178,7 @@ const Home = () => {
               Como funciona
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Simples, rápido e eficiente - comece em 3 passos
+              Simples, rápido e eficiente - organize sua prática em 3 passos
             </p>
           </div>
 
@@ -175,9 +187,9 @@ const Home = () => {
               <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
                 1
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Cadastre-se</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">Cadastre Pacientes</h3>
               <p className="text-gray-300">
-                Crie sua conta em menos de 2 minutos e configure seu perfil profissional
+                Importe ou adicione seus pacientes com fichas completas e histórico médico
               </p>
             </div>
 
@@ -185,9 +197,9 @@ const Home = () => {
               <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
                 2
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Adicione Pacientes</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">Agende Consultas</h3>
               <p className="text-gray-300">
-                Importe ou cadastre seus pacientes e organize todas as informações importantes
+                Use nosso calendário inteligente para organizar atendimentos e enviar lembretes
               </p>
             </div>
 
@@ -195,9 +207,9 @@ const Home = () => {
               <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
                 3
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Utilize a IA</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">Acompanhe Resultados</h3>
               <p className="text-gray-300">
-                Crie planos alimentares personalizados e automatize seu atendimento
+                Monitore a evolução dos pacientes e ajuste os planos com base nos resultados
               </p>
             </div>
           </div>
@@ -222,7 +234,7 @@ const Home = () => {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-4">
-                  "O Nutribox revolucionou minha prática. Consigo atender 3x mais pacientes com a mesma qualidade."
+                  "Consegui organizar todos meus pacientes e aumentei minha produtividade em 60%. O sistema é intuitivo e completo."
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
@@ -244,7 +256,7 @@ const Home = () => {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-4">
-                  "A IA para criação de cardápios é impressionante. Meus pacientes adoram a personalização."
+                  "A IA para criação de cardápios é revolucionária. Meus pacientes adoram a personalização dos planos."
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
@@ -266,7 +278,7 @@ const Home = () => {
                   ))}
                 </div>
                 <p className="text-gray-300 mb-4">
-                  "Minha receita aumentou 50% desde que comecei a usar. Recomendo para todos os colegas!"
+                  "Desde que uso o Nutribox, consigo atender mais pacientes sem perder a qualidade do atendimento."
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
@@ -287,10 +299,10 @@ const Home = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Pronto para transformar sua carreira?
+            Pronto para organizar sua prática?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Junte-se a mais de 1000 nutricionistas que já estão crescendo com o Nutribox
+            Junte-se a mais de 2500 nutricionistas que já organizam seus pacientes com o Nutribox
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -300,10 +312,15 @@ const Home = () => {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
+            <Button size="lg" asChild variant="outline" className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white text-lg px-8 py-6">
+              <Link to="/plans">
+                Ver Planos e Preços
+              </Link>
+            </Button>
           </div>
 
           <p className="text-gray-400 mt-6 text-sm">
-            ✅ Sem cartão de crédito necessário • ✅ Configuração em 2 minutos • ✅ Suporte 24/7
+            ✅ Teste grátis por 14 dias • ✅ Configuração em 2 minutos • ✅ Suporte especializado
           </p>
         </div>
       </section>

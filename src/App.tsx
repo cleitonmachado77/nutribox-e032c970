@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Home from "./pages/Home";
+import Plans from "./pages/Plans";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
 import Pacientes from "./pages/Pacientes";
@@ -29,6 +30,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/plans" element={<Plans />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard/*" element={
               <ProtectedRoute>
