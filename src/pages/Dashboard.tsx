@@ -1,4 +1,3 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -92,90 +91,90 @@ const Dashboard = () => {
       
       {/* Métricas de Leads */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-blue-100">Total de Leads</CardTitle>
+            <Users className="h-4 w-4 text-blue-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#6B46C1]">248</div>
-            <p className="text-xs text-green-500">+12% vs período anterior</p>
+            <div className="text-2xl font-bold text-white">248</div>
+            <p className="text-xs text-blue-200">+12% vs período anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leads Qualificados</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-emerald-100">Leads Qualificados</CardTitle>
+            <UserCheck className="h-4 w-4 text-emerald-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#6B46C1]">104</div>
-            <p className="text-xs text-emerald-500">+8% vs período anterior</p>
+            <div className="text-2xl font-bold text-white">104</div>
+            <p className="text-xs text-emerald-200">+8% vs período anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Consultas Agendadas</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-orange-100">Consultas Agendadas</CardTitle>
+            <Calendar className="h-4 w-4 text-orange-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#6B46C1]">78</div>
-            <p className="text-xs text-emerald-500">+5% vs período anterior</p>
+            <div className="text-2xl font-bold text-white">78</div>
+            <p className="text-xs text-orange-200">+5% vs período anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Consultas Realizadas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-purple-100">Consultas Realizadas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#6B46C1]">68</div>
-            <p className="text-xs text-emerald-500">+10% vs período anterior</p>
+            <div className="text-2xl font-bold text-white">68</div>
+            <p className="text-xs text-purple-200">+10% vs período anterior</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Conversões */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg">Leads → Qualificados</CardTitle>
+            <CardTitle className="text-lg text-cyan-100">Leads → Qualificados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#6B46C1]">41.9%</div>
-            <p className="text-sm text-emerald-500">+3.2% vs mês anterior</p>
+            <div className="text-3xl font-bold text-white">41.9%</div>
+            <p className="text-sm text-cyan-200">+3.2% vs mês anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-rose-500 to-rose-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg">Qualificados → Agendados</CardTitle>
+            <CardTitle className="text-lg text-rose-100">Qualificados → Agendados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#6B46C1]">75.0%</div>
-            <p className="text-sm text-red-500">-1.2% vs mês anterior</p>
+            <div className="text-3xl font-bold text-white">75.0%</div>
+            <p className="text-sm text-rose-200">-1.2% vs mês anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-teal-500 to-teal-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg">Agendados → Realizados</CardTitle>
+            <CardTitle className="text-lg text-teal-100">Agendados → Realizados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#6B46C1]">87.2%</div>
-            <p className="text-sm text-emerald-500">+2.4% vs mês anterior</p>
+            <div className="text-3xl font-bold text-white">87.2%</div>
+            <p className="text-sm text-teal-200">+2.4% vs mês anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg">Leads → Realizados</CardTitle>
+            <CardTitle className="text-lg text-indigo-100">Leads → Realizados</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#6B46C1]">27.4%</div>
-            <p className="text-sm text-emerald-500">+1.8% vs mês anterior</p>
+            <div className="text-3xl font-bold text-white">27.4%</div>
+            <p className="text-sm text-indigo-200">+1.8% vs mês anterior</p>
           </CardContent>
         </Card>
       </div>
