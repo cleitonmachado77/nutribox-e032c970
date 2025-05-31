@@ -81,10 +81,10 @@ const Dashboard = () => {
   }];
   return <div className="p-6 space-y-6 bg-slate-900">
       <div className="flex items-center gap-4">
-        <SidebarTrigger />
+        <SidebarTrigger className="text-gray-200" />
         <div>
           <h1 className="text-3xl font-bold text-slate-100">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do seu negócio</p>
+          <p className="text-gray-300">Visão geral do seu negócio</p>
         </div>
       </div>
 
