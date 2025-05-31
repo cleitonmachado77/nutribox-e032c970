@@ -1,4 +1,3 @@
-
 import { Search, Filter, Plus, Send, MoreVertical, QrCode, Phone, Video, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import { useWhatsAppAPI, WhatsAppMessage } from "@/hooks/useWhatsAppAPI";
 
 export default function Conversas() {
   const { isConnected, setIsConnected, resetUnreadCount, checkConnectionStatus } = useWhatsApp();
-  const { conversations, loading, loadMessages, sendMessage, markAsRead, generateQRCode } = useWhatsAppAPI();
+  const { conversations, loading, loadMessages, sendMessage, markAsRead } = useWhatsAppAPI();
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]);
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
@@ -41,17 +40,9 @@ export default function Conversas() {
     }
   }, [selectedConversation]);
 
-  const handleWhatsAppConnection = async () => {
-    try {
-      await generateQRCode();
-      // A conexão será atualizada automaticamente via webhook
-      setTimeout(() => {
-        checkConnectionStatus();
-        setIsConnected(true);
-      }, 10000);
-    } catch (error) {
-      console.error('Error connecting WhatsApp:', error);
-    }
+  const handleWhatsAppConnection = () => {
+    // A conexão será gerenciada pelo modal
+    console.log('WhatsApp connection successful');
   };
 
   const handleSendMessage = async () => {
