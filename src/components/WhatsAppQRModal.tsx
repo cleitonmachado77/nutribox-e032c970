@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { QrCode, Smartphone, Wifi, RefreshCw, AlertCircle } from "lucide-react";
 import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
 import { useWhatsApp } from "@/contexts/WhatsAppContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface WhatsAppQRModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface WhatsAppQRModalProps {
 export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: WhatsAppQRModalProps) => {
   const { generateQRCode, checkConnection } = useWhatsAppAPI();
   const { setIsConnected } = useWhatsApp();
+  const { toast } = useToast();
   const [qrCode, setQrCode] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStep, setConnectionStep] = useState(1);
@@ -28,14 +30,20 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
       setConnectionStep(1);
       setError("");
       
-      console.log('Gerando QR code real do WhatsApp...');
+      console.log('Iniciando geração do QR code...');
+      
       const qrCodeData = await generateQRCode();
-      console.log('QR code do WhatsApp gerado:', qrCodeData);
+      console.log('QR code recebido:', qrCodeData ? 'Sucesso' : 'Falhou');
       
       if (qrCodeData) {
         setQrCode(qrCodeData);
         setConnectionStep(2);
         setIsConnecting(false);
+
+        toast({
+          title: "QR Code gerado",
+          description: "Escaneie o código com seu WhatsApp para conectar",
+        });
 
         // Verificar conexão periodicamente
         const checkInterval = setInterval(async () => {
@@ -47,6 +55,11 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
               clearInterval(checkInterval);
               setConnectionStep(3);
               setIsConnected(true);
+              
+              toast({
+                title: "WhatsApp conectado!",
+                description: "Sua conta foi conectada com sucesso",
+              });
               
               setTimeout(() => {
                 onConnectionSuccess();
@@ -67,6 +80,11 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
             setError("QR Code expirado. Gere um novo código.");
             setConnectionStep(1);
             setQrCode("");
+            toast({
+              title: "QR Code expirado",
+              description: "Por favor, gere um novo código",
+              variant: "destructive",
+            });
           }
         }, 300000); // 5 minutos
       } else {
@@ -78,6 +96,12 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
       setError("Erro ao gerar QR Code do WhatsApp. Tente novamente.");
       setIsConnecting(false);
       setConnectionStep(1);
+      
+      toast({
+        title: "Erro na conexão",
+        description: "Não foi possível gerar o QR code. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -160,6 +184,10 @@ export const WhatsAppQRModal = ({ open, onOpenChange, onConnectionSuccess }: Wha
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode)}`}
                       alt="WhatsApp QR Code"
                       className="w-full h-full object-contain"
+                      onError={(e) => {
+                        console.error('Erro ao carregar QR code image');
+                        setError("Erro ao exibir QR code");
+                      }}
                     />
                   </div>
                   
