@@ -60,7 +60,7 @@ const Leads = () => {
         return "bg-gray-500";
     }
   };
-  return <div className="p-6 space-y-6 bg-purple-900">
+  return <div className="p-6 space-y-6 bg-gray-900">
       <div className="flex items-center gap-4">
         <SidebarTrigger />
         <div>
