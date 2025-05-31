@@ -1,6 +1,7 @@
 
 import { Header } from "@/components/Header";
 import { WhatsAppWebFrame } from "@/components/WhatsAppWebFrame";
+import { WhatsAppChatWidget } from "@/components/WhatsAppChatWidget";
 import { useEffect } from "react";
 import { useWhatsApp } from "@/contexts/WhatsAppContext";
 
@@ -28,9 +29,9 @@ export default function Conversas() {
               className="w-8 h-8"
             />
             <div>
-              <h3 className="text-white font-semibold">WhatsApp Web Integrado</h3>
+              <h3 className="text-white font-semibold">WhatsApp Web + Widget de Chat</h3>
               <p className="text-green-100 text-sm">
-                Use seu WhatsApp diretamente aqui. Escaneie o QR code com seu telefone para conectar.
+                Use o WhatsApp Web tradicional ou experimente nosso widget de chat integrado.
               </p>
             </div>
           </div>
@@ -39,16 +40,18 @@ export default function Conversas() {
         <WhatsAppWebFrame />
         
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h4 className="text-white font-medium mb-2">Como usar:</h4>
+          <h4 className="text-white font-medium mb-2">Novo: Widget de Chat Integrado</h4>
           <ul className="text-gray-300 text-sm space-y-1">
-            <li>• Abra o WhatsApp no seu celular</li>
-            <li>• Toque em "Mais opções" (três pontos) → "Dispositivos conectados"</li>
-            <li>• Toque em "Conectar um dispositivo"</li>
-            <li>• Escaneie o QR code que aparece acima</li>
-            <li>• Seu WhatsApp estará disponível diretamente aqui!</li>
+            <li>• Clique no ícone de chat no canto inferior direito</li>
+            <li>• Inicie uma conversa diretamente no site</li>
+            <li>• Continue a conversa no WhatsApp quando necessário</li>
+            <li>• Interface integrada e responsiva</li>
           </ul>
         </div>
       </div>
+
+      {/* Widget de Chat */}
+      <WhatsAppChatWidget />
     </div>
   );
 }
