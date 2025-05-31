@@ -1,15 +1,13 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { CheckCircle, Users, Calendar, TrendingUp, MessageSquare, Brain, Star, ArrowRight, Zap, Shield, Target, BarChart3, FileText, Clock } from "lucide-react";
-
 const Home = () => {
   return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <header className="border-b border-purple-800/20 bg-slate-900/50 backdrop-blur-sm">
-        <div className="container flex items-center justify-between py-[17px] my-0 mx-[2px] px-[16px]">
+        <div className="container flex items-center justify-between my-0 px-[16px] py-[15px] mx-0">
           <div className="flex items-center space-x-2">
             <img src="/lovable-uploads/83d718e0-f178-4131-ae80-27b184b0402a.png" alt="Nutribox Logo" className="h-12 w-auto object-contain" />
           </div>
