@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,62 +49,81 @@ const Leads = () => {
     cadastro: "04/12/2024",
     ultimaResposta: "10/12/2024, 15:00"
   }];
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Novo":
-        return "bg-blue-500";
+        return "bg-cyan-500";
       case "Qualificado":
-        return "bg-purple-600";
+        return "bg-teal-500";
       case "Consulta Agendada":
-        return "bg-violet-600";
+        return "bg-amber-500";
       case "Perdido":
         return "bg-red-500";
       default:
         return "bg-gray-500";
     }
   };
+
+  const getObjetivoColor = (objetivo: string) => {
+    switch (objetivo) {
+      case "Perda de Peso":
+        return "bg-rose-500";
+      case "Ganho de Massa":
+        return "bg-emerald-500";
+      case "Manutenção":
+        return "bg-blue-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
   return <div className="p-6 space-y-6 bg-gray-900">
       <Header title="Leads" description="Gerencie seus potenciais clientes" />
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-indigo-100">Total de Leads</CardTitle>
+            <Users className="h-4 w-4 text-indigo-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">29</div>
+            <div className="text-2xl font-bold text-white">29</div>
+            <p className="text-xs text-indigo-200">+15% vs período anterior</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hoje</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-emerald-100">Hoje</CardTitle>
+            <UserPlus className="h-4 w-4 text-emerald-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold text-white">0</div>
+            <p className="text-xs text-emerald-200">Nenhum lead hoje</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ontem</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-orange-100">Ontem</CardTitle>
+            <Calendar className="h-4 w-4 text-orange-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold text-white">0</div>
+            <p className="text-xs text-orange-200">Nenhum lead ontem</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Últimos 7 dias</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-purple-100">Últimos 7 dias</CardTitle>
+            <Calendar className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold text-white">0</div>
+            <p className="text-xs text-purple-200">Sem atividade recente</p>
           </CardContent>
         </Card>
       </div>
@@ -161,7 +181,9 @@ const Leads = () => {
                   <TableCell className="font-medium">{lead.nome}</TableCell>
                   <TableCell>{lead.estado}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="bg-red-500">{lead.objetivo}</Badge>
+                    <Badge variant="secondary" className={getObjetivoColor(lead.objetivo)}>
+                      {lead.objetivo}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(lead.status)}>
@@ -169,7 +191,7 @@ const Leads = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">Aproveitadora especial</Badge>
+                    <Badge variant="outline" className="border-pink-400 text-pink-600">Aproveitadora especial</Badge>
                   </TableCell>
                   <TableCell>{lead.cadastro}</TableCell>
                   <TableCell>{lead.ultimaResposta}</TableCell>
