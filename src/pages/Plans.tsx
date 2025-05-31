@@ -78,8 +78,7 @@ const Plans = () => {
               </Link>
             </Button>
             <div className="flex items-center space-x-2">
-              <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-8 h-8" />
-              <span className="text-2xl font-bold text-white">Nutribox</span>
+              <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-12 h-12" />
             </div>
           </div>
           <div className="flex gap-3">
@@ -240,8 +239,7 @@ const Plans = () => {
       <footer className="border-t border-purple-800/20 bg-slate-900/50 py-8 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-6 h-6" />
-            <span className="text-xl font-bold text-white">Nutribox</span>
+            <img src="/lovable-uploads/b5791f37-098e-4457-b186-61849d2a584c.png" alt="Nutribox Logo" className="w-8 h-8" />
           </div>
           <p className="text-gray-400">
             © 2024 Nutribox. Todos os direitos reservados.
