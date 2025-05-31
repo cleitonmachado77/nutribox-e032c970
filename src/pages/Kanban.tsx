@@ -1,10 +1,10 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import { useState, DragEvent } from "react";
+import { Header } from "@/components/Header";
 
 interface Lead {
   id: number;
@@ -157,13 +157,7 @@ const Kanban = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h1 className="text-3xl font-bold text-white">Kanban de Leads</h1>
-          <p className="text-gray-400">Gerencie o fluxo dos seus leads</p>
-        </div>
-      </div>
+      <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
 
       {/* Tabs */}
       <div className="flex gap-4">

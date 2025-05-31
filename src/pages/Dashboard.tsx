@@ -1,7 +1,9 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { Users, UserCheck, Calendar, CheckCircle, TrendingUp } from "lucide-react";
+import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck } from "lucide-react";
+import { Header } from "@/components/Header";
+
 const Dashboard = () => {
   // Mock data for charts
   const monthlyData = [{
@@ -79,15 +81,10 @@ const Dashboard = () => {
     value: 20,
     color: '#C4B5FD'
   }];
-  return <div className="p-6 space-y-6 bg-slate-900">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger className="text-gray-200" />
-        <div>
-          <h1 className="text-3xl font-bold text-slate-100">Dashboard</h1>
-          <p className="text-gray-300">Visão geral do seu negócio</p>
-        </div>
-      </div>
-
+  return (
+    <div className="p-6 space-y-6">
+      <Header title="Dashboard" description="Visão geral do seu negócio" />
+      
       {/* Métricas de Leads */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -257,6 +254,8 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Dashboard;

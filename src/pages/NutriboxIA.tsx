@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,13 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Header } from "@/components/Header";
 
 export default function NutriboxIA() {
   return (
     <div className="p-6 space-y-6 bg-background min-h-screen">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Nutribox IA</h1>
-      </div>
+      <Header title="Nutribox IA" description="Configure sua inteligência artificial" />
 
       <Tabs defaultValue="configuracoes" className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-muted">

@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, ShoppingCart, StickyNote } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Header } from "@/components/Header";
+
 const Pacientes = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,14 +36,9 @@ const Pacientes = () => {
     planoAlimentar: "Dieta hipercalórica com 2800 calorias...",
     anotacoes: "Paciente ativo, pratica musculação 5x por semana..."
   }];
-  return <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h1 className="text-3xl font-bold text-white">Pacientes</h1>
-          <p className="text-gray-400">Gerencie seus pacientes ativos</p>
-        </div>
-      </div>
+  return (
+    <div className="p-6 space-y-6">
+      <Header title="Pacientes" description="Gerencie seus pacientes ativos" />
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -224,6 +221,8 @@ const Pacientes = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Pacientes;

@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Filter, Download, Upload, Users, UserPlus, Calendar, Eye } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
+import { Header } from "@/components/Header";
+
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
@@ -61,13 +63,7 @@ const Leads = () => {
     }
   };
   return <div className="p-6 space-y-6 bg-gray-900">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h1 className="text-3xl font-bold text-white">Leads</h1>
-          <p className="text-gray-400">Gerencie seus potenciais clientes</p>
-        </div>
-      </div>
+      <Header title="Leads" description="Gerencie seus potenciais clientes" />
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
