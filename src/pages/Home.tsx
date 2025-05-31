@@ -2,29 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { 
-  CheckCircle, 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  MessageSquare, 
-  Brain,
-  Star,
-  ArrowRight,
-  Zap,
-  Shield,
-  Target,
-  BarChart3,
-  FileText,
-  Clock
-} from "lucide-react";
-
+import { CheckCircle, Users, Calendar, TrendingUp, MessageSquare, Brain, Star, ArrowRight, Zap, Shield, Target, BarChart3, FileText, Clock } from "lucide-react";
 const Home = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <header className="border-b border-purple-800/20 bg-slate-900/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container flex items-center justify-between px-[30px] py-[17px] mx-0 my-0">
           <div className="flex items-center space-x-2">
             <img src="/lovable-uploads/9ab9f459-9eda-4a07-8911-e8691b811bf4.png" alt="Nutribox Logo" className="w-12 h-12 object-contain" />
           </div>
@@ -227,9 +210,7 @@ const Home = () => {
             <Card className="bg-slate-800/50 border-purple-800/20">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />)}
                 </div>
                 <p className="text-gray-300 mb-4">
                   "Consegui organizar todos meus pacientes e aumentei minha produtividade em 60%. O sistema é intuitivo e completo."
@@ -249,9 +230,7 @@ const Home = () => {
             <Card className="bg-slate-800/50 border-purple-800/20">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />)}
                 </div>
                 <p className="text-gray-300 mb-4">
                   "A IA para criação de cardápios é revolucionária. Meus pacientes adoram a personalização dos planos."
@@ -271,9 +250,7 @@ const Home = () => {
             <Card className="bg-slate-800/50 border-purple-800/20">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />)}
                 </div>
                 <p className="text-gray-300 mb-4">
                   "Desde que uso o Nutribox, consigo atender mais pacientes sem perder a qualidade do atendimento."
@@ -334,8 +311,6 @@ const Home = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
