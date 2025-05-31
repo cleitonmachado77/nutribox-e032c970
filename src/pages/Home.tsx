@@ -18,7 +18,7 @@ const Home = () => {
               </Link>
             </Button>
             <Button asChild className="bg-purple-600 hover:bg-purple-700">
-              <Link to="/auth">
+              <Link to="/plans">
                 Começar Grátis
               </Link>
             </Button>
@@ -46,7 +46,7 @@ const Home = () => {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <Button size="lg" asChild className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-6">
-              <Link to="/auth">
+              <Link to="/plans">
                 Começar Gratuitamente
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
@@ -282,7 +282,7 @@ const Home = () => {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" asChild className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-6">
-              <Link to="/auth">
+              <Link to="/plans">
                 Começar Gratuitamente
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
