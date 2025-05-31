@@ -8,6 +8,7 @@ import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, Shopp
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
+
 const Pacientes = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -166,6 +167,7 @@ const Pacientes = () => {
     anotacoes: "Paciente jovem, muito motivado. Excelente resposta ao protocolo de ganho de massa.",
     progresso: 91
   }];
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Em acompanhamento":
@@ -178,6 +180,7 @@ const Pacientes = () => {
         return "bg-gradient-to-r from-gray-500 to-slate-500 text-white";
     }
   };
+  
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
       case "Perda de Peso":
@@ -190,13 +193,21 @@ const Pacientes = () => {
         return "bg-gradient-to-r from-gray-500 to-slate-500 text-white";
     }
   };
+  
   const getProgressColor = (progress: number) => {
     if (progress >= 80) return "bg-gradient-to-r from-emerald-400 to-green-500";
     if (progress >= 60) return "bg-gradient-to-r from-amber-400 to-yellow-500";
     return "bg-gradient-to-r from-rose-400 to-red-500";
   };
-  const filteredPatients = mockPatients.filter(patient => patient.nome.toLowerCase().includes(searchTerm.toLowerCase()) || patient.email.toLowerCase().includes(searchTerm.toLowerCase()) || patient.telefone.includes(searchTerm));
-  return <div className="p-6 space-y-8 bg-gradient-to-br from-slate-50 to-indigo-50 min-h-screen bg-gray-950">
+  
+  const filteredPatients = mockPatients.filter(patient => 
+    patient.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    patient.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    patient.telefone.includes(searchTerm)
+  );
+  
+  return (
+    <div className="p-6 space-y-8 bg-gray-950 min-h-screen">
       <Header title="Pacientes" description="Gerencie seus pacientes convertidos de leads" />
 
       {/* Estatísticas Modernizadas */}
@@ -408,7 +419,7 @@ const Pacientes = () => {
                     </CardHeader>
                     <CardContent>
                       <Textarea placeholder="Adicione suas anotações sobre o paciente..." value={selectedPatient.anotacoes} className="min-h-32 border-2 focus:border-indigo-500" />
-                      <Button className="mt-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
+                      <Button className="mt-3 bg-gradient-to-r from-indigo-500 to-purple-600">
                         <StickyNote className="w-4 h-4 mr-2" />
                         Salvar Anotações
                       </Button>
@@ -512,6 +523,8 @@ const Pacientes = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Pacientes;
