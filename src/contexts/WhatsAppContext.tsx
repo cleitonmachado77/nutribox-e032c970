@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useWhatsAppAPI } from '@/hooks/useWhatsAppAPI';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WhatsAppContextType {
   isConnected: boolean;
@@ -8,6 +10,7 @@ interface WhatsAppContextType {
   setUnreadCount: (count: number) => void;
   incrementUnreadCount: () => void;
   resetUnreadCount: () => void;
+  checkConnectionStatus: () => Promise<void>;
 }
 
 const WhatsAppContext = createContext<WhatsAppContextType | undefined>(undefined);
@@ -25,8 +28,10 @@ interface WhatsAppProviderProps {
 }
 
 export const WhatsAppProvider = ({ children }: WhatsAppProviderProps) => {
+  const { user } = useAuth();
+  const { conversations, checkConnection } = useWhatsAppAPI();
   const [isConnected, setIsConnected] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3); // Simula mensagens não lidas iniciais
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const incrementUnreadCount = () => {
     setUnreadCount(prev => prev + 1);
@@ -36,19 +41,33 @@ export const WhatsAppProvider = ({ children }: WhatsAppProviderProps) => {
     setUnreadCount(0);
   };
 
-  // Simula recebimento de novas mensagens quando conectado
-  useEffect(() => {
-    if (isConnected) {
-      const interval = setInterval(() => {
-        // Simula chegada de nova mensagem ocasionalmente
-        if (Math.random() < 0.1) { // 10% de chance a cada 5 segundos
-          incrementUnreadCount();
-        }
-      }, 5000);
-
-      return () => clearInterval(interval);
+  const checkConnectionStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const connected = await checkConnection();
+      setIsConnected(connected);
+    } catch (error) {
+      console.error('Error checking connection:', error);
+      setIsConnected(false);
     }
-  }, [isConnected]);
+  };
+
+  // Calcular total de mensagens não lidas
+  useEffect(() => {
+    const totalUnread = conversations.reduce((total, conv) => total + conv.unread_count, 0);
+    setUnreadCount(totalUnread);
+  }, [conversations]);
+
+  // Verificar status da conexão periodicamente
+  useEffect(() => {
+    if (!user) return;
+
+    checkConnectionStatus();
+    const interval = setInterval(checkConnectionStatus, 30000); // Verifica a cada 30 segundos
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   return (
     <WhatsAppContext.Provider
@@ -59,6 +78,7 @@ export const WhatsAppProvider = ({ children }: WhatsAppProviderProps) => {
         setUnreadCount,
         incrementUnreadCount,
         resetUnreadCount,
+        checkConnectionStatus,
       }}
     >
       {children}
