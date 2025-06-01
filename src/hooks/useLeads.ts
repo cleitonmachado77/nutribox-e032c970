@@ -96,6 +96,33 @@ export const useLeadsStats = () => {
                name === 'Manutenção' ? '#45B7D1' : '#FFA07A'
       }));
 
+      // Estatísticas mensais (últimos 6 meses)
+      const now = new Date();
+      const monthlyData = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        const monthLeads = leads.filter(lead => {
+          const leadDate = new Date(lead.created_at);
+          return leadDate >= monthStart && leadDate <= monthEnd;
+        });
+
+        const monthConsultas = leads.filter(lead => {
+          if (!lead.ultima_consulta) return false;
+          const consultaDate = new Date(lead.ultima_consulta);
+          return consultaDate >= monthStart && consultaDate <= monthEnd;
+        });
+
+        monthlyData.push({
+          month: date.toLocaleDateString('pt-BR', { month: 'short' }),
+          leads: monthLeads.length,
+          consultas: monthConsultas.length
+        });
+      }
+
       return {
         totalLeads,
         leadsQualificados,
@@ -103,6 +130,7 @@ export const useLeadsStats = () => {
         consultasRealizadas,
         estadosData,
         objetivosData,
+        monthlyData,
         leads
       };
     },
@@ -139,7 +167,7 @@ export const useCreateLead = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidar as queries para refrescar os dados
+      // Invalidar as queries para refrescar os dados automaticamente
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
     },

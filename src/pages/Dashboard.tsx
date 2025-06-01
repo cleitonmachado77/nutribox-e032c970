@@ -9,33 +9,7 @@ import { useLeadsStats } from "@/hooks/useLeads";
 const Dashboard = () => {
   const { data: stats, isLoading, error } = useLeadsStats();
 
-  // Mock data for charts when no real data is available
-  const monthlyData = [{
-    month: 'Jan',
-    leads: 45,
-    consultas: 28
-  }, {
-    month: 'Fev',
-    leads: 52,
-    consultas: 31
-  }, {
-    month: 'Mar',
-    leads: 38,
-    consultas: 22
-  }, {
-    month: 'Abr',
-    leads: 61,
-    consultas: 45
-  }, {
-    month: 'Mai',
-    leads: 58,
-    consultas: 41
-  }, {
-    month: 'Jun',
-    leads: 67,
-    consultas: 52
-  }];
-
+  // Mock data para motivos de abandono (pode ser implementado depois)
   const motivosAbandonoData = [{
     name: 'Preço',
     value: 35,
@@ -82,7 +56,8 @@ const Dashboard = () => {
     consultasAgendadas = 0,
     consultasRealizadas = 0,
     estadosData = [],
-    objetivosData = []
+    objetivosData = [],
+    monthlyData = []
   } = stats || {};
 
   // Calcular taxas de conversão
@@ -190,18 +165,24 @@ const Dashboard = () => {
         {/* Gráfico de Barras - Leads vs Consultas */}
         <Card>
           <CardHeader>
-            <CardTitle>Leads x Consultas</CardTitle>
+            <CardTitle>Leads x Consultas (Últimos 6 meses)</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="leads" fill="#3B82F6" name="Leads" />
-                <Bar dataKey="consultas" fill="#10B981" name="Consultas" />
-              </BarChart>
+              {monthlyData.length > 0 ? (
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="leads" fill="#3B82F6" name="Leads" />
+                  <Bar dataKey="consultas" fill="#10B981" name="Consultas" />
+                </BarChart>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  Nenhum dado disponível
+                </div>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Filter, Download, Upload, Users, UserPlus, Calendar, Eye } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
 import { Header } from "@/components/Header";
 import { useLeads } from "@/hooks/useLeads";
@@ -225,7 +226,7 @@ const Leads = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
+                  <TableHead>Lead</TableHead>
                   <TableHead>UF</TableHead>
                   <TableHead>Objetivo</TableHead>
                   <TableHead>Status</TableHead>
@@ -238,7 +239,23 @@ const Leads = () => {
               <TableBody>
                 {filteredLeads.map((lead) => (
                   <TableRow key={lead.id}>
-                    <TableCell className="font-medium">{lead.nome}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage 
+                            src={lead.foto_perfil || undefined} 
+                            alt={lead.nome}
+                          />
+                          <AvatarFallback>
+                            {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{lead.nome}</div>
+                          <div className="text-sm text-gray-500">{lead.telefone}</div>
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>{lead.estado || '-'}</TableCell>
                     <TableCell>
                       {lead.objetivo ? (
