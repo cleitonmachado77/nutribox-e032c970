@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,14 +34,14 @@ export const useEvolutionAPI = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Configuração da Evolution API (substitua pela sua URL e token)
-  const API_URL = 'https://evolution-api.example.com'; // Substitua pela sua URL
-  const API_TOKEN = 'your-api-token'; // Substitua pelo seu token
+  // Configuração da Evolution API Local
+  const API_URL = 'http://localhost:8080';
+  const API_TOKEN = 'nutribox-evolution-key-2024';
   const INSTANCE_NAME = 'nutribox-instance';
 
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_TOKEN}`
+    'apikey': API_TOKEN
   };
 
   // Criar instância
