@@ -4,27 +4,27 @@ import { Header } from "@/components/Header";
 import { ConversationsList } from "@/components/ConversationsList";
 import { ChatWindow } from "@/components/ChatWindow";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
-import { useEvolutionAPI, EvolutionContact } from "@/hooks/useEvolutionAPI";
+import { useEvolutionSupabase, EvolutionContact } from "@/hooks/useEvolutionSupabase";
 import { useWhatsApp } from "@/contexts/WhatsAppContext";
 import { Button } from "@/components/ui/button";
-import { Settings, Zap } from "lucide-react";
+import { Settings, Zap, Database } from "lucide-react";
 
 export default function Conversas() {
   const { resetUnreadCount } = useWhatsApp();
   const [selectedContact, setSelectedContact] = useState<EvolutionContact | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
 
   const {
-    instance,
+    session,
     contacts,
-    messages,
     loading,
     createInstance,
     checkInstanceStatus,
     fetchContacts,
     fetchMessages,
     sendMessage
-  } = useEvolutionAPI();
+  } = useEvolutionSupabase();
 
   // Reset unread count when entering conversations page
   useEffect(() => {
@@ -34,25 +34,26 @@ export default function Conversas() {
   // Check instance status periodically
   useEffect(() => {
     const interval = setInterval(() => {
-      if (instance) {
+      if (session) {
         checkInstanceStatus();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [instance, checkInstanceStatus]);
+  }, [session, checkInstanceStatus]);
 
   // Fetch contacts when connected
   useEffect(() => {
-    if (instance?.status === 'connected') {
+    if (session?.status === 'connected') {
       fetchContacts();
     }
-  }, [instance?.status]);
+  }, [session?.status]);
 
   const handleSelectContact = async (contact: EvolutionContact) => {
     setSelectedContact(contact);
     setShowMobileChat(true);
-    await fetchMessages(contact.phone);
+    const contactMessages = await fetchMessages(contact.phone);
+    setMessages(contactMessages);
   };
 
   const handleSendMessage = async (message: string) => {
@@ -60,7 +61,8 @@ export default function Conversas() {
       const success = await sendMessage(selectedContact.phone, message);
       if (success) {
         // Refresh messages after sending
-        await fetchMessages(selectedContact.phone);
+        const contactMessages = await fetchMessages(selectedContact.phone);
+        setMessages(contactMessages);
       }
     }
   };
@@ -71,7 +73,7 @@ export default function Conversas() {
   };
 
   // Show connection screen if not connected
-  if (!instance || instance.status !== 'connected') {
+  if (!session || session.status !== 'connected') {
     return (
       <div className="p-6 space-y-6 bg-gray-900 min-h-screen">
         <Header 
@@ -84,24 +86,22 @@ export default function Conversas() {
             <div className="flex items-center gap-3">
               <Zap className="w-8 h-8 text-white" />
               <div>
-                <h3 className="text-white font-semibold">Evolution API - WhatsApp Business</h3>
+                <h3 className="text-white font-semibold">Evolution API + Supabase</h3>
                 <p className="text-green-100 text-sm">
-                  Gerencie todas as suas conversas WhatsApp em um só lugar
+                  WhatsApp Business integrado com banco de dados online
                 </p>
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">
-              <Button variant="secondary" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Configurações
-              </Button>
+              <Database className="h-5 w-5 text-white" />
+              <span className="text-white text-sm">Supabase Connected</span>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <WhatsAppConnection
-            instance={instance}
+            instance={session}
             onConnect={createInstance}
             onRefresh={checkInstanceStatus}
             loading={loading}
@@ -125,13 +125,14 @@ export default function Conversas() {
               <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
             </div>
             <div>
-              <h3 className="text-white font-semibold">WhatsApp Conectado</h3>
+              <h3 className="text-white font-semibold">WhatsApp + Supabase Conectado</h3>
               <p className="text-green-100 text-sm">
-                {contacts.length} conversas encontradas
+                {contacts.length} conversas sincronizadas com banco online
               </p>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-2">
+            <Database className="h-4 w-4 text-white" />
             <Button 
               variant="secondary" 
               size="sm"
@@ -139,7 +140,7 @@ export default function Conversas() {
               disabled={loading}
             >
               <Settings className="h-4 w-4 mr-2" />
-              Atualizar
+              Sincronizar
             </Button>
           </div>
         </div>
