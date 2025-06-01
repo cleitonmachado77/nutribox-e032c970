@@ -9,6 +9,321 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      Chat: {
+        Row: {
+          createdAt: string | null
+          id: number
+          instance: string
+          labels: Json | null
+          remoteJid: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          id?: number
+          instance: string
+          labels?: Json | null
+          remoteJid: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          id?: number
+          instance?: string
+          labels?: Json | null
+          remoteJid?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
+      Contact: {
+        Row: {
+          createdAt: string | null
+          id: number
+          instance: string
+          profilePicUrl: string | null
+          pushName: string | null
+          remoteJid: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          id?: number
+          instance: string
+          profilePicUrl?: string | null
+          pushName?: string | null
+          remoteJid: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          id?: number
+          instance?: string
+          profilePicUrl?: string | null
+          pushName?: string | null
+          remoteJid?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
+      Instance: {
+        Row: {
+          apikey: string | null
+          autoReconnect: boolean | null
+          browser: string | null
+          businessAddress: string | null
+          businessDescription: string | null
+          businessHours: Json | null
+          businessId: string | null
+          chatwootAccountId: number | null
+          chatwootConversationPending: boolean | null
+          chatwootReopenConversation: boolean | null
+          chatwootSignMsg: boolean | null
+          chatwootToken: string | null
+          chatwootUrl: string | null
+          clientName: string | null
+          connectionAt: string | null
+          connectionStatus:
+            | Database["public"]["Enums"]["InstanceConnectionStatus"]
+            | null
+          createdAt: string | null
+          device: string | null
+          difyBot: Json | null
+          disconnectionAt: string | null
+          disconnectionCount: number | null
+          disconnectionObject: Json | null
+          disconnectionReason: string | null
+          disconnectionReasonCode: string | null
+          disconnectionTime: string | null
+          evolution: Json | null
+          flowise: Json | null
+          id: number
+          instanceId: string | null
+          integration: string | null
+          lastConnectionAttempt: string | null
+          lastSeen: string | null
+          mobile: string | null
+          name: string
+          number: string | null
+          openaiBot: Json | null
+          ownerJid: string | null
+          platform: string | null
+          profileBio: string | null
+          profileBusiness: string | null
+          profileCategory: string | null
+          profileEmail: string | null
+          profileName: string | null
+          profilePicUrl: string | null
+          profileStatus: string | null
+          profileVerified: boolean | null
+          profileWebsite: string | null
+          qrcode: string | null
+          rabbitMq: Json | null
+          retryCount: number | null
+          serverUrl: string | null
+          settings: Json | null
+          sqs: Json | null
+          state: string | null
+          token: string | null
+          typebot: Json | null
+          updatedAt: string | null
+          version: string | null
+          webhook_settings: Json | null
+          webhookBase64: boolean | null
+          webhookByEvents: boolean | null
+          webhookEvents: Json | null
+          webhookUrl: string | null
+          websocket: Json | null
+        }
+        Insert: {
+          apikey?: string | null
+          autoReconnect?: boolean | null
+          browser?: string | null
+          businessAddress?: string | null
+          businessDescription?: string | null
+          businessHours?: Json | null
+          businessId?: string | null
+          chatwootAccountId?: number | null
+          chatwootConversationPending?: boolean | null
+          chatwootReopenConversation?: boolean | null
+          chatwootSignMsg?: boolean | null
+          chatwootToken?: string | null
+          chatwootUrl?: string | null
+          clientName?: string | null
+          connectionAt?: string | null
+          connectionStatus?:
+            | Database["public"]["Enums"]["InstanceConnectionStatus"]
+            | null
+          createdAt?: string | null
+          device?: string | null
+          difyBot?: Json | null
+          disconnectionAt?: string | null
+          disconnectionCount?: number | null
+          disconnectionObject?: Json | null
+          disconnectionReason?: string | null
+          disconnectionReasonCode?: string | null
+          disconnectionTime?: string | null
+          evolution?: Json | null
+          flowise?: Json | null
+          id?: number
+          instanceId?: string | null
+          integration?: string | null
+          lastConnectionAttempt?: string | null
+          lastSeen?: string | null
+          mobile?: string | null
+          name: string
+          number?: string | null
+          openaiBot?: Json | null
+          ownerJid?: string | null
+          platform?: string | null
+          profileBio?: string | null
+          profileBusiness?: string | null
+          profileCategory?: string | null
+          profileEmail?: string | null
+          profileName?: string | null
+          profilePicUrl?: string | null
+          profileStatus?: string | null
+          profileVerified?: boolean | null
+          profileWebsite?: string | null
+          qrcode?: string | null
+          rabbitMq?: Json | null
+          retryCount?: number | null
+          serverUrl?: string | null
+          settings?: Json | null
+          sqs?: Json | null
+          state?: string | null
+          token?: string | null
+          typebot?: Json | null
+          updatedAt?: string | null
+          version?: string | null
+          webhook_settings?: Json | null
+          webhookBase64?: boolean | null
+          webhookByEvents?: boolean | null
+          webhookEvents?: Json | null
+          webhookUrl?: string | null
+          websocket?: Json | null
+        }
+        Update: {
+          apikey?: string | null
+          autoReconnect?: boolean | null
+          browser?: string | null
+          businessAddress?: string | null
+          businessDescription?: string | null
+          businessHours?: Json | null
+          businessId?: string | null
+          chatwootAccountId?: number | null
+          chatwootConversationPending?: boolean | null
+          chatwootReopenConversation?: boolean | null
+          chatwootSignMsg?: boolean | null
+          chatwootToken?: string | null
+          chatwootUrl?: string | null
+          clientName?: string | null
+          connectionAt?: string | null
+          connectionStatus?:
+            | Database["public"]["Enums"]["InstanceConnectionStatus"]
+            | null
+          createdAt?: string | null
+          device?: string | null
+          difyBot?: Json | null
+          disconnectionAt?: string | null
+          disconnectionCount?: number | null
+          disconnectionObject?: Json | null
+          disconnectionReason?: string | null
+          disconnectionReasonCode?: string | null
+          disconnectionTime?: string | null
+          evolution?: Json | null
+          flowise?: Json | null
+          id?: number
+          instanceId?: string | null
+          integration?: string | null
+          lastConnectionAttempt?: string | null
+          lastSeen?: string | null
+          mobile?: string | null
+          name?: string
+          number?: string | null
+          openaiBot?: Json | null
+          ownerJid?: string | null
+          platform?: string | null
+          profileBio?: string | null
+          profileBusiness?: string | null
+          profileCategory?: string | null
+          profileEmail?: string | null
+          profileName?: string | null
+          profilePicUrl?: string | null
+          profileStatus?: string | null
+          profileVerified?: boolean | null
+          profileWebsite?: string | null
+          qrcode?: string | null
+          rabbitMq?: Json | null
+          retryCount?: number | null
+          serverUrl?: string | null
+          settings?: Json | null
+          sqs?: Json | null
+          state?: string | null
+          token?: string | null
+          typebot?: Json | null
+          updatedAt?: string | null
+          version?: string | null
+          webhook_settings?: Json | null
+          webhookBase64?: boolean | null
+          webhookByEvents?: boolean | null
+          webhookEvents?: Json | null
+          webhookUrl?: string | null
+          websocket?: Json | null
+        }
+        Relationships: []
+      }
+      Message: {
+        Row: {
+          contextInfo: Json | null
+          createdAt: string | null
+          fromMe: boolean
+          id: number
+          instance: string
+          message: Json
+          messageId: string
+          messageTimestamp: number
+          messageType: string
+          participant: string | null
+          pushName: string | null
+          remoteJid: string
+          status: string | null
+          updatedAt: string | null
+        }
+        Insert: {
+          contextInfo?: Json | null
+          createdAt?: string | null
+          fromMe: boolean
+          id?: number
+          instance: string
+          message: Json
+          messageId: string
+          messageTimestamp: number
+          messageType: string
+          participant?: string | null
+          pushName?: string | null
+          remoteJid: string
+          status?: string | null
+          updatedAt?: string | null
+        }
+        Update: {
+          contextInfo?: Json | null
+          createdAt?: string | null
+          fromMe?: boolean
+          id?: number
+          instance?: string
+          message?: Json
+          messageId?: string
+          messageTimestamp?: number
+          messageType?: string
+          participant?: string | null
+          pushName?: string | null
+          remoteJid?: string
+          status?: string | null
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -30,6 +345,114 @@ export type Database = {
           nome_completo?: string | null
           telefone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      Setting: {
+        Row: {
+          always_online: boolean | null
+          alwaysOnline: boolean | null
+          callReject: boolean | null
+          createdAt: string | null
+          groups_ignore: boolean | null
+          groupsIgnore: boolean | null
+          id: number
+          instanceId: string
+          key: string
+          msgCall: boolean | null
+          read_messages: boolean | null
+          read_status: boolean | null
+          readMessages: boolean | null
+          readStatus: boolean | null
+          rejectCall: boolean | null
+          sync_full_history: boolean | null
+          syncFullHistory: boolean | null
+          updatedAt: string | null
+          value: string | null
+          wavoipToken: string | null
+        }
+        Insert: {
+          always_online?: boolean | null
+          alwaysOnline?: boolean | null
+          callReject?: boolean | null
+          createdAt?: string | null
+          groups_ignore?: boolean | null
+          groupsIgnore?: boolean | null
+          id?: number
+          instanceId: string
+          key: string
+          msgCall?: boolean | null
+          read_messages?: boolean | null
+          read_status?: boolean | null
+          readMessages?: boolean | null
+          readStatus?: boolean | null
+          rejectCall?: boolean | null
+          sync_full_history?: boolean | null
+          syncFullHistory?: boolean | null
+          updatedAt?: string | null
+          value?: string | null
+          wavoipToken?: string | null
+        }
+        Update: {
+          always_online?: boolean | null
+          alwaysOnline?: boolean | null
+          callReject?: boolean | null
+          createdAt?: string | null
+          groups_ignore?: boolean | null
+          groupsIgnore?: boolean | null
+          id?: number
+          instanceId?: string
+          key?: string
+          msgCall?: boolean | null
+          read_messages?: boolean | null
+          read_status?: boolean | null
+          readMessages?: boolean | null
+          readStatus?: boolean | null
+          rejectCall?: boolean | null
+          sync_full_history?: boolean | null
+          syncFullHistory?: boolean | null
+          updatedAt?: string | null
+          value?: string | null
+          wavoipToken?: string | null
+        }
+        Relationships: []
+      }
+      Webhook: {
+        Row: {
+          createdAt: string | null
+          enabled: boolean | null
+          events: Json | null
+          headers: Json | null
+          id: number
+          instanceId: string
+          updatedAt: string | null
+          url: string
+          webhookBase64: boolean | null
+          webhookByEvents: boolean | null
+        }
+        Insert: {
+          createdAt?: string | null
+          enabled?: boolean | null
+          events?: Json | null
+          headers?: Json | null
+          id?: number
+          instanceId: string
+          updatedAt?: string | null
+          url: string
+          webhookBase64?: boolean | null
+          webhookByEvents?: boolean | null
+        }
+        Update: {
+          createdAt?: string | null
+          enabled?: boolean | null
+          events?: Json | null
+          headers?: Json | null
+          id?: number
+          instanceId?: string
+          updatedAt?: string | null
+          url?: string
+          webhookBase64?: boolean | null
+          webhookByEvents?: boolean | null
         }
         Relationships: []
       }
@@ -160,7 +583,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      InstanceConnectionStatus: "open" | "close" | "connecting"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -275,6 +698,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      InstanceConnectionStatus: ["open", "close", "connecting"],
+    },
   },
 } as const
