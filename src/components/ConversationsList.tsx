@@ -4,12 +4,21 @@ import { Search, Phone, MessageCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { EvolutionContact } from '@/hooks/useEvolutionAPI';
+
+interface Contact {
+  id: string;
+  name: string;
+  phone: string;
+  profilePicture?: string;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  unreadCount?: number;
+}
 
 interface ConversationsListProps {
-  contacts: EvolutionContact[];
-  selectedContact: EvolutionContact | null;
-  onSelectContact: (contact: EvolutionContact) => void;
+  contacts: Contact[];
+  selectedContact: Contact | null;
+  onSelectContact: (contact: Contact) => void;
   loading?: boolean;
 }
 

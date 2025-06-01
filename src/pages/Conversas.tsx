@@ -4,65 +4,142 @@ import { Header } from "@/components/Header";
 import { ConversationsList } from "@/components/ConversationsList";
 import { ChatWindow } from "@/components/ChatWindow";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
-import { useEvolutionSupabase, EvolutionContact } from "@/hooks/useEvolutionSupabase";
+import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
 import { useWhatsApp } from "@/contexts/WhatsAppContext";
 import { Button } from "@/components/ui/button";
 import { Settings, Zap, Database } from "lucide-react";
 
+interface Contact {
+  id: string;
+  name: string;
+  phone: string;
+  profilePicture?: string;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  unreadCount?: number;
+}
+
+interface Message {
+  id: string;
+  conversationId: string;
+  from: string;
+  to: string;
+  body: string;
+  timestamp: Date;
+  fromMe: boolean;
+  messageType: 'text' | 'image' | 'audio' | 'video' | 'document';
+  isRead: boolean;
+}
+
 export default function Conversas() {
   const { resetUnreadCount } = useWhatsApp();
-  const [selectedContact, setSelectedContact] = useState<EvolutionContact | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
+  const [qrCode, setQrCode] = useState<string | null>(null);
 
   const {
-    session,
-    contacts,
+    conversations,
     loading,
-    createInstance,
-    checkInstanceStatus,
-    fetchContacts,
-    fetchMessages,
-    sendMessage
-  } = useEvolutionSupabase();
+    loadMessages,
+    sendMessage,
+    generateQRCode,
+    checkConnection,
+    disconnect,
+    markAsRead
+  } = useWhatsAppAPI();
 
   // Reset unread count when entering conversations page
   useEffect(() => {
     resetUnreadCount();
   }, [resetUnreadCount]);
 
-  // Check instance status periodically
+  // Check connection status on mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (session) {
-        checkInstanceStatus();
+    const checkStatus = async () => {
+      const connected = await checkConnection();
+      setConnectionStatus(connected ? 'connected' : 'disconnected');
+    };
+    checkStatus();
+  }, [checkConnection]);
+
+  // Convert conversations to contacts format
+  const contacts: Contact[] = conversations.map(conv => ({
+    id: conv.id,
+    name: conv.contact_name || conv.contact_phone,
+    phone: conv.contact_phone,
+    lastMessage: conv.last_message || undefined,
+    lastMessageTime: conv.last_message_time ? new Date(conv.last_message_time) : undefined,
+    unreadCount: conv.unread_count
+  }));
+
+  const handleConnect = async () => {
+    setConnectionStatus('connecting');
+    try {
+      const result = await generateQRCode();
+      if (result.qr_code) {
+        setQrCode(result.qr_code);
+        // Simulate connection after QR scan
+        setTimeout(() => {
+          setConnectionStatus('connected');
+          setQrCode(null);
+        }, 15000);
       }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [session, checkInstanceStatus]);
-
-  // Fetch contacts when connected
-  useEffect(() => {
-    if (session?.status === 'connected') {
-      fetchContacts();
+    } catch (error) {
+      console.error('Erro ao gerar QR:', error);
+      setConnectionStatus('disconnected');
     }
-  }, [session?.status]);
+  };
 
-  const handleSelectContact = async (contact: EvolutionContact) => {
+  const handleRefresh = async () => {
+    const connected = await checkConnection();
+    setConnectionStatus(connected ? 'connected' : 'disconnected');
+  };
+
+  const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
     setShowMobileChat(true);
-    const contactMessages = await fetchMessages(contact.phone);
-    setMessages(contactMessages);
+    
+    // Mark as read
+    await markAsRead(contact.id);
+    
+    // Load messages
+    const contactMessages = await loadMessages(contact.id);
+    const formattedMessages: Message[] = contactMessages.map(msg => ({
+      id: msg.id,
+      conversationId: msg.conversation_id,
+      from: msg.sender_type === 'contact' ? contact.phone : 'me',
+      to: msg.sender_type === 'user' ? contact.phone : 'me',
+      body: msg.content || '',
+      timestamp: new Date(msg.timestamp),
+      fromMe: msg.sender_type === 'user',
+      messageType: 'text',
+      isRead: msg.is_read || false
+    }));
+    setMessages(formattedMessages);
   };
 
   const handleSendMessage = async (message: string) => {
     if (selectedContact) {
-      const success = await sendMessage(selectedContact.phone, message);
-      if (success) {
-        // Refresh messages after sending
-        const contactMessages = await fetchMessages(selectedContact.phone);
-        setMessages(contactMessages);
+      try {
+        await sendMessage(selectedContact.id, selectedContact.phone, message);
+        // Reload messages after sending
+        const contactMessages = await loadMessages(selectedContact.id);
+        const formattedMessages: Message[] = contactMessages.map(msg => ({
+          id: msg.id,
+          conversationId: msg.conversation_id,
+          from: msg.sender_type === 'contact' ? selectedContact.phone : 'me',
+          to: msg.sender_type === 'user' ? selectedContact.phone : 'me',
+          body: msg.content || '',
+          timestamp: new Date(msg.timestamp),
+          fromMe: msg.sender_type === 'user',
+          messageType: 'text',
+          isRead: msg.is_read || false
+        }));
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
       }
     }
   };
@@ -73,7 +150,7 @@ export default function Conversas() {
   };
 
   // Show connection screen if not connected
-  if (!session || session.status !== 'connected') {
+  if (connectionStatus !== 'connected') {
     return (
       <div className="p-6 space-y-6 bg-gray-900 min-h-screen">
         <Header 
@@ -86,9 +163,9 @@ export default function Conversas() {
             <div className="flex items-center gap-3">
               <Zap className="w-8 h-8 text-white" />
               <div>
-                <h3 className="text-white font-semibold">Evolution API + Supabase</h3>
+                <h3 className="text-white font-semibold">WhatsApp via Supabase</h3>
                 <p className="text-green-100 text-sm">
-                  WhatsApp Business integrado com banco de dados online
+                  Sistema integrado com banco de dados online
                 </p>
               </div>
             </div>
@@ -101,9 +178,13 @@ export default function Conversas() {
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <WhatsAppConnection
-            instance={session}
-            onConnect={createInstance}
-            onRefresh={checkInstanceStatus}
+            instance={{
+              instanceName: 'supabase-instance',
+              status: connectionStatus,
+              qrCode
+            }}
+            onConnect={handleConnect}
+            onRefresh={handleRefresh}
             loading={loading}
           />
         </div>
@@ -127,7 +208,7 @@ export default function Conversas() {
             <div>
               <h3 className="text-white font-semibold">WhatsApp + Supabase Conectado</h3>
               <p className="text-green-100 text-sm">
-                {contacts.length} conversas sincronizadas com banco online
+                {contacts.length} conversas sincronizadas via Supabase
               </p>
             </div>
           </div>
@@ -136,11 +217,11 @@ export default function Conversas() {
             <Button 
               variant="secondary" 
               size="sm"
-              onClick={fetchContacts}
+              onClick={handleRefresh}
               disabled={loading}
             >
               <Settings className="h-4 w-4 mr-2" />
-              Sincronizar
+              Atualizar
             </Button>
           </div>
         </div>
