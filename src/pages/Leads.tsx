@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,56 +8,25 @@ import { Plus, Search, Filter, Download, Upload, Users, UserPlus, Calendar, Eye 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
 import { Header } from "@/components/Header";
+import { useLeads } from "@/hooks/useLeads";
+import { format } from "date-fns";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
-
-  // Mock data
-  const mockLeads = [{
-    id: 1,
-    nome: "Maria Silva",
-    telefone: "(11) 99123-4567",
-    email: "maria@email.com",
-    objetivo: "Perda de Peso",
-    cidade: "São Paulo",
-    estado: "SP",
-    status: "Novo",
-    cadastro: "06/12/2024",
-    ultimaResposta: "Hoje"
-  }, {
-    id: 2,
-    nome: "João Santos",
-    telefone: "(21) 98765-4321",
-    email: "joao@email.com",
-    objetivo: "Ganho de Massa",
-    cidade: "Rio de Janeiro",
-    estado: "RJ",
-    status: "Qualificado",
-    cadastro: "05/12/2024",
-    ultimaResposta: "Ontem"
-  }, {
-    id: 3,
-    nome: "Ana Costa",
-    telefone: "(31) 97654-3210",
-    email: "ana@email.com",
-    objetivo: "Manutenção",
-    cidade: "Belo Horizonte",
-    estado: "MG",
-    status: "Consulta Agendada",
-    cadastro: "04/12/2024",
-    ultimaResposta: "10/12/2024, 15:00"
-  }];
+  const { data: leads, isLoading, error } = useLeads();
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Novo":
+      case "novo":
         return "bg-cyan-500";
-      case "Qualificado":
+      case "qualificado":
         return "bg-teal-500";
-      case "Consulta Agendada":
+      case "consulta_agendada":
         return "bg-amber-500";
-      case "Perdido":
+      case "em_acompanhamento":
+        return "bg-green-500";
+      case "perdido":
         return "bg-red-500";
       default:
         return "bg-gray-500";
@@ -78,7 +46,77 @@ const Leads = () => {
     }
   };
 
-  return <div className="p-6 space-y-6 bg-gray-900">
+  const formatStatusDisplay = (status: string) => {
+    switch (status) {
+      case "novo":
+        return "Novo";
+      case "qualificado":
+        return "Qualificado";
+      case "consulta_agendada":
+        return "Consulta Agendada";
+      case "em_acompanhamento":
+        return "Em Acompanhamento";
+      case "perdido":
+        return "Perdido";
+      default:
+        return status;
+    }
+  };
+
+  // Filtrar leads baseado no termo de busca
+  const filteredLeads = leads?.filter(lead => 
+    lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lead.telefone.includes(searchTerm) ||
+    lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Calcular estatísticas baseadas nos dados reais
+  const totalLeads = leads?.length || 0;
+  const leadsHoje = leads?.filter(lead => {
+    const hoje = new Date();
+    const dataConversao = new Date(lead.data_conversao || lead.created_at);
+    return dataConversao.toDateString() === hoje.toDateString();
+  }).length || 0;
+
+  const leadsOntem = leads?.filter(lead => {
+    const ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    const dataConversao = new Date(lead.data_conversao || lead.created_at);
+    return dataConversao.toDateString() === ontem.toDateString();
+  }).length || 0;
+
+  const leadsUltimos7Dias = leads?.filter(lead => {
+    const seteDiasAtras = new Date();
+    seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+    const dataConversao = new Date(lead.data_conversao || lead.created_at);
+    return dataConversao >= seteDiasAtras;
+  }).length || 0;
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <Header title="Leads" description="Gerencie seus potenciais clientes" />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <Header title="Leads" description="Gerencie seus potenciais clientes" />
+        <div className="text-center text-red-500">
+          Erro ao carregar leads: {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6 bg-gray-900">
       <Header title="Leads" description="Gerencie seus potenciais clientes" />
 
       {/* Estatísticas */}
@@ -89,8 +127,10 @@ const Leads = () => {
             <Users className="h-4 w-4 text-indigo-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">29</div>
-            <p className="text-xs text-indigo-200">+15% vs período anterior</p>
+            <div className="text-2xl font-bold text-white">{totalLeads}</div>
+            <p className="text-xs text-indigo-200">
+              {totalLeads === 0 ? "Nenhum lead cadastrado" : "Total de leads cadastrados"}
+            </p>
           </CardContent>
         </Card>
 
@@ -100,8 +140,10 @@ const Leads = () => {
             <UserPlus className="h-4 w-4 text-emerald-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">0</div>
-            <p className="text-xs text-emerald-200">Nenhum lead hoje</p>
+            <div className="text-2xl font-bold text-white">{leadsHoje}</div>
+            <p className="text-xs text-emerald-200">
+              {leadsHoje === 0 ? "Nenhum lead hoje" : `${leadsHoje} lead${leadsHoje > 1 ? 's' : ''} hoje`}
+            </p>
           </CardContent>
         </Card>
 
@@ -111,8 +153,10 @@ const Leads = () => {
             <Calendar className="h-4 w-4 text-orange-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">0</div>
-            <p className="text-xs text-orange-200">Nenhum lead ontem</p>
+            <div className="text-2xl font-bold text-white">{leadsOntem}</div>
+            <p className="text-xs text-orange-200">
+              {leadsOntem === 0 ? "Nenhum lead ontem" : `${leadsOntem} lead${leadsOntem > 1 ? 's' : ''} ontem`}
+            </p>
           </CardContent>
         </Card>
 
@@ -122,8 +166,10 @@ const Leads = () => {
             <Calendar className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">0</div>
-            <p className="text-xs text-purple-200">Sem atividade recente</p>
+            <div className="text-2xl font-bold text-white">{leadsUltimos7Dias}</div>
+            <p className="text-xs text-purple-200">
+              {leadsUltimos7Dias === 0 ? "Sem atividade recente" : `${leadsUltimos7Dias} lead${leadsUltimos7Dias > 1 ? 's' : ''} na semana`}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -148,7 +194,12 @@ const Leads = () => {
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input placeholder="Buscar leads..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 w-64" />
+            <Input 
+              placeholder="Buscar leads..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              className="pl-10 w-64" 
+            />
           </div>
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />
@@ -160,53 +211,85 @@ const Leads = () => {
       {/* Tabela de Leads */}
       <Card>
         <CardHeader>
-          <CardTitle>Resultados: {mockLeads.length}</CardTitle>
+          <CardTitle>Resultados: {filteredLeads.length}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>UF</TableHead>
-                <TableHead>Objetivo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Teste</TableHead>
-                <TableHead>Cadastro</TableHead>
-                <TableHead>Últ. Resposta</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockLeads.map(lead => <TableRow key={lead.id}>
-                  <TableCell className="font-medium">{lead.nome}</TableCell>
-                  <TableCell>{lead.estado}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={getObjetivoColor(lead.objetivo)}>
-                      {lead.objetivo}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(lead.status)}>
-                      {lead.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="border-pink-400 text-pink-600">Aproveitadora especial</Badge>
-                  </TableCell>
-                  <TableCell>{lead.cadastro}</TableCell>
-                  <TableCell>{lead.ultimaResposta}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>)}
-            </TableBody>
-          </Table>
+          {filteredLeads.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {totalLeads === 0 
+                ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para começar."
+                : "Nenhum lead encontrado com os filtros aplicados."
+              }
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>UF</TableHead>
+                  <TableHead>Objetivo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progresso</TableHead>
+                  <TableHead>Cadastro</TableHead>
+                  <TableHead>Últ. Consulta</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLeads.map((lead) => (
+                  <TableRow key={lead.id}>
+                    <TableCell className="font-medium">{lead.nome}</TableCell>
+                    <TableCell>{lead.estado || '-'}</TableCell>
+                    <TableCell>
+                      {lead.objetivo ? (
+                        <Badge variant="secondary" className={getObjetivoColor(lead.objetivo)}>
+                          {lead.objetivo}
+                        </Badge>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(lead.status)}>
+                        {formatStatusDisplay(lead.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-purple-600 h-2 rounded-full" 
+                            style={{ width: `${lead.progresso}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-600">{lead.progresso}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(lead.created_at), 'dd/MM/yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      {lead.ultima_consulta 
+                        ? format(new Date(lead.ultima_consulta), 'dd/MM/yyyy') 
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
       <NewLeadDialog open={showNewLeadDialog} onOpenChange={setShowNewLeadDialog} />
-    </div>;
+    </div>
+  );
 };
+
 export default Leads;
