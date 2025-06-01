@@ -36,6 +36,47 @@ export type Database = {
         }
         Relationships: []
       }
+      consultas: {
+        Row: {
+          created_at: string
+          data_consulta: string
+          id: string
+          lead_id: string | null
+          observacoes: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_consulta: string
+          id?: string
+          lead_id?: string | null
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_consulta?: string
+          id?: string
+          lead_id?: string | null
+          observacoes?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Contact: {
         Row: {
           createdAt: string | null
@@ -270,6 +311,78 @@ export type Database = {
           webhookEvents?: Json | null
           webhookUrl?: string | null
           websocket?: Json | null
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          altura: string | null
+          anotacoes: string | null
+          cidade: string | null
+          created_at: string
+          data_conversao: string | null
+          email: string | null
+          estado: string | null
+          foto_perfil: string | null
+          id: string
+          imc: string | null
+          nome: string
+          objetivo: string | null
+          peso: string | null
+          plano_alimentar: string | null
+          progresso: number | null
+          proxima_consulta: string | null
+          status: string | null
+          telefone: string
+          ultima_consulta: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          altura?: string | null
+          anotacoes?: string | null
+          cidade?: string | null
+          created_at?: string
+          data_conversao?: string | null
+          email?: string | null
+          estado?: string | null
+          foto_perfil?: string | null
+          id?: string
+          imc?: string | null
+          nome: string
+          objetivo?: string | null
+          peso?: string | null
+          plano_alimentar?: string | null
+          progresso?: number | null
+          proxima_consulta?: string | null
+          status?: string | null
+          telefone: string
+          ultima_consulta?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          altura?: string | null
+          anotacoes?: string | null
+          cidade?: string | null
+          created_at?: string
+          data_conversao?: string | null
+          email?: string | null
+          estado?: string | null
+          foto_perfil?: string | null
+          id?: string
+          imc?: string | null
+          nome?: string
+          objetivo?: string | null
+          peso?: string | null
+          plano_alimentar?: string | null
+          progresso?: number | null
+          proxima_consulta?: string | null
+          status?: string | null
+          telefone?: string
+          ultima_consulta?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
