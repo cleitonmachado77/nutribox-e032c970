@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -219,38 +218,26 @@ export const useDeleteLead = () => {
       console.log('Attempting to delete lead:', leadId);
       
       try {
-        // Primeiro, deletar pacientes vinculados usando uma consulta SQL direta
-        const { error: deletePacientesError } = await supabase.rpc('delete_lead_cascade', {
-          lead_id: leadId
-        });
+        // Primeiro, deletar pacientes relacionados
+        const { error: deletePacientesError } = await supabase
+          .from('pacientes')
+          .delete()
+          .eq('lead_id', leadId);
 
         if (deletePacientesError) {
-          console.error('Error in delete_lead_cascade:', deletePacientesError);
-          
-          // Fallback: tentar deletar manualmente se a função não existir
-          console.log('Trying manual deletion as fallback...');
-          
-          // Deletar pacientes relacionados
-          const { error: manualDeletePacientesError } = await supabase
-            .from('pacientes')
-            .delete()
-            .eq('lead_id', leadId);
+          console.error('Error deleting pacientes:', deletePacientesError);
+          throw new Error('Erro ao deletar pacientes vinculados');
+        }
 
-          if (manualDeletePacientesError) {
-            console.error('Error deleting pacientes manually:', manualDeletePacientesError);
-            throw new Error('Erro ao deletar pacientes vinculados');
-          }
+        // Depois deletar o lead
+        const { error: deleteLeadError } = await supabase
+          .from('leads')
+          .delete()
+          .eq('id', leadId);
 
-          // Deletar o lead
-          const { error: manualDeleteLeadError } = await supabase
-            .from('leads')
-            .delete()
-            .eq('id', leadId);
-
-          if (manualDeleteLeadError) {
-            console.error('Error deleting lead manually:', manualDeleteLeadError);
-            throw new Error('Erro ao deletar lead');
-          }
+        if (deleteLeadError) {
+          console.error('Error deleting lead:', deleteLeadError);
+          throw new Error('Erro ao deletar lead');
         }
 
         console.log('Lead and related data deleted successfully');
