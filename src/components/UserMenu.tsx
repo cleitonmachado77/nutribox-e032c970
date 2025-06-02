@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export function UserMenu() {
   const { user, profile, signOut } = useAuth();
@@ -53,13 +54,17 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-700" />
-        <DropdownMenuItem className="text-gray-300 focus:bg-gray-700 focus:text-white">
-          <User className="mr-2 h-4 w-4" />
-          <span>Perfil</span>
+        <DropdownMenuItem className="text-gray-300 focus:bg-gray-700 focus:text-white" asChild>
+          <Link to="/dashboard/settings">
+            <User className="mr-2 h-4 w-4" />
+            <span>Perfil</span>
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className="text-gray-300 focus:bg-gray-700 focus:text-white">
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Configurações</span>
+        <DropdownMenuItem className="text-gray-300 focus:bg-gray-700 focus:text-white" asChild>
+          <Link to="/dashboard/settings">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Configurações</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-gray-700" />
         <DropdownMenuItem 

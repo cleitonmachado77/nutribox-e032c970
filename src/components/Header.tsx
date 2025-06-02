@@ -67,8 +67,10 @@ export const Header = ({ title, description }: HeaderProps) => {
             </Button>
 
             {/* Settings */}
-            <Button variant="ghost" size="icon">
-              <Settings className="w-5 h-5 text-gray-400" />
+            <Button variant="ghost" size="icon" asChild>
+              <Link to="/dashboard/settings">
+                <Settings className="w-5 h-5 text-gray-400" />
+              </Link>
             </Button>
 
             {/* User Menu */}

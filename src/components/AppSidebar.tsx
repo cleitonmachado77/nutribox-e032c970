@@ -1,4 +1,5 @@
-import { Calendar, Home, Users, MessageSquare, Brain, KanbanSquare, UserCheck, LogOut } from "lucide-react"
+
+import { Calendar, Home, Users, MessageSquare, Brain, KanbanSquare, UserCheck, LogOut, Settings } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
 import {
@@ -46,6 +47,11 @@ const items = [
     title: "Nutribox IA",
     url: "/dashboard/nutribox-ia",
     icon: Brain,
+  },
+  {
+    title: "Configurações",
+    url: "/dashboard/settings",
+    icon: Settings,
   },
 ]
 
