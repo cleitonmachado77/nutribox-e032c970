@@ -50,12 +50,8 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
 
       console.log('Lead status updated to consulta_agendada');
 
-      // Criar um paciente baseado no lead
-      await createPaciente.mutateAsync({
-        lead_id: lead.id,
-        data_primeira_consulta: new Date().toISOString(),
-        status_tratamento: 'ativo'
-      });
+      // Criar um paciente baseado no lead (passando apenas o lead_id)
+      await createPaciente.mutateAsync(lead.id);
 
       console.log('Paciente created from lead');
 
