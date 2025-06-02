@@ -8,6 +8,7 @@ import { useUpdateLead } from "@/hooks/useLeads";
 import { useToast } from "@/hooks/use-toast";
 import { Lead } from "@/hooks/useLeads";
 import { getLeadProgressByStatus } from "@/hooks/useLeadProgress";
+import { useCreatePaciente } from "@/hooks/usePacientes";
 
 interface ScheduleConsultationDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface ScheduleConsultationDialogProps {
 export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: ScheduleConsultationDialogProps) => {
   const { data: userSettings } = useUserSettings();
   const updateLead = useUpdateLead();
+  const createPaciente = useCreatePaciente();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -34,7 +36,9 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
     setIsProcessing(true);
 
     try {
-      // Atualizar o status do lead para consulta_agendada com progresso de 50%
+      console.log('Scheduling consultation for lead:', lead.id, 'Current status:', lead.status);
+      
+      // Atualizar o status do lead para consulta_agendada
       await updateLead.mutateAsync({
         id: lead.id,
         leadData: {
@@ -44,12 +48,23 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
         }
       });
 
+      console.log('Lead status updated to consulta_agendada');
+
+      // Criar um paciente baseado no lead
+      await createPaciente.mutateAsync({
+        lead_id: lead.id,
+        data_primeira_consulta: new Date().toISOString(),
+        status_tratamento: 'ativo'
+      });
+
+      console.log('Paciente created from lead');
+
       // Abrir Google Calendar em nova aba
       window.open(userSettings.google_calendar_link, '_blank');
       
       toast({
         title: "Sucesso!",
-        description: `Consulta agendada para ${lead.nome}! Status atualizado para "Consulta Agendada".`,
+        description: `Consulta agendada para ${lead.nome}! Status atualizado para "Consulta Agendada" e paciente criado.`,
       });
       
       onOpenChange(false);
@@ -90,6 +105,7 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
                   <li>• O Google Calendar será aberto para agendamento</li>
                   <li>• O status será atualizado para "Consulta Agendada"</li>
                   <li>• O progresso será atualizado para 50%</li>
+                  <li>• Um registro de paciente será criado</li>
                 </ul>
               </div>
               

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -175,7 +176,6 @@ export const useCreateLead = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidar as queries para refrescar os dados automaticamente
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
     },
@@ -216,14 +216,42 @@ export const useDeleteLead = () => {
   
   return useMutation({
     mutationFn: async (leadId: string) => {
-      const { error } = await supabase
+      console.log('Attempting to delete lead:', leadId);
+      
+      // Primeiro, verificar se existem pacientes vinculados a este lead
+      const { data: pacientes, error: pacientesError } = await supabase
+        .from('pacientes')
+        .select('id')
+        .eq('lead_id', leadId);
+
+      if (pacientesError) {
+        console.error('Error checking pacientes:', pacientesError);
+        throw new Error('Erro ao verificar pacientes vinculados');
+      }
+
+      // Se existem pacientes, deletá-los primeiro
+      if (pacientes && pacientes.length > 0) {
+        console.log('Deleting related pacientes:', pacientes.length);
+        const { error: deletePacientesError } = await supabase
+          .from('pacientes')
+          .delete()
+          .eq('lead_id', leadId);
+
+        if (deletePacientesError) {
+          console.error('Error deleting pacientes:', deletePacientesError);
+          throw new Error('Erro ao deletar pacientes vinculados');
+        }
+      }
+
+      // Agora deletar o lead
+      const { error: deleteLeadError } = await supabase
         .from('leads')
         .delete()
         .eq('id', leadId);
 
-      if (error) {
-        console.error('Error deleting lead:', error);
-        throw error;
+      if (deleteLeadError) {
+        console.error('Error deleting lead:', deleteLeadError);
+        throw new Error('Erro ao deletar lead');
       }
 
       return leadId;
@@ -231,6 +259,7 @@ export const useDeleteLead = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
     },
   });
 };

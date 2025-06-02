@@ -22,6 +22,7 @@ export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogP
 
     setIsDeleting(true);
     try {
+      console.log('Starting delete process for lead:', lead.id);
       await deleteLead.mutateAsync(lead.id);
       toast({
         title: "Sucesso!",
@@ -32,7 +33,7 @@ export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogP
       console.error('Error deleting lead:', error);
       toast({
         title: "Erro",
-        description: "Erro ao excluir lead. Tente novamente.",
+        description: error instanceof Error ? error.message : "Erro ao excluir lead. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -60,7 +61,7 @@ export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogP
           
           <div className="border rounded-lg p-4 bg-red-50">
             <p className="text-sm text-red-800">
-              <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados do lead serão permanentemente removidos.
+              <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados do lead e pacientes relacionados serão permanentemente removidos.
             </p>
           </div>
           

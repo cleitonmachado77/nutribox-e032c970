@@ -295,9 +295,11 @@ const Leads = () => {
               </TableHeader>
               <TableBody>
                 {filteredLeads.map((lead) => {
-                  // Calcular progresso automático baseado no status
+                  // Usar o progresso baseado no status
                   const progressoAtual = getLeadProgressByStatus(lead.status);
                   const progressColor = getProgressColor(progressoAtual);
+                  
+                  console.log('Lead:', lead.nome, 'Status:', lead.status, 'Progresso:', progressoAtual);
                   
                   return (
                     <TableRow key={lead.id}>
@@ -309,6 +311,10 @@ const Leads = () => {
                                 src={lead.foto_perfil} 
                                 alt={lead.nome}
                                 className="object-cover"
+                                onError={(e) => {
+                                  console.log('Error loading image for', lead.nome, ':', lead.foto_perfil);
+                                  e.currentTarget.style.display = 'none';
+                                }}
                               />
                             ) : null}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
@@ -394,7 +400,10 @@ const Leads = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => setSelectedLeadForDelete(lead)}
+                            onClick={() => {
+                              console.log('Opening delete dialog for lead:', lead.id);
+                              setSelectedLeadForDelete(lead);
+                            }}
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash className="w-4 h-4" />
