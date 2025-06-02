@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Lead } from './useLeads';
+import { getLeadProgressByStatus } from './useLeadProgress';
 
 export interface Paciente {
   id: string;
@@ -72,10 +73,14 @@ export const useCreatePaciente = () => {
         throw pacienteError;
       }
 
-      // Depois atualizar o status do lead para "em_acompanhamento"
+      // Depois atualizar o status do lead para "em_acompanhamento" com progresso de 100%
       const { error: leadError } = await supabase
         .from('leads')
-        .update({ status: 'em_acompanhamento' })
+        .update({ 
+          status: 'em_acompanhamento',
+          progresso: getLeadProgressByStatus('em_acompanhamento'),
+          ultima_consulta: new Date().toISOString()
+        })
         .eq('id', leadId);
 
       if (leadError) {

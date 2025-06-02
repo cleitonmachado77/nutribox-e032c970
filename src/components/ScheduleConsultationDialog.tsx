@@ -35,24 +35,22 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
     setIsProcessing(true);
 
     try {
-      // Primeiro atualizar o status do lead para consulta_agendada
+      // Atualizar o status do lead para consulta_agendada com progresso de 50%
       await updateLead.mutateAsync({
         id: lead.id,
         leadData: {
           status: 'consulta_agendada',
+          progresso: 50,
           proxima_consulta: new Date().toISOString(),
         }
       });
-
-      // Converter lead em paciente imediatamente após agendar
-      await createPaciente.mutateAsync(lead.id);
 
       // Abrir Google Calendar em nova aba
       window.open(userSettings.google_calendar_link, '_blank');
       
       toast({
         title: "Sucesso!",
-        description: `Consulta agendada para ${lead.nome} e convertido em paciente com sucesso!`,
+        description: `Consulta agendada para ${lead.nome}! Status atualizado para "Consulta Agendada".`,
       });
       
       onOpenChange(false);
@@ -91,8 +89,8 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
                 <h4 className="font-medium mb-2">Agendar Primeira Consulta:</h4>
                 <ul className="text-sm space-y-1 text-gray-600">
                   <li>• O Google Calendar será aberto para agendamento</li>
-                  <li>• O lead será automaticamente convertido em paciente</li>
-                  <li>• O status será atualizado para "Em Acompanhamento"</li>
+                  <li>• O status será atualizado para "Consulta Agendada"</li>
+                  <li>• O progresso será atualizado para 50%</li>
                 </ul>
               </div>
               
@@ -102,14 +100,14 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
                 className="w-full"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                {isProcessing ? "Processando..." : "Agendar e Converter em Paciente"}
+                {isProcessing ? "Processando..." : "Agendar Consulta"}
               </Button>
             </div>
           ) : (
             <div className="border rounded-lg p-4 bg-green-50">
-              <h4 className="font-medium mb-2">Lead já convertido!</h4>
+              <h4 className="font-medium mb-2">Consulta já agendada!</h4>
               <p className="text-sm text-gray-600">
-                Este lead já foi convertido em paciente e está em acompanhamento.
+                Este lead já possui uma consulta agendada ou está em acompanhamento.
               </p>
             </div>
           )}

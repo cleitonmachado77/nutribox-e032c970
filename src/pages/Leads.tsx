@@ -17,6 +17,7 @@ import { ImportLeadsDialog } from "@/components/ImportLeadsDialog";
 import { ExportLeadsButton } from "@/components/ExportLeadsButton";
 import { EditLeadTagDialog } from "@/components/EditLeadTagDialog";
 import { DeleteLeadDialog } from "@/components/DeleteLeadDialog";
+import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from "@/hooks/useLeadProgress";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +36,8 @@ const Leads = () => {
         return "bg-teal-500";
       case "consulta_agendada":
         return "bg-amber-500";
+      case "consulta_realizada":
+        return "bg-orange-500";
       case "em_acompanhamento":
         return "bg-green-500";
       case "perdido":
@@ -290,99 +293,105 @@ const Leads = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage 
-                            src={lead.foto_perfil || undefined} 
-                            alt={lead.nome}
-                          />
-                          <AvatarFallback>
-                            {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{lead.nome}</div>
-                          <div className="text-sm text-gray-500">{lead.telefone}</div>
+                {filteredLeads.map((lead) => {
+                  // Calcular progresso automático baseado no status
+                  const progressoAtual = getLeadProgressByStatus(lead.status);
+                  const progressColor = getProgressColor(progressoAtual);
+                  
+                  return (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage 
+                              src={lead.foto_perfil || undefined} 
+                              alt={lead.nome}
+                            />
+                            <AvatarFallback className="bg-purple-100 text-purple-600">
+                              {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{lead.nome}</div>
+                            <div className="text-sm text-gray-500">{lead.telefone}</div>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{lead.estado || '-'}</TableCell>
-                    <TableCell>
-                      {lead.objetivo_tag ? (
-                        <Badge 
-                          variant="secondary" 
-                          className="text-white cursor-pointer"
-                          style={{ backgroundColor: lead.objetivo_tag.cor }}
-                          onClick={() => setSelectedLeadForTagEdit(lead)}
-                        >
-                          {lead.objetivo_tag.nome}
-                        </Badge>
-                      ) : (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => setSelectedLeadForTagEdit(lead)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <Tag className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(lead.status)}>
-                        {formatStatusDisplay(lead.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-purple-600 h-2 rounded-full" 
-                            style={{ width: `${lead.progresso}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-600">{lead.progresso}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(lead.created_at), 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      {lead.ultima_consulta 
-                        ? format(new Date(lead.ultima_consulta), 'dd/MM/yyyy') 
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {lead.status !== 'em_acompanhamento' && (
+                      </TableCell>
+                      <TableCell>{lead.estado || '-'}</TableCell>
+                      <TableCell>
+                        {lead.objetivo_tag ? (
+                          <Badge 
+                            variant="secondary" 
+                            className="text-white cursor-pointer"
+                            style={{ backgroundColor: lead.objetivo_tag.cor }}
+                            onClick={() => setSelectedLeadForTagEdit(lead)}
+                          >
+                            {lead.objetivo_tag.nome}
+                          </Badge>
+                        ) : (
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => setSelectedLeadForScheduling(lead)}
-                            className="text-green-600 hover:text-green-700"
+                            onClick={() => setSelectedLeadForTagEdit(lead)}
+                            className="text-gray-400 hover:text-gray-600"
                           >
-                            <Calendar className="w-4 h-4" />
+                            <Tag className="w-4 h-4" />
                           </Button>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => setSelectedLeadForDelete(lead)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(lead.status)}>
+                          {getStatusDisplayName(lead.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${progressColor}`}
+                              style={{ width: `${progressoAtual}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-600 min-w-[35px]">{progressoAtual}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(lead.created_at), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        {lead.ultima_consulta 
+                          ? format(new Date(lead.ultima_consulta), 'dd/MM/yyyy') 
+                          : '-'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {(lead.status === 'novo' || lead.status === 'qualificado') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedLeadForScheduling(lead)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <Calendar className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setSelectedLeadForDelete(lead)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
