@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Calendar, Tag, Plus, Trash2 } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Tag, Plus, Trash2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings";
 import { useObjetivoTags, useCreateObjetivoTag } from "@/hooks/useObjetivoTags";

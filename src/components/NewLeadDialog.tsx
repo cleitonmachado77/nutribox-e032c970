@@ -1,15 +1,15 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { useCreateLead } from "@/hooks/useLeads";
-import { storage } from "@/integrations/supabase/storage";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useEffect } from "react";
 import { useObjetivoTags } from "@/hooks/useObjetivoTags";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewLeadDialogProps {
   open: boolean;
@@ -17,90 +17,90 @@ interface NewLeadDialogProps {
 }
 
 export const NewLeadDialog = ({ open, onOpenChange }: NewLeadDialogProps) => {
-  const [nome, setNome] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [email, setEmail] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState("");
-  const [peso, setPeso] = useState("");
-  const [altura, setAltura] = useState("");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imageUrl, setImageUrl] = useState("");
-  const { toast } = useToast();
   const createLead = useCreateLead();
   const { data: objetivoTags = [] } = useObjetivoTags();
+  const { toast } = useToast();
   
-  const [objetivoTagId, setObjetivoTagId] = useState("");
-
-  const calculatedIMC = peso && altura ? (parseFloat(peso) / (parseFloat(altura) * parseFloat(altura))).toFixed(2) : "";
-
-  useEffect(() => {
-    if (selectedImage) {
-      uploadImage();
-    }
-  }, [selectedImage]);
+  const [formData, setFormData] = useState({
+    nome: "",
+    telefone: "",
+    email: "",
+    cidade: "",
+    estado: "",
+    peso: "",
+    altura: "",
+    objetivo: "",
+    objetivo_tag_id: "",
+    anotacoes: "",
+  });
+  
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedImage(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImage(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
     }
   };
 
-  const uploadImage = async () => {
-    if (!selectedImage) return;
-
+  const uploadImage = async (file: File): Promise<string | null> => {
     try {
-      const { data, error } = await storage
-        .from('avatars')
-        .upload(`leads/${Date.now()}-${selectedImage.name}`, selectedImage, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `profile-images/${fileName}`;
 
-      if (error) {
-        console.error('Error uploading image:', error);
-        toast({
-          title: "Erro",
-          description: "Erro ao fazer upload da imagem. Tente novamente.",
-          variant: "destructive",
-        });
-        return;
+      const { error: uploadError } = await supabase.storage
+        .from('leads-storage')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return null;
       }
 
-      const publicURL = storage.from('avatars').getPublicUrl(data.path);
-      setImageUrl(publicURL.data.publicUrl);
-      
-      toast({
-        title: "Sucesso!",
-        description: "Imagem enviada com sucesso.",
-      });
+      const { data } = supabase.storage
+        .from('leads-storage')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
     } catch (error) {
-      console.error('Unexpected error uploading image:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado ao fazer upload da imagem. Tente novamente.",
-        variant: "destructive",
-      });
+      console.error('Error uploading image:', error);
+      return null;
     }
+  };
+
+  const calculateIMC = (peso: string, altura: string): string => {
+    const pesoNum = parseFloat(peso);
+    const alturaNum = parseFloat(altura) / 100; // converter cm para metros
+    
+    if (pesoNum > 0 && alturaNum > 0) {
+      const imc = pesoNum / (alturaNum * alturaNum);
+      return imc.toFixed(1);
+    }
+    
+    return "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      let photoUrl = "";
+      
+      if (profileImage) {
+        photoUrl = await uploadImage(profileImage) || "";
+      }
+
+      const imc = calculateIMC(formData.peso, formData.altura);
+
       const leadData = {
-        nome,
-        telefone,
-        email: email || undefined,
-        objetivo_tag_id: objetivoTagId || undefined,
-        cidade: cidade || undefined,
-        estado: estado || undefined,
-        status: "novo",
-        peso: peso || undefined,
-        altura: altura || undefined,
-        imc: calculatedIMC || undefined,
-        foto_perfil: imageUrl || undefined,
-        progresso: 0,
+        ...formData,
+        imc,
+        foto_perfil: photoUrl,
+        objetivo_tag_id: formData.objetivo_tag_id || null,
       };
 
       await createLead.mutateAsync(leadData);
@@ -111,16 +111,21 @@ export const NewLeadDialog = ({ open, onOpenChange }: NewLeadDialogProps) => {
       });
       
       // Reset form
-      setNome("");
-      setTelefone("");
-      setEmail("");
-      setObjetivoTagId("");
-      setCidade("");
-      setEstado("");
-      setPeso("");
-      setAltura("");
-      setSelectedImage(null);
-      setImageUrl("");
+      setFormData({
+        nome: "",
+        telefone: "",
+        email: "",
+        cidade: "",
+        estado: "",
+        peso: "",
+        altura: "",
+        objetivo: "",
+        objetivo_tag_id: "",
+        anotacoes: "",
+      });
+      setProfileImage(null);
+      setPreviewUrl("");
+      
       onOpenChange(false);
     } catch (error) {
       toast({
@@ -139,151 +144,155 @@ export const NewLeadDialog = ({ open, onOpenChange }: NewLeadDialogProps) => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nome e Telefone */}
+          {/* Foto de perfil */}
+          <div className="space-y-2">
+            <Label>Foto de Perfil</Label>
+            <div className="flex items-center gap-4">
+              {previewUrl && (
+                <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              )}
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="flex-1"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="nome">Nome</Label>
+              <Label htmlFor="nome">Nome Completo *</Label>
               <Input
                 id="nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Nome completo"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                 required
               />
             </div>
+            
             <div>
-              <Label htmlFor="telefone">Telefone</Label>
+              <Label htmlFor="telefone">Telefone *</Label>
               <Input
                 id="telefone"
-                type="tel"
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
-                placeholder="(99) 99999-9999"
+                value={formData.telefone}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                 required
               />
             </div>
           </div>
 
-          {/* Email */}
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-            />
-          </div>
-
-          {/* Objetivo Tag */}
-          <div>
-            <Label htmlFor="objetivo">Objetivo</Label>
-            <Select value={objetivoTagId} onValueChange={setObjetivoTagId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um objetivo" />
-              </SelectTrigger>
-              <SelectContent>
-                {objetivoTags.map((tag) => (
-                  <SelectItem key={tag.id} value={tag.id}>
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: tag.cor }}
-                      />
-                      {tag.nome}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cidade e Estado */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            
             <div>
               <Label htmlFor="cidade">Cidade</Label>
               <Input
                 id="cidade"
-                value={cidade}
-                onChange={(e) => setCidade(e.target.value)}
-                placeholder="Cidade"
-              />
-            </div>
-            <div>
-              <Label htmlFor="estado">Estado</Label>
-              <Input
-                id="estado"
-                value={estado}
-                onChange={(e) => setEstado(e.target.value)}
-                placeholder="Estado"
+                value={formData.cidade}
+                onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
               />
             </div>
           </div>
 
-          {/* Peso e Altura */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="estado">Estado</Label>
+              <Input
+                id="estado"
+                value={formData.estado}
+                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+              />
+            </div>
+            
             <div>
               <Label htmlFor="peso">Peso (kg)</Label>
               <Input
                 id="peso"
                 type="number"
-                value={peso}
-                onChange={(e) => setPeso(e.target.value)}
-                placeholder="Peso em kg"
+                step="0.1"
+                value={formData.peso}
+                onChange={(e) => setFormData({ ...formData, peso: e.target.value })}
               />
             </div>
+            
             <div>
-              <Label htmlFor="altura">Altura (m)</Label>
+              <Label htmlFor="altura">Altura (cm)</Label>
               <Input
                 id="altura"
                 type="number"
-                value={altura}
-                onChange={(e) => setAltura(e.target.value)}
-                placeholder="Altura em metros"
+                value={formData.altura}
+                onChange={(e) => setFormData({ ...formData, altura: e.target.value })}
               />
             </div>
           </div>
 
-          {/* IMC */}
-          {calculatedIMC && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>IMC (Calculado)</Label>
-              <Input value={calculatedIMC} readOnly />
+              <Label htmlFor="objetivo">Objetivo Principal</Label>
+              <Input
+                id="objetivo"
+                value={formData.objetivo}
+                onChange={(e) => setFormData({ ...formData, objetivo: e.target.value })}
+                placeholder="Ex: Perder 10kg em 6 meses"
+              />
             </div>
-          )}
-
-          {/* Foto de Perfil */}
-          <div>
-            <Label htmlFor="image">Foto de Perfil</Label>
-            <Input
-              type="file"
-              id="image"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-12 w-12">
-                {imageUrl ? (
-                  <AvatarImage src={imageUrl} alt="Foto de Perfil" />
-                ) : (
-                  <AvatarFallback>
-                    {nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <Button variant="outline" asChild>
-                <label htmlFor="image" className="cursor-pointer">
-                  {imageUrl ? "Alterar Foto" : "Adicionar Foto"}
-                </label>
-              </Button>
+            
+            <div>
+              <Label htmlFor="objetivo_tag">Tag de Objetivo</Label>
+              <Select 
+                value={formData.objetivo_tag_id} 
+                onValueChange={(value) => setFormData({ ...formData, objetivo_tag_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  {objetivoTags.map((tag) => (
+                    <SelectItem key={tag.id} value={tag.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: tag.cor }}
+                        />
+                        {tag.nome}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={createLead.isPending}>
+          <div>
+            <Label htmlFor="anotacoes">Anotações</Label>
+            <Textarea
+              id="anotacoes"
+              value={formData.anotacoes}
+              onChange={(e) => setFormData({ ...formData, anotacoes: e.target.value })}
+              placeholder="Observações importantes sobre o lead..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={createLead.isPending} className="flex-1">
               {createLead.isPending ? "Criando..." : "Criar Lead"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
             </Button>
           </div>
         </form>
