@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,10 +10,12 @@ import { NewLeadDialog } from "@/components/NewLeadDialog";
 import { Header } from "@/components/Header";
 import { useLeads } from "@/hooks/useLeads";
 import { format } from "date-fns";
+import { ScheduleConsultationDialog } from "@/components/ScheduleConsultationDialog";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
+  const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<any>(null);
   const { data: leads, isLoading, error } = useLeads();
 
   const getStatusColor = (status: string) => {
@@ -34,17 +35,11 @@ const Leads = () => {
     }
   };
 
-  const getObjetivoColor = (objetivo: string) => {
-    switch (objetivo) {
-      case "Perda de Peso":
-        return "bg-rose-500";
-      case "Ganho de Massa":
-        return "bg-emerald-500";
-      case "Manutenção":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
+  const getObjetivoColor = (objetivoTag: any) => {
+    if (objetivoTag) {
+      return objetivoTag.cor;
     }
+    return "#6B7280"; // gray color for no tag
   };
 
   const formatStatusDisplay = (status: string) => {
@@ -258,9 +253,13 @@ const Leads = () => {
                     </TableCell>
                     <TableCell>{lead.estado || '-'}</TableCell>
                     <TableCell>
-                      {lead.objetivo ? (
-                        <Badge variant="secondary" className={getObjetivoColor(lead.objetivo)}>
-                          {lead.objetivo}
+                      {lead.objetivo_tag ? (
+                        <Badge 
+                          variant="secondary" 
+                          className="text-white"
+                          style={{ backgroundColor: lead.objetivo_tag.cor }}
+                        >
+                          {lead.objetivo_tag.nome}
                         </Badge>
                       ) : (
                         '-'
@@ -292,9 +291,21 @@ const Leads = () => {
                       }
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {lead.status !== 'em_acompanhamento' && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setSelectedLeadForScheduling(lead)}
+                            className="text-green-600 hover:text-green-700"
+                          >
+                            <Calendar className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -305,6 +316,14 @@ const Leads = () => {
       </Card>
 
       <NewLeadDialog open={showNewLeadDialog} onOpenChange={setShowNewLeadDialog} />
+      
+      {selectedLeadForScheduling && (
+        <ScheduleConsultationDialog 
+          open={!!selectedLeadForScheduling}
+          onOpenChange={(open) => !open && setSelectedLeadForScheduling(null)}
+          lead={selectedLeadForScheduling}
+        />
+      )}
     </div>
   );
 };

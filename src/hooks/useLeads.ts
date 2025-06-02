@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,6 +7,7 @@ export interface Lead {
   telefone: string;
   email?: string;
   objetivo?: string;
+  objetivo_tag_id?: string;
   cidade?: string;
   estado?: string;
   status: string;
@@ -24,6 +24,11 @@ export interface Lead {
   created_at: string;
   updated_at: string;
   user_id: string;
+  objetivo_tag?: {
+    id: string;
+    nome: string;
+    cor: string;
+  };
 }
 
 export const useLeads = () => {
@@ -32,7 +37,10 @@ export const useLeads = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads')
-        .select('*')
+        .select(`
+          *,
+          objetivo_tag:objetivo_tags(id, nome, cor)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -168,6 +176,35 @@ export const useCreateLead = () => {
     },
     onSuccess: () => {
       // Invalidar as queries para refrescar os dados automaticamente
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
+    },
+  });
+};
+
+export const useUpdateLead = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, leadData }: { id: string; leadData: Partial<Lead> }) => {
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          ...leadData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating lead:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
     },

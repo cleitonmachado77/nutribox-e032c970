@@ -328,6 +328,7 @@ export type Database = {
           imc: string | null
           nome: string
           objetivo: string | null
+          objetivo_tag_id: string | null
           peso: string | null
           plano_alimentar: string | null
           progresso: number | null
@@ -351,6 +352,7 @@ export type Database = {
           imc?: string | null
           nome: string
           objetivo?: string | null
+          objetivo_tag_id?: string | null
           peso?: string | null
           plano_alimentar?: string | null
           progresso?: number | null
@@ -374,6 +376,7 @@ export type Database = {
           imc?: string | null
           nome?: string
           objetivo?: string | null
+          objetivo_tag_id?: string | null
           peso?: string | null
           plano_alimentar?: string | null
           progresso?: number | null
@@ -384,7 +387,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_objetivo_tag_id_fkey"
+            columns: ["objetivo_tag_id"]
+            isOneToOne: false
+            referencedRelation: "objetivo_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Message: {
         Row: {
@@ -436,6 +447,68 @@ export type Database = {
           updatedAt?: string | null
         }
         Relationships: []
+      }
+      objetivo_tags: {
+        Row: {
+          cor: string
+          created_at: string
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          cor?: string
+          created_at?: string
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pacientes: {
+        Row: {
+          created_at: string
+          data_primeira_consulta: string | null
+          id: string
+          lead_id: string
+          status_tratamento: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_primeira_consulta?: string | null
+          id?: string
+          lead_id: string
+          status_tratamento?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_primeira_consulta?: string | null
+          id?: string
+          lead_id?: string
+          status_tratamento?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pacientes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -527,6 +600,30 @@ export type Database = {
           updatedAt?: string | null
           value?: string | null
           wavoipToken?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          google_calendar_link: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          google_calendar_link?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          google_calendar_link?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

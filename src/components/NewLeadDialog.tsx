@@ -1,455 +1,293 @@
-
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Upload, X } from "lucide-react";
-import { useCreateLead } from "@/hooks/useLeads";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateLead } from "@/hooks/useLeads";
+import { storage } from "@/integrations/supabase/storage";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect } from "react";
+import { useObjetivoTags } from "@/hooks/useObjetivoTags";
 
 interface NewLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function NewLeadDialog({ open, onOpenChange }: NewLeadDialogProps) {
+export const NewLeadDialog = ({ open, onOpenChange }: NewLeadDialogProps) => {
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [peso, setPeso] = useState("");
+  const [altura, setAltura] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const { toast } = useToast();
   const createLead = useCreateLead();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-  const [bodyImages, setBodyImages] = useState<File[]>([]);
-  const [bodyImagePreviews, setBodyImagePreviews] = useState<string[]>([]);
+  const { data: objetivoTags = [] } = useObjetivoTags();
+  
+  const [objetivoTagId, setObjetivoTagId] = useState("");
 
-  const [formData, setFormData] = useState({
-    nome: "",
-    telefone: "",
-    email: "",
-    objetivo: "",
-    cidade: "",
-    estado: "",
-    peso: "",
-    altura: "",
-    anotacoes: "",
-  });
+  const calculatedIMC = peso && altura ? (parseFloat(peso) / (parseFloat(altura) * parseFloat(altura))).toFixed(2) : "";
 
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    if (selectedImage) {
+      uploadImage();
+    }
+  }, [selectedImage]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedImage(e.target.files[0]);
     }
   };
 
-  const handleBodyImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setBodyImages(prev => [...prev, ...files]);
-    
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBodyImagePreviews(prev => [...prev, e.target?.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+  const uploadImage = async () => {
+    if (!selectedImage) return;
 
-  const removeBodyImage = (index: number) => {
-    setBodyImages(prev => prev.filter((_, i) => i !== index));
-    setBodyImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadImage = async (file: File, path: string): Promise<string | null> => {
     try {
-      const { data, error } = await supabase.storage
-        .from('lead-images')
-        .upload(path, file);
+      const { data, error } = await storage
+        .from('avatars')
+        .upload(`leads/${Date.now()}-${selectedImage.name}`, selectedImage, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (error) {
         console.error('Error uploading image:', error);
-        return null;
+        toast({
+          title: "Erro",
+          description: "Erro ao fazer upload da imagem. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('lead-images')
-        .getPublicUrl(data.path);
-
-      return publicUrl;
+      const publicURL = storage.from('avatars').getPublicUrl(data.path);
+      setImageUrl(publicURL.data.publicUrl);
+      
+      toast({
+        title: "Sucesso!",
+        description: "Imagem enviada com sucesso.",
+      });
     } catch (error) {
-      console.error('Error uploading image:', error);
-      return null;
+      console.error('Unexpected error uploading image:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao fazer upload da imagem. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
+    
     try {
-      let profileImageUrl = null;
-      let bodyImageUrls: string[] = [];
-
-      // Upload profile image
-      if (profileImage) {
-        const timestamp = Date.now();
-        const profilePath = `profile/${timestamp}_${profileImage.name}`;
-        profileImageUrl = await uploadImage(profileImage, profilePath);
-      }
-
-      // Upload body images
-      if (bodyImages.length > 0) {
-        const uploadPromises = bodyImages.map(async (file, index) => {
-          const timestamp = Date.now();
-          const bodyPath = `body/${timestamp}_${index}_${file.name}`;
-          return uploadImage(file, bodyPath);
-        });
-
-        const results = await Promise.all(uploadPromises);
-        bodyImageUrls = results.filter(url => url !== null) as string[];
-      }
-
-      // Calculate IMC if weight and height are provided
-      let imc = null;
-      if (formData.peso && formData.altura) {
-        const weight = parseFloat(formData.peso);
-        const height = parseFloat(formData.altura) / 100; // Convert cm to m
-        imc = (weight / (height * height)).toFixed(1);
-      }
-
-      // Map objetivo values to match database format
-      const objetivoMap: Record<string, string> = {
-        "perda-peso": "Perda de Peso",
-        "ganho-massa": "Ganho de Massa",
-        "manutencao": "Manutenção",
-        "outros": "Outros"
-      };
-
       const leadData = {
-        nome: formData.nome,
-        telefone: formData.telefone,
-        email: formData.email || null,
-        objetivo: objetivoMap[formData.objetivo] || null,
-        cidade: formData.cidade || null,
-        estado: formData.estado || null,
-        peso: formData.peso || null,
-        altura: formData.altura || null,
-        imc: imc,
-        anotacoes: formData.anotacoes || null,
-        foto_perfil: profileImageUrl,
+        nome,
+        telefone,
+        email: email || undefined,
+        objetivo_tag_id: objetivoTagId || undefined,
+        cidade: cidade || undefined,
+        estado: estado || undefined,
         status: "novo",
+        peso: peso || undefined,
+        altura: altura || undefined,
+        imc: calculatedIMC || undefined,
+        foto_perfil: imageUrl || undefined,
         progresso: 0,
       };
 
       await createLead.mutateAsync(leadData);
-
+      
       toast({
-        title: "Lead criado com sucesso!",
-        description: "O novo lead foi adicionado ao sistema.",
+        title: "Sucesso!",
+        description: "Lead criado com sucesso.",
       });
-
+      
       // Reset form
-      setFormData({
-        nome: "",
-        telefone: "",
-        email: "",
-        objetivo: "",
-        cidade: "",
-        estado: "",
-        peso: "",
-        altura: "",
-        anotacoes: "",
-      });
-      setProfileImage(null);
-      setProfileImagePreview(null);
-      setBodyImages([]);
-      setBodyImagePreviews([]);
+      setNome("");
+      setTelefone("");
+      setEmail("");
+      setObjetivoTagId("");
+      setCidade("");
+      setEstado("");
+      setPeso("");
+      setAltura("");
+      setSelectedImage(null);
+      setImageUrl("");
       onOpenChange(false);
-
     } catch (error) {
-      console.error('Error creating lead:', error);
       toast({
-        title: "Erro ao criar lead",
-        description: "Ocorreu um erro ao criar o lead. Tente novamente.",
+        title: "Erro",
+        description: "Erro ao criar lead. Tente novamente.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Criar Novo Lead</DialogTitle>
+          <DialogTitle>Novo Lead</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nome e Telefone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome Completo *</Label>
+            <div>
+              <Label htmlFor="nome">Nome</Label>
               <Input
                 id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({...formData, nome: e.target.value})}
-                placeholder="Digite o nome completo"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Nome completo"
                 required
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone *</Label>
+            <div>
+              <Label htmlFor="telefone">Telefone</Label>
               <Input
                 id="telefone"
-                value={formData.telefone}
-                onChange={(e) => setFormData({...formData, telefone: e.target.value})}
-                placeholder="(11) 99999-9999"
+                type="tel"
+                value={telefone}
+                onChange={(e) => setTelefone(e.target.value)}
+                placeholder="(99) 99999-9999"
                 required
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="objetivo">Objetivo</Label>
-              <Select onValueChange={(value) => setFormData({...formData, objetivo: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o objetivo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="perda-peso">Perda de Peso</SelectItem>
-                  <SelectItem value="ganho-massa">Ganho de Massa</SelectItem>
-                  <SelectItem value="manutencao">Manutenção</SelectItem>
-                  <SelectItem value="outros">Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
+          </div>
+
+          {/* Email */}
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@example.com"
+            />
+          </div>
+
+          {/* Objetivo Tag */}
+          <div>
+            <Label htmlFor="objetivo">Objetivo</Label>
+            <Select value={objetivoTagId} onValueChange={setObjetivoTagId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um objetivo" />
+              </SelectTrigger>
+              <SelectContent>
+                {objetivoTags.map((tag) => (
+                  <SelectItem key={tag.id} value={tag.id}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: tag.cor }}
+                      />
+                      {tag.nome}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Cidade e Estado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="cidade">Cidade</Label>
               <Input
                 id="cidade"
-                value={formData.cidade}
-                onChange={(e) => setFormData({...formData, cidade: e.target.value})}
-                placeholder="Digite a cidade"
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+                placeholder="Cidade"
               />
             </div>
-            
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="estado">Estado</Label>
-              <Select onValueChange={(value) => setFormData({...formData, estado: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SP">São Paulo</SelectItem>
-                  <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                  <SelectItem value="MG">Minas Gerais</SelectItem>
-                  <SelectItem value="PR">Paraná</SelectItem>
-                  <SelectItem value="SC">Santa Catarina</SelectItem>
-                  <SelectItem value="RS">Rio Grande do Sul</SelectItem>
-                  <SelectItem value="DF">Distrito Federal</SelectItem>
-                  <SelectItem value="BA">Bahia</SelectItem>
-                  <SelectItem value="GO">Goiás</SelectItem>
-                  <SelectItem value="PE">Pernambuco</SelectItem>
-                  <SelectItem value="CE">Ceará</SelectItem>
-                  <SelectItem value="ES">Espírito Santo</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="estado"
+                value={estado}
+                onChange={(e) => setEstado(e.target.value)}
+                placeholder="Estado"
+              />
             </div>
+          </div>
 
-            <div className="space-y-2">
+          {/* Peso e Altura */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="peso">Peso (kg)</Label>
               <Input
                 id="peso"
                 type="number"
-                step="0.1"
-                value={formData.peso}
-                onChange={(e) => setFormData({...formData, peso: e.target.value})}
-                placeholder="70.5"
+                value={peso}
+                onChange={(e) => setPeso(e.target.value)}
+                placeholder="Peso em kg"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="altura">Altura (cm)</Label>
+            <div>
+              <Label htmlFor="altura">Altura (m)</Label>
               <Input
                 id="altura"
                 type="number"
-                value={formData.altura}
-                onChange={(e) => setFormData({...formData, altura: e.target.value})}
-                placeholder="175"
+                value={altura}
+                onChange={(e) => setAltura(e.target.value)}
+                placeholder="Altura em metros"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="anotacoes">Anotações</Label>
+          {/* IMC */}
+          {calculatedIMC && (
+            <div>
+              <Label>IMC (Calculado)</Label>
+              <Input value={calculatedIMC} readOnly />
+            </div>
+          )}
+
+          {/* Foto de Perfil */}
+          <div>
+            <Label htmlFor="image">Foto de Perfil</Label>
             <Input
-              id="anotacoes"
-              value={formData.anotacoes}
-              onChange={(e) => setFormData({...formData, anotacoes: e.target.value})}
-              placeholder="Observações importantes sobre o lead"
+              type="file"
+              id="image"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
             />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Foto de Perfil</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                {profileImagePreview ? (
-                  <div className="space-y-2">
-                    <img 
-                      src={profileImagePreview} 
-                      alt="Preview" 
-                      className="w-20 h-20 object-cover rounded-full mx-auto"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setProfileImage(null);
-                        setProfileImagePreview(null);
-                      }}
-                    >
-                      Remover
-                    </Button>
-                  </div>
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                {imageUrl ? (
+                  <AvatarImage src={imageUrl} alt="Foto de Perfil" />
                 ) : (
-                  <>
-                    <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 mb-2">Clique para adicionar foto</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfileImageChange}
-                      className="hidden"
-                      id="profile-upload"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => document.getElementById('profile-upload')?.click()}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Selecionar Foto
-                    </Button>
-                  </>
+                  <AvatarFallback>
+                    {nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Fotos do Corpo</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                {bodyImagePreviews.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {bodyImagePreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img 
-                            src={preview} 
-                            alt={`Body ${index + 1}`} 
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute -top-2 -right-2 w-5 h-5 p-0"
-                            onClick={() => removeBodyImage(index)}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleBodyImagesChange}
-                      className="hidden"
-                      id="body-upload"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => document.getElementById('body-upload')?.click()}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Adicionar Mais
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 mb-2">Fotos para antes/depois</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleBodyImagesChange}
-                      className="hidden"
-                      id="body-upload-initial"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => document.getElementById('body-upload-initial')?.click()}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      Selecionar Fotos
-                    </Button>
-                  </>
-                )}
-              </div>
+              </Avatar>
+              <Button variant="outline" asChild>
+                <label htmlFor="image" className="cursor-pointer">
+                  {imageUrl ? "Alterar Foto" : "Adicionar Foto"}
+                </label>
+              </Button>
             </div>
           </div>
-          
-          <div className="flex justify-end gap-3 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-primary hover:bg-primary/90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Criando..." : "Criar Lead"}
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={createLead.isPending}>
+              {createLead.isPending ? "Criando..." : "Criar Lead"}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};

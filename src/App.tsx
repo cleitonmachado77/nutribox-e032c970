@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,7 @@ import Conversas from "./pages/Conversas";
 import NutriboxIA from "./pages/NutriboxIA";
 import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +45,7 @@ const App = () => (
                           <Route path="conversas" element={<Conversas />} />
                           <Route path="nutribox-ia" element={<NutriboxIA />} />
                           <Route path="plans" element={<Plans />} />
+                          <Route path="settings" element={<Settings />} />
                         </Routes>
                       </div>
                     </div>
