@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -101,6 +100,8 @@ export const NewLeadDialog = ({ open, onOpenChange }: NewLeadDialogProps) => {
         imc,
         foto_perfil: photoUrl,
         objetivo_tag_id: formData.objetivo_tag_id || null,
+        status: "novo",
+        progresso: 0,
       };
 
       await createLead.mutateAsync(leadData);
