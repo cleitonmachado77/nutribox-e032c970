@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag } from "lucide-react";
+import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag, Trash } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
@@ -15,12 +16,14 @@ import { LeadsFilter, FilterCriteria } from "@/components/LeadsFilter";
 import { ImportLeadsDialog } from "@/components/ImportLeadsDialog";
 import { ExportLeadsButton } from "@/components/ExportLeadsButton";
 import { EditLeadTagDialog } from "@/components/EditLeadTagDialog";
+import { DeleteLeadDialog } from "@/components/DeleteLeadDialog";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
   const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<any>(null);
   const [selectedLeadForTagEdit, setSelectedLeadForTagEdit] = useState<any>(null);
+  const [selectedLeadForDelete, setSelectedLeadForDelete] = useState<any>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   const { data: leads, isLoading, error } = useLeads();
 
@@ -368,6 +371,14 @@ const Leads = () => {
                             <Calendar className="w-4 h-4" />
                           </Button>
                         )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setSelectedLeadForDelete(lead)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -392,6 +403,12 @@ const Leads = () => {
         open={!!selectedLeadForTagEdit}
         onOpenChange={(open) => !open && setSelectedLeadForTagEdit(null)}
         lead={selectedLeadForTagEdit}
+      />
+
+      <DeleteLeadDialog
+        open={!!selectedLeadForDelete}
+        onOpenChange={(open) => !open && setSelectedLeadForDelete(null)}
+        lead={selectedLeadForDelete}
       />
     </div>
   );

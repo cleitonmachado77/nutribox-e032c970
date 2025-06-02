@@ -1,0 +1,84 @@
+
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Lead, useDeleteLead } from "@/hooks/useLeads";
+import { AlertTriangle } from "lucide-react";
+
+interface DeleteLeadDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  lead: Lead | null;
+}
+
+export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogProps) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
+  const deleteLead = useDeleteLead();
+
+  const handleDelete = async () => {
+    if (!lead) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteLead.mutateAsync(lead.id);
+      toast({
+        title: "Sucesso!",
+        description: `Lead ${lead.nome} foi excluído com sucesso.`,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir lead. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (!lead) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            Excluir Lead
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-lg font-medium">{lead.nome}</p>
+            <p className="text-sm text-gray-600">{lead.telefone}</p>
+          </div>
+          
+          <div className="border rounded-lg p-4 bg-red-50">
+            <p className="text-sm text-red-800">
+              <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados do lead serão permanentemente removidos.
+            </p>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleDelete} 
+              disabled={isDeleting}
+              variant="destructive"
+              className="flex-1"
+            >
+              {isDeleting ? "Excluindo..." : "Excluir Lead"}
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

@@ -44,12 +44,15 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
         }
       });
 
+      // Converter lead em paciente imediatamente após agendar
+      await createPaciente.mutateAsync(lead.id);
+
       // Abrir Google Calendar em nova aba
       window.open(userSettings.google_calendar_link, '_blank');
       
       toast({
         title: "Sucesso!",
-        description: `Consulta agendada para ${lead.nome}. Status atualizado para "Consulta Agendada".`,
+        description: `Consulta agendada para ${lead.nome} e convertido em paciente com sucesso!`,
       });
       
       onOpenChange(false);
@@ -58,31 +61,6 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
       toast({
         title: "Erro",
         description: "Erro ao agendar consulta. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleMarkAsPatient = async () => {
-    setIsProcessing(true);
-
-    try {
-      // Converter lead em paciente
-      await createPaciente.mutateAsync(lead.id);
-      
-      toast({
-        title: "Sucesso!",
-        description: `${lead.nome} foi convertido em paciente com sucesso!`,
-      });
-      
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error converting to patient:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao converter em paciente. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -113,8 +91,8 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
                 <h4 className="font-medium mb-2">Agendar Primeira Consulta:</h4>
                 <ul className="text-sm space-y-1 text-gray-600">
                   <li>• O Google Calendar será aberto para agendamento</li>
-                  <li>• O status será atualizado para "Consulta Agendada"</li>
-                  <li>• Após a consulta, você pode converter em paciente</li>
+                  <li>• O lead será automaticamente convertido em paciente</li>
+                  <li>• O status será atualizado para "Em Acompanhamento"</li>
                 </ul>
               </div>
               
@@ -124,31 +102,14 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
                 className="w-full"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                {isProcessing ? "Processando..." : "Agendar no Google Calendar"}
-              </Button>
-            </div>
-          ) : lead.status === 'consulta_agendada' ? (
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4 bg-green-50">
-                <h4 className="font-medium mb-2">Consulta já foi agendada!</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Após realizar a consulta, você pode converter este lead em paciente.
-                </p>
-              </div>
-              
-              <Button
-                onClick={handleMarkAsPatient}
-                disabled={isProcessing}
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {isProcessing ? "Convertendo..." : "Converter em Paciente"}
+                {isProcessing ? "Processando..." : "Agendar e Converter em Paciente"}
               </Button>
             </div>
           ) : (
-            <div className="border rounded-lg p-4 bg-gray-50">
+            <div className="border rounded-lg p-4 bg-green-50">
+              <h4 className="font-medium mb-2">Lead já convertido!</h4>
               <p className="text-sm text-gray-600">
-                Este lead já está em acompanhamento como paciente.
+                Este lead já foi convertido em paciente e está em acompanhamento.
               </p>
             </div>
           )}

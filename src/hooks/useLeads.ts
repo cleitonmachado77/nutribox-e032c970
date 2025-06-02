@@ -210,3 +210,27 @@ export const useUpdateLead = () => {
     },
   });
 };
+
+export const useDeleteLead = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (leadId: string) => {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', leadId);
+
+      if (error) {
+        console.error('Error deleting lead:', error);
+        throw error;
+      }
+
+      return leadId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
+    },
+  });
+};
