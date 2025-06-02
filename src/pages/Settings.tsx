@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,8 @@ import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings"
 import { useObjetivoTags, useCreateObjetivoTag } from "@/hooks/useObjetivoTags";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DeleteTagDialog } from "@/components/DeleteTagDialog";
+import { useEffect } from "react";
 
 const Settings = () => {
   const { data: userSettings } = useUserSettings();
@@ -19,10 +20,18 @@ const Settings = () => {
   const createTag = useCreateObjetivoTag();
   const { toast } = useToast();
 
-  const [calendarLink, setCalendarLink] = useState(userSettings?.google_calendar_link || "");
+  const [calendarLink, setCalendarLink] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#3B82F6");
   const [showNewTagDialog, setShowNewTagDialog] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<any>(null);
+
+  // Sincronizar o estado com os dados do usuário
+  useEffect(() => {
+    if (userSettings?.google_calendar_link) {
+      setCalendarLink(userSettings.google_calendar_link);
+    }
+  }, [userSettings]);
 
   const handleSaveCalendarLink = async () => {
     try {
@@ -172,13 +181,22 @@ const Settings = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {objetivoTags.map((tag) => (
-              <Badge
-                key={tag.id}
-                className="justify-center py-2 text-white"
-                style={{ backgroundColor: tag.cor }}
-              >
-                {tag.nome}
-              </Badge>
+              <div key={tag.id} className="relative group">
+                <Badge
+                  className="justify-center py-2 text-white w-full"
+                  style={{ backgroundColor: tag.cor }}
+                >
+                  {tag.nome}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTagToDelete(tag)}
+                  className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 bg-red-500 hover:bg-red-600 text-white rounded-full"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
             ))}
           </div>
           {objetivoTags.length === 0 && (
@@ -188,6 +206,12 @@ const Settings = () => {
           )}
         </CardContent>
       </Card>
+
+      <DeleteTagDialog 
+        open={!!tagToDelete}
+        onOpenChange={(open) => !open && setTagToDelete(null)}
+        tag={tagToDelete}
+      />
     </div>
   );
 };

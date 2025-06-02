@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Download, Upload, Users, UserPlus, Calendar, Eye } from "lucide-react";
+import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
@@ -11,11 +11,17 @@ import { Header } from "@/components/Header";
 import { useLeads } from "@/hooks/useLeads";
 import { format } from "date-fns";
 import { ScheduleConsultationDialog } from "@/components/ScheduleConsultationDialog";
+import { LeadsFilter, FilterCriteria } from "@/components/LeadsFilter";
+import { ImportLeadsDialog } from "@/components/ImportLeadsDialog";
+import { ExportLeadsButton } from "@/components/ExportLeadsButton";
+import { EditLeadTagDialog } from "@/components/EditLeadTagDialog";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
   const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<any>(null);
+  const [selectedLeadForTagEdit, setSelectedLeadForTagEdit] = useState<any>(null);
+  const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   const { data: leads, isLoading, error } = useLeads();
 
   const getStatusColor = (status: string) => {
@@ -60,12 +66,48 @@ const Leads = () => {
   };
 
   // Filtrar leads baseado no termo de busca
-  const filteredLeads = leads?.filter(lead => 
-    lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.telefone.includes(searchTerm) ||
-    lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const applyFilters = (leads: any[], filters: FilterCriteria, searchTerm: string) => {
+    return leads.filter(lead => {
+      // Filtro de busca por texto
+      const matchesSearch = searchTerm === "" || 
+        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.telefone.includes(searchTerm) ||
+        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Filtros específicos
+      const matchesStatus = !filters.status || lead.status === filters.status;
+      const matchesEstado = !filters.estado || lead.estado?.toLowerCase().includes(filters.estado.toLowerCase());
+      const matchesTag = !filters.objetivo_tag_id || lead.objetivo_tag_id === filters.objetivo_tag_id;
+      
+      const matchesProgressoMin = filters.progresso_min === undefined || lead.progresso >= filters.progresso_min;
+      const matchesProgressoMax = filters.progresso_max === undefined || lead.progresso <= filters.progresso_max;
+      
+      let matchesDataRange = true;
+      if (filters.data_inicio || filters.data_fim) {
+        const leadDate = new Date(lead.created_at);
+        if (filters.data_inicio) {
+          matchesDataRange = matchesDataRange && leadDate >= new Date(filters.data_inicio);
+        }
+        if (filters.data_fim) {
+          matchesDataRange = matchesDataRange && leadDate <= new Date(filters.data_fim + 'T23:59:59');
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesEstado && matchesTag && 
+             matchesProgressoMin && matchesProgressoMax && matchesDataRange;
+    });
+  };
+
+  const filteredLeads = leads ? applyFilters(leads, activeFilters, searchTerm) : [];
+
+  const handleFilter = (filters: FilterCriteria) => {
+    setActiveFilters(filters);
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+  };
 
   // Calcular estatísticas baseadas nos dados reais
   const totalLeads = leads?.length || 0;
@@ -177,14 +219,13 @@ const Leads = () => {
             <Plus className="w-4 h-4 mr-2" />
             Novo Lead
           </Button>
-          <Button variant="outline">
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </Button>
+          <ImportLeadsDialog>
+            <Button variant="outline">
+              <Upload className="w-4 h-4 mr-2" />
+              Importar
+            </Button>
+          </ImportLeadsDialog>
+          <ExportLeadsButton leads={filteredLeads} />
         </div>
 
         <div className="flex gap-2">
@@ -197,12 +238,26 @@ const Leads = () => {
               className="pl-10 w-64" 
             />
           </div>
-          <Button variant="outline">
-            <Filter className="w-4 h-4 mr-2" />
-            Filtros
-          </Button>
+          <LeadsFilter onFilter={handleFilter} onClearFilters={handleClearFilters} />
         </div>
       </div>
+
+      {/* Indicador de filtros ativos */}
+      {Object.keys(activeFilters).length > 0 && (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span>Filtros ativos:</span>
+          {Object.entries(activeFilters).map(([key, value]) => (
+            value && (
+              <Badge key={key} variant="secondary" className="text-xs">
+                {key}: {String(value)}
+              </Badge>
+            )
+          ))}
+          <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+            Limpar filtros
+          </Button>
+        </div>
+      )}
 
       {/* Tabela de Leads */}
       <Card>
@@ -212,7 +267,7 @@ const Leads = () => {
         <CardContent>
           {filteredLeads.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              {totalLeads === 0 
+              {(leads?.length || 0) === 0 
                 ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para começar."
                 : "Nenhum lead encontrado com os filtros aplicados."
               }
@@ -256,13 +311,21 @@ const Leads = () => {
                       {lead.objetivo_tag ? (
                         <Badge 
                           variant="secondary" 
-                          className="text-white"
+                          className="text-white cursor-pointer"
                           style={{ backgroundColor: lead.objetivo_tag.cor }}
+                          onClick={() => setSelectedLeadForTagEdit(lead)}
                         >
                           {lead.objetivo_tag.nome}
                         </Badge>
                       ) : (
-                        '-'
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setSelectedLeadForTagEdit(lead)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <Tag className="w-4 h-4" />
+                        </Button>
                       )}
                     </TableCell>
                     <TableCell>
@@ -324,6 +387,12 @@ const Leads = () => {
           lead={selectedLeadForScheduling}
         />
       )}
+
+      <EditLeadTagDialog
+        open={!!selectedLeadForTagEdit}
+        onOpenChange={(open) => !open && setSelectedLeadForTagEdit(null)}
+        lead={selectedLeadForTagEdit}
+      />
     </div>
   );
 };
