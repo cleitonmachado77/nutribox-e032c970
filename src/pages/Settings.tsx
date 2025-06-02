@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,9 @@ import { useObjetivoTags, useCreateObjetivoTag } from "@/hooks/useObjetivoTags";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DeleteTagDialog } from "@/components/DeleteTagDialog";
-import { useEffect } from "react";
 
 const Settings = () => {
-  const { data: userSettings } = useUserSettings();
+  const { data: userSettings, isLoading: settingsLoading } = useUserSettings();
   const updateSettings = useUpdateUserSettings();
   const { data: objetivoTags = [] } = useObjetivoTags();
   const createTag = useCreateObjetivoTag();
@@ -34,13 +34,23 @@ const Settings = () => {
   }, [userSettings]);
 
   const handleSaveCalendarLink = async () => {
+    if (!calendarLink.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um link válido do Google Calendar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await updateSettings.mutateAsync({ google_calendar_link: calendarLink });
+      await updateSettings.mutateAsync({ google_calendar_link: calendarLink.trim() });
       toast({
         title: "Sucesso!",
         description: "Link do Google Calendar salvo com sucesso.",
       });
     } catch (error) {
+      console.error("Error saving calendar link:", error);
       toast({
         title: "Erro",
         description: "Erro ao salvar configurações. Tente novamente.",
@@ -50,7 +60,14 @@ const Settings = () => {
   };
 
   const handleCreateTag = async () => {
-    if (!newTagName.trim()) return;
+    if (!newTagName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um nome para a tag.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       await createTag.mutateAsync({
@@ -67,6 +84,7 @@ const Settings = () => {
         description: "Tag de objetivo criada com sucesso.",
       });
     } catch (error) {
+      console.error("Error creating tag:", error);
       toast({
         title: "Erro",
         description: "Erro ao criar tag. Tente novamente.",
@@ -81,6 +99,17 @@ const Settings = () => {
     "#3B82F6", "#6366F1", "#8B5CF6", "#A855F7", "#D946EF",
     "#EC4899", "#F43F5E"
   ];
+
+  if (settingsLoading) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <Header title="Configurações" description="Gerencie suas configurações de perfil e sistema" />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -113,6 +142,11 @@ const Settings = () => {
             >
               {updateSettings.isPending ? "Salvando..." : "Salvar Link"}
             </Button>
+            {userSettings?.google_calendar_link && (
+              <p className="text-sm text-green-600 mt-2">
+                ✓ Link do Google Calendar configurado com sucesso
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
