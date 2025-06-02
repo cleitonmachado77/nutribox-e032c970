@@ -2,12 +2,12 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Calendar, ExternalLink, CheckCircle } from "lucide-react";
+import { Calendar, ExternalLink } from "lucide-react";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { useCreatePaciente } from "@/hooks/usePacientes";
 import { useUpdateLead } from "@/hooks/useLeads";
 import { useToast } from "@/hooks/use-toast";
 import { Lead } from "@/hooks/useLeads";
+import { getLeadProgressByStatus } from "@/hooks/useLeadProgress";
 
 interface ScheduleConsultationDialogProps {
   open: boolean;
@@ -17,7 +17,6 @@ interface ScheduleConsultationDialogProps {
 
 export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: ScheduleConsultationDialogProps) => {
   const { data: userSettings } = useUserSettings();
-  const createPaciente = useCreatePaciente();
   const updateLead = useUpdateLead();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,7 +39,7 @@ export const ScheduleConsultationDialog = ({ open, onOpenChange, lead }: Schedul
         id: lead.id,
         leadData: {
           status: 'consulta_agendada',
-          progresso: 50,
+          progresso: getLeadProgressByStatus('consulta_agendada'),
           proxima_consulta: new Date().toISOString(),
         }
       });

@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag, Trash } from "lucide-react";
+import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag, Trash, Edit } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
@@ -17,6 +16,7 @@ import { ImportLeadsDialog } from "@/components/ImportLeadsDialog";
 import { ExportLeadsButton } from "@/components/ExportLeadsButton";
 import { EditLeadTagDialog } from "@/components/EditLeadTagDialog";
 import { DeleteLeadDialog } from "@/components/DeleteLeadDialog";
+import { EditLeadDialog } from "@/components/EditLeadDialog";
 import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from "@/hooks/useLeadProgress";
 
 const Leads = () => {
@@ -25,6 +25,7 @@ const Leads = () => {
   const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<any>(null);
   const [selectedLeadForTagEdit, setSelectedLeadForTagEdit] = useState<any>(null);
   const [selectedLeadForDelete, setSelectedLeadForDelete] = useState<any>(null);
+  const [selectedLeadForEdit, setSelectedLeadForEdit] = useState<any>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   const { data: leads, isLoading, error } = useLeads();
 
@@ -303,10 +304,13 @@ const Leads = () => {
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage 
-                              src={lead.foto_perfil || undefined} 
-                              alt={lead.nome}
-                            />
+                            {lead.foto_perfil ? (
+                              <AvatarImage 
+                                src={lead.foto_perfil} 
+                                alt={lead.nome}
+                                className="object-cover"
+                              />
+                            ) : null}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
                               {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -369,6 +373,14 @@ const Leads = () => {
                           <Button variant="ghost" size="sm">
                             <Eye className="w-4 h-4" />
                           </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setSelectedLeadForEdit(lead)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
                           {(lead.status === 'novo' || lead.status === 'qualificado') && (
                             <Button 
                               variant="ghost" 
@@ -418,6 +430,12 @@ const Leads = () => {
         open={!!selectedLeadForDelete}
         onOpenChange={(open) => !open && setSelectedLeadForDelete(null)}
         lead={selectedLeadForDelete}
+      />
+
+      <EditLeadDialog
+        open={!!selectedLeadForEdit}
+        onOpenChange={(open) => !open && setSelectedLeadForEdit(null)}
+        lead={selectedLeadForEdit}
       />
     </div>
   );
