@@ -18,7 +18,7 @@ export const EditLeadTagDialog = ({ open, onOpenChange, lead }: EditLeadTagDialo
   const updateLead = useUpdateLead();
   const { toast } = useToast();
   
-  const [selectedTagId, setSelectedTagId] = useState<string>(lead?.objetivo_tag_id || "");
+  const [selectedTagId, setSelectedTagId] = useState<string>(lead?.objetivo_tag_id || "none");
 
   const handleUpdateTag = async () => {
     if (!lead) return;
@@ -27,7 +27,7 @@ export const EditLeadTagDialog = ({ open, onOpenChange, lead }: EditLeadTagDialo
       await updateLead.mutateAsync({
         id: lead.id,
         leadData: {
-          objetivo_tag_id: selectedTagId || null,
+          objetivo_tag_id: selectedTagId === "none" ? null : selectedTagId,
         }
       });
 
@@ -67,7 +67,7 @@ export const EditLeadTagDialog = ({ open, onOpenChange, lead }: EditLeadTagDialo
                 <SelectValue placeholder="Selecione uma tag" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sem tag</SelectItem>
+                <SelectItem value="none">Sem tag</SelectItem>
                 {objetivoTags.map((tag) => (
                   <SelectItem key={tag.id} value={tag.id}>
                     <div className="flex items-center gap-2">

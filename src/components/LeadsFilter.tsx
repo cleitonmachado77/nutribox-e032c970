@@ -38,7 +38,13 @@ export const LeadsFilter = ({ onFilter, onClearFilters }: LeadsFilterProps) => {
   ];
 
   const handleApplyFilters = () => {
-    onFilter(filters);
+    // Convert "all" values back to undefined
+    const processedFilters = {
+      ...filters,
+      status: filters.status === "all" ? undefined : filters.status,
+      objetivo_tag_id: filters.objetivo_tag_id === "all" ? undefined : filters.objetivo_tag_id,
+    };
+    onFilter(processedFilters);
     setOpen(false);
   };
 
@@ -64,14 +70,14 @@ export const LeadsFilter = ({ onFilter, onClearFilters }: LeadsFilterProps) => {
           <div>
             <Label>Status</Label>
             <Select 
-              value={filters.status || ""} 
-              onValueChange={(value) => setFilters({ ...filters, status: value || undefined })}
+              value={filters.status || "all"} 
+              onValueChange={(value) => setFilters({ ...filters, status: value === "all" ? undefined : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
                 {statusOptions.map((status) => (
                   <SelectItem key={status.value} value={status.value}>
                     {status.label}
@@ -93,14 +99,14 @@ export const LeadsFilter = ({ onFilter, onClearFilters }: LeadsFilterProps) => {
           <div>
             <Label>Tag de Objetivo</Label>
             <Select 
-              value={filters.objetivo_tag_id || ""} 
-              onValueChange={(value) => setFilters({ ...filters, objetivo_tag_id: value || undefined })}
+              value={filters.objetivo_tag_id || "all"} 
+              onValueChange={(value) => setFilters({ ...filters, objetivo_tag_id: value === "all" ? undefined : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todas as tags" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as tags</SelectItem>
+                <SelectItem value="all">Todas as tags</SelectItem>
                 {objetivoTags.map((tag) => (
                   <SelectItem key={tag.id} value={tag.id}>
                     <div className="flex items-center gap-2">
