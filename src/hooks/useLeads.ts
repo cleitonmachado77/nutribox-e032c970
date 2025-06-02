@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -218,18 +219,34 @@ export const useDeleteLead = () => {
       console.log('Attempting to delete lead:', leadId);
       
       try {
-        // Primeiro, deletar pacientes relacionados
-        const { error: deletePacientesError } = await supabase
+        // Primeiro, buscar todos os pacientes relacionados ao lead
+        const { data: pacientesRelacionados, error: fetchError } = await supabase
           .from('pacientes')
-          .delete()
+          .select('id')
           .eq('lead_id', leadId);
 
-        if (deletePacientesError) {
-          console.error('Error deleting pacientes:', deletePacientesError);
-          throw new Error('Erro ao deletar pacientes vinculados');
+        if (fetchError) {
+          console.error('Error fetching related pacientes:', fetchError);
+          throw new Error('Erro ao verificar pacientes vinculados');
         }
 
-        // Depois deletar o lead
+        console.log('Found related pacientes:', pacientesRelacionados?.length || 0);
+
+        // Se existem pacientes relacionados, deletá-los primeiro
+        if (pacientesRelacionados && pacientesRelacionados.length > 0) {
+          const { error: deletePacientesError } = await supabase
+            .from('pacientes')
+            .delete()
+            .eq('lead_id', leadId);
+
+          if (deletePacientesError) {
+            console.error('Error deleting pacientes:', deletePacientesError);
+            throw new Error('Erro ao deletar pacientes vinculados');
+          }
+          console.log('Successfully deleted related pacientes');
+        }
+
+        // Agora deletar o lead
         const { error: deleteLeadError } = await supabase
           .from('leads')
           .delete()
@@ -240,7 +257,7 @@ export const useDeleteLead = () => {
           throw new Error('Erro ao deletar lead');
         }
 
-        console.log('Lead and related data deleted successfully');
+        console.log('Lead deleted successfully');
         return leadId;
       } catch (error) {
         console.error('Delete operation failed:', error);

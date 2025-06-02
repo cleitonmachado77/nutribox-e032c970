@@ -18,11 +18,19 @@ export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogP
   const deleteLead = useDeleteLead();
 
   const handleDelete = async () => {
-    if (!lead) return;
+    if (!lead?.id) {
+      console.error('No lead ID provided for deletion');
+      toast({
+        title: "Erro",
+        description: "ID do lead não encontrado",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsDeleting(true);
     try {
-      console.log('Starting delete process for lead:', lead.id);
+      console.log('Starting delete process for lead:', lead.id, 'Lead name:', lead.nome);
       await deleteLead.mutateAsync(lead.id);
       toast({
         title: "Sucesso!",
@@ -57,6 +65,7 @@ export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogP
           <div className="text-center">
             <p className="text-lg font-medium">{lead.nome}</p>
             <p className="text-sm text-gray-600">{lead.telefone}</p>
+            <p className="text-xs text-gray-500">ID: {lead.id}</p>
           </div>
           
           <div className="border rounded-lg p-4 bg-red-50">
