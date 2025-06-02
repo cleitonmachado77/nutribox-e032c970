@@ -218,43 +218,47 @@ export const useDeleteLead = () => {
     mutationFn: async (leadId: string) => {
       console.log('Attempting to delete lead:', leadId);
       
-      // Primeiro, verificar se existem pacientes vinculados a este lead
-      const { data: pacientes, error: pacientesError } = await supabase
-        .from('pacientes')
-        .select('id')
-        .eq('lead_id', leadId);
-
-      if (pacientesError) {
-        console.error('Error checking pacientes:', pacientesError);
-        throw new Error('Erro ao verificar pacientes vinculados');
-      }
-
-      // Se existem pacientes, deletá-los primeiro
-      if (pacientes && pacientes.length > 0) {
-        console.log('Deleting related pacientes:', pacientes.length);
-        const { error: deletePacientesError } = await supabase
-          .from('pacientes')
-          .delete()
-          .eq('lead_id', leadId);
+      try {
+        // Primeiro, deletar pacientes vinculados usando uma consulta SQL direta
+        const { error: deletePacientesError } = await supabase.rpc('delete_lead_cascade', {
+          lead_id: leadId
+        });
 
         if (deletePacientesError) {
-          console.error('Error deleting pacientes:', deletePacientesError);
-          throw new Error('Erro ao deletar pacientes vinculados');
+          console.error('Error in delete_lead_cascade:', deletePacientesError);
+          
+          // Fallback: tentar deletar manualmente se a função não existir
+          console.log('Trying manual deletion as fallback...');
+          
+          // Deletar pacientes relacionados
+          const { error: manualDeletePacientesError } = await supabase
+            .from('pacientes')
+            .delete()
+            .eq('lead_id', leadId);
+
+          if (manualDeletePacientesError) {
+            console.error('Error deleting pacientes manually:', manualDeletePacientesError);
+            throw new Error('Erro ao deletar pacientes vinculados');
+          }
+
+          // Deletar o lead
+          const { error: manualDeleteLeadError } = await supabase
+            .from('leads')
+            .delete()
+            .eq('id', leadId);
+
+          if (manualDeleteLeadError) {
+            console.error('Error deleting lead manually:', manualDeleteLeadError);
+            throw new Error('Erro ao deletar lead');
+          }
         }
+
+        console.log('Lead and related data deleted successfully');
+        return leadId;
+      } catch (error) {
+        console.error('Delete operation failed:', error);
+        throw error;
       }
-
-      // Agora deletar o lead
-      const { error: deleteLeadError } = await supabase
-        .from('leads')
-        .delete()
-        .eq('id', leadId);
-
-      if (deleteLeadError) {
-        console.error('Error deleting lead:', deleteLeadError);
-        throw new Error('Erro ao deletar lead');
-      }
-
-      return leadId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });

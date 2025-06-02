@@ -295,28 +295,21 @@ const Leads = () => {
               </TableHeader>
               <TableBody>
                 {filteredLeads.map((lead) => {
-                  // Usar o progresso baseado no status
                   const progressoAtual = getLeadProgressByStatus(lead.status);
                   const progressColor = getProgressColor(progressoAtual);
-                  
-                  console.log('Lead:', lead.nome, 'Status:', lead.status, 'Progresso:', progressoAtual);
                   
                   return (
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            {lead.foto_perfil ? (
+                            {lead.foto_perfil && (
                               <AvatarImage 
                                 src={lead.foto_perfil} 
                                 alt={lead.nome}
                                 className="object-cover"
-                                onError={(e) => {
-                                  console.log('Error loading image for', lead.nome, ':', lead.foto_perfil);
-                                  e.currentTarget.style.display = 'none';
-                                }}
                               />
-                            ) : null}
+                            )}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
                               {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
