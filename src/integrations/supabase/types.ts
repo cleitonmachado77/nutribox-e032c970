@@ -36,6 +36,44 @@ export type Database = {
         }
         Relationships: []
       }
+      consulta_arquivos: {
+        Row: {
+          consulta_realizada_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome_arquivo: string
+          tipo_arquivo: string
+          url_arquivo: string
+        }
+        Insert: {
+          consulta_realizada_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome_arquivo: string
+          tipo_arquivo: string
+          url_arquivo: string
+        }
+        Update: {
+          consulta_realizada_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome_arquivo?: string
+          tipo_arquivo?: string
+          url_arquivo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consulta_arquivos_consulta_realizada_id_fkey"
+            columns: ["consulta_realizada_id"]
+            isOneToOne: false
+            referencedRelation: "consultas_realizadas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultas: {
         Row: {
           created_at: string
@@ -73,6 +111,66 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultas_realizadas: {
+        Row: {
+          altura_atual: string | null
+          consulta_id: string | null
+          created_at: string
+          data_consulta: string
+          id: string
+          imc_atual: string | null
+          notas_clinicas: string | null
+          observacoes: string | null
+          paciente_id: string
+          peso_atual: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          altura_atual?: string | null
+          consulta_id?: string | null
+          created_at?: string
+          data_consulta: string
+          id?: string
+          imc_atual?: string | null
+          notas_clinicas?: string | null
+          observacoes?: string | null
+          paciente_id: string
+          peso_atual?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          altura_atual?: string | null
+          consulta_id?: string | null
+          created_at?: string
+          data_consulta?: string
+          id?: string
+          imc_atual?: string | null
+          notas_clinicas?: string | null
+          observacoes?: string | null
+          paciente_id?: string
+          peso_atual?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_realizadas_consulta_id_fkey"
+            columns: ["consulta_id"]
+            isOneToOne: false
+            referencedRelation: "consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_realizadas_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
             referencedColumns: ["id"]
           },
         ]

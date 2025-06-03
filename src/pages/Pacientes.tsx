@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, ShoppingCart, StickyNote, Heart, Star, Phone, Mail, MapPin, Calendar } from "lucide-react";
+import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, ShoppingCart, StickyNote, Heart, Star, Phone, Mail, MapPin, Calendar, CheckCircle, History } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { usePacientes } from "@/hooks/usePacientes";
+import { ConsultaRealizadaDialog } from "@/components/ConsultaRealizadaDialog";
+import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 
 const Pacientes = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [consultaDialogOpen, setConsultaDialogOpen] = useState(false);
   const { data: pacientes = [], isLoading, error } = usePacientes();
 
   const getStatusColor = (status: string) => {
@@ -187,11 +190,12 @@ const Pacientes = () => {
           <CardContent className="p-6">
             {selectedPatient ? (
               <Tabs defaultValue="geral" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+                <TabsList className="grid w-full grid-cols-5 bg-gray-100">
                   <TabsTrigger value="geral" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Geral</TabsTrigger>
                   <TabsTrigger value="plano" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Plano Alimentar</TabsTrigger>
                   <TabsTrigger value="fotos" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Fotos</TabsTrigger>
                   <TabsTrigger value="compras" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Lista de Compras</TabsTrigger>
+                  <TabsTrigger value="historico" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Histórico</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="geral" className="space-y-6 mt-6">
@@ -283,6 +287,38 @@ const Pacientes = () => {
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Seção de Consultas */}
+                  <Card className="border-2 border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-gray-800 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5" />
+                        Consultas
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-3">
+                        <Button 
+                          onClick={() => setConsultaDialogOpen(true)}
+                          className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Registrar Consulta Realizada
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            const tab = document.querySelector('[value="historico"]') as HTMLElement;
+                            tab?.click();
+                          }}
+                          className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                        >
+                          <History className="w-4 h-4 mr-2" />
+                          Ver Histórico
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   {/* Anotações */}
                   <Card className="border-2 border-gray-200">
@@ -388,6 +424,20 @@ const Pacientes = () => {
                     </CardContent>
                   </Card>
                 </TabsContent>
+
+                <TabsContent value="historico" className="space-y-6 mt-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold text-gray-800">Histórico de Consultas</h3>
+                    <Button 
+                      onClick={() => setConsultaDialogOpen(true)}
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Nova Consulta
+                    </Button>
+                  </div>
+                  <HistoricoConsultas pacienteId={selectedPatient.id} />
+                </TabsContent>
               </Tabs>
             ) : (
               <div className="text-center py-16">
@@ -401,6 +451,15 @@ const Pacientes = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog para registrar consulta */}
+      {selectedPatient && (
+        <ConsultaRealizadaDialog
+          open={consultaDialogOpen}
+          onOpenChange={setConsultaDialogOpen}
+          paciente={selectedPatient}
+        />
+      )}
     </div>
   );
 };
