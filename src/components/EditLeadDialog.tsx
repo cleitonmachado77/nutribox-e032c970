@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUpdateLead } from "@/hooks/useLeads";
 import { useToast } from "@/hooks/use-toast";
 import { Lead } from "@/hooks/useLeads";
+import { ImageUpload } from "./ImageUpload";
 
 interface EditLeadDialogProps {
   open: boolean;
@@ -31,6 +32,23 @@ export const EditLeadDialog = ({ open, onOpenChange, lead }: EditLeadDialogProps
 
   const updateLead = useUpdateLead();
   const { toast } = useToast();
+
+  // Atualizar formData quando lead mudar
+  useState(() => {
+    if (lead) {
+      setFormData({
+        nome: lead.nome || "",
+        telefone: lead.telefone || "",
+        email: lead.email || "",
+        cidade: lead.cidade || "",
+        estado: lead.estado || "",
+        peso: lead.peso || "",
+        altura: lead.altura || "",
+        foto_perfil: lead.foto_perfil || "",
+        anotacoes: lead.anotacoes || "",
+      });
+    }
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +85,20 @@ export const EditLeadDialog = ({ open, onOpenChange, lead }: EditLeadDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Lead</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Foto de perfil */}
+          <ImageUpload
+            value={formData.foto_perfil}
+            onChange={(url) => setFormData({...formData, foto_perfil: url})}
+            label="Foto de Perfil"
+            placeholder="URL da foto ou faça upload de uma imagem"
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="nome">Nome *</Label>
@@ -149,16 +175,6 @@ export const EditLeadDialog = ({ open, onOpenChange, lead }: EditLeadDialogProps
                 placeholder="Ex: 175"
               />
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="foto_perfil">URL da Foto de Perfil</Label>
-            <Input
-              id="foto_perfil"
-              value={formData.foto_perfil}
-              onChange={(e) => setFormData({...formData, foto_perfil: e.target.value})}
-              placeholder="https://exemplo.com/foto.jpg"
-            />
           </div>
 
           <div>
