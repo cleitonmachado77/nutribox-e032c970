@@ -59,7 +59,7 @@ const App = () => (
       </AuthProvider>
     </TooltipProvider>
     <Toaster />
-  </BrowserRouter>
+  </QueryClientProvider>
 );
 
 export default App;
