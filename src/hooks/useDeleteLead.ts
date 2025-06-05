@@ -74,7 +74,7 @@ export const useDeleteLead = () => {
           console.log('Successfully deleted pacientes');
         }
 
-        // PASSO 3: Deletar consultas agendadas relacionadas ao lead
+        // PASSO 3: Deletar consultas agendadas relacionadas ao lead (ANTES de deletar o lead)
         const { error: deleteConsultasError } = await supabase
           .from('consultas')
           .delete()
@@ -109,6 +109,7 @@ export const useDeleteLead = () => {
       queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
       queryClient.invalidateQueries({ queryKey: ['pacientes'] });
       queryClient.invalidateQueries({ queryKey: ['consultas-realizadas'] });
+      queryClient.invalidateQueries({ queryKey: ['consultas'] });
     },
   });
 };
