@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
 import { Header } from "@/components/Header";
 import { useLeads } from "@/hooks/useLeads";
+import { Lead } from "@/types/lead";
 import { format } from "date-fns";
 import { ScheduleConsultationDialog } from "@/components/ScheduleConsultationDialog";
 import { LeadsFilter, FilterCriteria } from "@/components/LeadsFilter";
@@ -22,10 +23,10 @@ import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
-  const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<any>(null);
-  const [selectedLeadForTagEdit, setSelectedLeadForTagEdit] = useState<any>(null);
-  const [selectedLeadForDelete, setSelectedLeadForDelete] = useState<any>(null);
-  const [selectedLeadForEdit, setSelectedLeadForEdit] = useState<any>(null);
+  const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<Lead | null>(null);
+  const [selectedLeadForTagEdit, setSelectedLeadForTagEdit] = useState<Lead | null>(null);
+  const [selectedLeadForDelete, setSelectedLeadForDelete] = useState<Lead | null>(null);
+  const [selectedLeadForEdit, setSelectedLeadForEdit] = useState<Lead | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   const { data: leads, isLoading, error } = useLeads();
 
@@ -73,7 +74,7 @@ const Leads = () => {
   };
 
   // Filtrar leads baseado no termo de busca
-  const applyFilters = (leads: any[], filters: FilterCriteria, searchTerm: string) => {
+  const applyFilters = (leads: Lead[], filters: FilterCriteria, searchTerm: string) => {
     return leads.filter(lead => {
       // Filtro de busca por texto
       const matchesSearch = searchTerm === "" || 
