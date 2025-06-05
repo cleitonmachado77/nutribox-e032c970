@@ -2,19 +2,21 @@
 export const getLeadProgressByStatus = (status: string): number => {
   switch (status) {
     case 'novo':
-      return 25; // 1° Lead cadastrado
+      return 10;
     case 'qualificado':
-      return 25; // Mantém 25% até agendar
+      return 30;
     case 'consulta_agendada':
-      return 50; // 2° Consulta agendada
+      return 50;
     case 'consulta_realizada':
-      return 75; // 3° Consulta realizada
+      return 75;
     case 'em_acompanhamento':
-      return 100; // 4° Paciente em acompanhamento
+      return 100;
     case 'perdido':
-      return 0; // Lead perdido
+      return 0;
+    case 'arquivado':
+      return 0;
     default:
-      return 25;
+      return 0;
   }
 };
 
@@ -32,15 +34,17 @@ export const getStatusDisplayName = (status: string): string => {
       return 'Em Acompanhamento';
     case 'perdido':
       return 'Perdido';
+    case 'arquivado':
+      return 'Arquivado';
     default:
       return status;
   }
 };
 
 export const getProgressColor = (progress: number): string => {
-  if (progress === 0) return 'bg-red-500';
-  if (progress <= 25) return 'bg-cyan-500';
-  if (progress <= 50) return 'bg-amber-500';
-  if (progress <= 75) return 'bg-orange-500';
-  return 'bg-green-500';
+  if (progress === 0) return 'bg-gray-400';
+  if (progress <= 30) return 'bg-red-400';
+  if (progress <= 60) return 'bg-yellow-400';
+  if (progress <= 90) return 'bg-blue-400';
+  return 'bg-green-400';
 };

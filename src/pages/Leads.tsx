@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag, Trash, Edit } from "lucide-react";
+import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag, Trash, Edit, Archive, ArchiveRestore } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewLeadDialog } from "@/components/NewLeadDialog";
@@ -19,6 +19,8 @@ import { EditLeadTagDialog } from "@/components/EditLeadTagDialog";
 import { DeleteLeadDialog } from "@/components/DeleteLeadDialog";
 import { EditLeadDialog } from "@/components/EditLeadDialog";
 import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from "@/hooks/useLeadProgress";
+import { useArchiveLead } from "@/hooks/useArchiveLead";
+import { useToast } from "@/hooks/use-toast";
 
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,6 +31,8 @@ const Leads = () => {
   const [selectedLeadForEdit, setSelectedLeadForEdit] = useState<Lead | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   const { data: leads, isLoading, error } = useLeads();
+  const archiveLead = useArchiveLead();
+  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -44,6 +48,8 @@ const Leads = () => {
         return "bg-green-500";
       case "perdido":
         return "bg-red-500";
+      case "arquivado":
+        return "bg-gray-500";
       default:
         return "bg-gray-500";
     }
@@ -138,6 +144,27 @@ const Leads = () => {
     const dataConversao = new Date(lead.data_conversao || lead.created_at);
     return dataConversao >= seteDiasAtras;
   }).length || 0;
+
+  const handleArchiveLead = async (lead: Lead) => {
+    const isArchived = lead.status === 'arquivado';
+    try {
+      await archiveLead.mutateAsync({ 
+        leadId: lead.id, 
+        archived: !isArchived 
+      });
+      toast({
+        title: "Sucesso!",
+        description: `Lead ${isArchived ? 'desarquivado' : 'arquivado'} com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error archiving lead:', error);
+      toast({
+        title: "Erro",
+        description: `Erro ao ${isArchived ? 'desarquivar' : 'arquivar'} lead. Tente novamente.`,
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -298,6 +325,7 @@ const Leads = () => {
                 {filteredLeads.map((lead) => {
                   const progressoAtual = getLeadProgressByStatus(lead.status);
                   const progressColor = getProgressColor(progressoAtual);
+                  const isArchived = lead.status === 'arquivado';
                   
                   return (
                     <TableRow key={lead.id}>
@@ -391,6 +419,15 @@ const Leads = () => {
                               <Calendar className="w-4 h-4" />
                             </Button>
                           )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleArchiveLead(lead)}
+                            className="text-yellow-600 hover:text-yellow-700"
+                            disabled={archiveLead.isPending}
+                          >
+                            {isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="sm"

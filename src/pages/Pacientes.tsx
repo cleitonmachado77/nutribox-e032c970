@@ -1,21 +1,24 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, ShoppingCart, StickyNote, Heart, Star, Phone, Mail, MapPin, Calendar, CheckCircle, History } from "lucide-react";
+import { Users, UserCheck, UserX, Search, Filter, FileText, Camera, Video, ShoppingCart, StickyNote, Heart, Star, Phone, Mail, MapPin, Calendar, CheckCircle, History, Trash } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Header";
 import { usePacientes } from "@/hooks/usePacientes";
 import { ConsultaRealizadaDialog } from "@/components/ConsultaRealizadaDialog";
 import { HistoricoConsultas } from "@/components/HistoricoConsultas";
+import { DeletePacienteDialog } from "@/components/DeletePacienteDialog";
 
 const Pacientes = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [consultaDialogOpen, setConsultaDialogOpen] = useState(false);
+  const [selectedPacienteForDelete, setSelectedPacienteForDelete] = useState<any>(null);
   const { data: pacientes = [], isLoading, error } = usePacientes();
 
   const getStatusColor = (status: string) => {
@@ -168,6 +171,19 @@ const Pacientes = () => {
                         {paciente.status_tratamento === 'ativo' ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPacienteForDelete(paciente);
+                      }}
+                      className="text-red-600 hover:text-red-700 p-1"
+                    >
+                      <Trash className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </Card>)}
@@ -460,6 +476,13 @@ const Pacientes = () => {
           paciente={selectedPatient}
         />
       )}
+
+      {/* Dialog para excluir paciente */}
+      <DeletePacienteDialog
+        open={!!selectedPacienteForDelete}
+        onOpenChange={(open) => !open && setSelectedPacienteForDelete(null)}
+        paciente={selectedPacienteForDelete}
+      />
     </div>
   );
 };
