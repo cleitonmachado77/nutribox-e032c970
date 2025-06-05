@@ -1,13 +1,15 @@
-
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck, CheckCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useLeadsStats } from "@/hooks/useLeads";
-
 const Dashboard = () => {
-  const { data: stats, isLoading, error } = useLeadsStats();
+  const {
+    data: stats,
+    isLoading,
+    error
+  } = useLeadsStats();
 
   // Mock data para motivos de abandono (pode ser implementado depois)
   const motivosAbandonoData = [{
@@ -27,29 +29,22 @@ const Dashboard = () => {
     value: 20,
     color: '#FD79A8'
   }];
-
   if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
+    return <div className="p-6 space-y-6">
         <Header title="Dashboard" description="Visão geral do seu negócio" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error) {
-    return (
-      <div className="p-6 space-y-6">
+    return <div className="p-6 space-y-6">
         <Header title="Dashboard" description="Visão geral do seu negócio" />
         <div className="text-center text-red-500">
           Erro ao carregar dados: {error.message}
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const {
     totalLeads = 0,
     leadsQualificados = 0,
@@ -61,13 +56,11 @@ const Dashboard = () => {
   } = stats || {};
 
   // Calcular taxas de conversão
-  const taxaQualificacao = totalLeads > 0 ? ((leadsQualificados / totalLeads) * 100).toFixed(1) : '0.0';
-  const taxaAgendamento = leadsQualificados > 0 ? ((consultasAgendadas / leadsQualificados) * 100).toFixed(1) : '0.0';
-  const taxaRealizacao = consultasAgendadas > 0 ? ((consultasRealizadas / consultasAgendadas) * 100).toFixed(1) : '0.0';
-  const taxaConversaoTotal = totalLeads > 0 ? ((consultasRealizadas / totalLeads) * 100).toFixed(1) : '0.0';
-
-  return (
-    <div className="p-6 space-y-6">
+  const taxaQualificacao = totalLeads > 0 ? (leadsQualificados / totalLeads * 100).toFixed(1) : '0.0';
+  const taxaAgendamento = leadsQualificados > 0 ? (consultasAgendadas / leadsQualificados * 100).toFixed(1) : '0.0';
+  const taxaRealizacao = consultasAgendadas > 0 ? (consultasRealizadas / consultasAgendadas * 100).toFixed(1) : '0.0';
+  const taxaConversaoTotal = totalLeads > 0 ? (consultasRealizadas / totalLeads * 100).toFixed(1) : '0.0';
+  return <div className="p-6 space-y-6 bg-gray-900">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
       
       {/* Métricas de Leads */}
@@ -169,20 +162,16 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              {monthlyData.length > 0 ? (
-                <BarChart data={monthlyData}>
+              {monthlyData.length > 0 ? <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip />
                   <Bar dataKey="leads" fill="#3B82F6" name="Leads" />
                   <Bar dataKey="consultas" fill="#10B981" name="Consultas" />
-                </BarChart>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
+                </BarChart> : <div className="flex items-center justify-center h-full text-gray-500">
                   Nenhum dado disponível
-                </div>
-              )}
+                </div>}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -194,27 +183,17 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              {objetivosData.length > 0 ? (
-                <PieChart>
-                  <Pie 
-                    data={objetivosData} 
-                    cx="50%" 
-                    cy="50%" 
-                    outerRadius={100} 
-                    dataKey="value" 
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {objetivosData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+              {objetivosData.length > 0 ? <PieChart>
+                  <Pie data={objetivosData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({
+                name,
+                percent
+              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                    {objetivosData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                   </Pie>
                   <Tooltip />
-                </PieChart>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
+                </PieChart> : <div className="flex items-center justify-center h-full text-gray-500">
                   Nenhum dado disponível
-                </div>
-              )}
+                </div>}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -226,35 +205,22 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              {estadosData.length > 0 ? (
-                <BarChart 
-                  data={estadosData} 
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
+              {estadosData.length > 0 ? <BarChart data={estadosData} layout="vertical" margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5
+            }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
                   <XAxis type="number" />
-                  <YAxis 
-                    dataKey="estado" 
-                    type="category" 
-                    width={50}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    formatter={(value) => [`${value} pacientes`, 'Quantidade']}
-                    labelFormatter={(label) => `Estado: ${label}`}
-                  />
-                  <Bar 
-                    dataKey="pacientes" 
-                    fill="#8B5CF6" 
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
+                  <YAxis dataKey="estado" type="category" width={50} tick={{
+                fontSize: 12
+              }} />
+                  <Tooltip formatter={value => [`${value} pacientes`, 'Quantidade']} labelFormatter={label => `Estado: ${label}`} />
+                  <Bar dataKey="pacientes" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+                </BarChart> : <div className="flex items-center justify-center h-full text-gray-500">
                   Nenhum dado disponível
-                </div>
-              )}
+                </div>}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -267,17 +233,11 @@ const Dashboard = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie 
-                  data={motivosAbandonoData} 
-                  cx="50%" 
-                  cy="50%" 
-                  outerRadius={100} 
-                  dataKey="value" 
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {motivosAbandonoData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                <Pie data={motivosAbandonoData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({
+                name,
+                percent
+              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                  {motivosAbandonoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -285,8 +245,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
