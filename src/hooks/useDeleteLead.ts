@@ -10,19 +10,7 @@ export const useDeleteLead = () => {
       console.log('Attempting to delete lead:', leadId);
       
       try {
-        // PASSO 1: Deletar consultas agendadas relacionadas ao lead PRIMEIRO
-        const { error: deleteConsultasError } = await supabase
-          .from('consultas')
-          .delete()
-          .eq('lead_id', leadId);
-
-        if (deleteConsultasError) {
-          console.error('Error deleting consultas agendadas:', deleteConsultasError);
-          throw new Error('Erro ao deletar consultas agendadas: ' + deleteConsultasError.message);
-        }
-        console.log('Successfully deleted consultas agendadas');
-
-        // PASSO 2: Buscar pacientes relacionados ao lead
+        // PASSO 1: Buscar pacientes relacionados ao lead PRIMEIRO
         const { data: pacientesRelacionados, error: fetchPacientesError } = await supabase
           .from('pacientes')
           .select('id')
@@ -35,12 +23,12 @@ export const useDeleteLead = () => {
 
         console.log('Found related pacientes:', pacientesRelacionados?.length || 0);
 
-        // PASSO 3: Se existem pacientes, deletar TODA a hierarquia de dados dos pacientes
+        // PASSO 2: Se existem pacientes, deletar TODA a hierarquia de dados dos pacientes
         if (pacientesRelacionados && pacientesRelacionados.length > 0) {
           for (const paciente of pacientesRelacionados) {
             console.log('Processing paciente:', paciente.id);
 
-            // 3.1: Deletar arquivos de consultas realizadas
+            // 2.1: Deletar arquivos de consultas realizadas primeiro
             const { data: consultasRealizadas, error: fetchConsultasError } = await supabase
               .from('consultas_realizadas')
               .select('id')
@@ -71,9 +59,19 @@ export const useDeleteLead = () => {
                 console.error('Error deleting consultas realizadas:', deleteConsultasRealizadasError);
               }
             }
+
+            // 2.2: Deletar consultas agendadas do paciente
+            const { error: deleteConsultasPacienteError } = await supabase
+              .from('consultas')
+              .delete()
+              .eq('lead_id', leadId);
+
+            if (deleteConsultasPacienteError) {
+              console.error('Error deleting consultas do paciente:', deleteConsultasPacienteError);
+            }
           }
 
-          // 3.2: Deletar pacientes
+          // 2.3: Agora deletar os pacientes
           const { error: deletePacientesError } = await supabase
             .from('pacientes')
             .delete()
@@ -84,6 +82,18 @@ export const useDeleteLead = () => {
             throw new Error('Erro ao deletar pacientes vinculados: ' + deletePacientesError.message);
           }
           console.log('Successfully deleted pacientes');
+        } else {
+          // PASSO 3: Se não há pacientes, apenas deletar consultas agendadas diretamente vinculadas ao lead
+          const { error: deleteConsultasError } = await supabase
+            .from('consultas')
+            .delete()
+            .eq('lead_id', leadId);
+
+          if (deleteConsultasError) {
+            console.error('Error deleting consultas agendadas:', deleteConsultasError);
+            throw new Error('Erro ao deletar consultas agendadas: ' + deleteConsultasError.message);
+          }
+          console.log('Successfully deleted consultas agendadas');
         }
 
         // PASSO 4: Finalmente deletar o lead
