@@ -42,7 +42,7 @@ export const PatientGeneralTab = ({
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                Convertido em {selectedPatient.dataConversao}
+                Convertido em {selectedPatient.lead.data_conversao}
               </span>
             </div>
           </div>
