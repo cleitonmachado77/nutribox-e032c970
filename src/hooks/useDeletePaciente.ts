@@ -47,7 +47,6 @@ export const useDeletePaciente = () => {
 
       if (consultasRealizadas && consultasRealizadas.length > 0) {
         for (const consulta of consultasRealizadas) {
-          // Deletar arquivos da consulta
           const { error: deleteArquivosError } = await supabase
             .from('consulta_arquivos')
             .delete()
@@ -59,7 +58,6 @@ export const useDeletePaciente = () => {
           }
         }
 
-        // Deletar consultas realizadas
         const { error: deleteConsultasRealizadasError } = await supabase
           .from('consultas_realizadas')
           .delete()
@@ -111,23 +109,25 @@ export const useDeletePaciente = () => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Resultado:', result);
       
-      // Remover o paciente do cache imediatamente
-      queryClient.setQueryData(['pacientes'], (oldData: any) => {
-        if (!oldData) return [];
-        return oldData.filter((p: any) => p.id !== result.pacienteId);
-      });
-      
-      // Invalidar e refetch todas as queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['consultas-realizadas'] });
-      queryClient.invalidateQueries({ queryKey: ['consultas'] });
-      
-      // Força um refetch imediato
-      queryClient.refetchQueries({ queryKey: ['pacientes'] });
-      
-      console.log('Queries invalidadas e refetched');
+      // Aguardar um pequeno delay para garantir que a exclusão foi processada no servidor
+      setTimeout(() => {
+        // Remover o paciente do cache de forma mais específica
+        queryClient.setQueryData(['pacientes'], (oldData: any) => {
+          if (!oldData) return [];
+          const filteredData = oldData.filter((p: any) => p.id !== result.pacienteId);
+          console.log('Cache atualizado - pacientes restantes:', filteredData.length);
+          return filteredData;
+        });
+        
+        // Invalidar queries relacionadas
+        queryClient.invalidateQueries({ queryKey: ['pacientes'], exact: true });
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['consultas-realizadas'] });
+        queryClient.invalidateQueries({ queryKey: ['consultas'] });
+        
+        console.log('Queries invalidadas com delay');
+      }, 100);
     },
     onError: (error) => {
       console.error('=== MUTATION ERROR ===');

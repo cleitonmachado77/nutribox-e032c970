@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,9 +10,15 @@ interface DeletePacienteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paciente: Paciente | null;
+  onDeleteSuccess?: (pacienteId: string) => void;
 }
 
-export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePacienteDialogProps) => {
+export const DeletePacienteDialog = ({ 
+  open, 
+  onOpenChange, 
+  paciente, 
+  onDeleteSuccess 
+}: DeletePacienteDialogProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const deletePaciente = useDeletePaciente();
@@ -41,6 +46,11 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
         title: "Sucesso!",
         description: `Paciente ${paciente.lead.nome} foi excluído permanentemente.`,
       });
+      
+      // Chamar callback de sucesso se fornecido
+      if (onDeleteSuccess) {
+        onDeleteSuccess(paciente.id);
+      }
       
       // Fechar o dialog imediatamente
       onOpenChange(false);
