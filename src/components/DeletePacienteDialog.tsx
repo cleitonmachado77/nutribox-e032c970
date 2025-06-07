@@ -33,11 +33,15 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
     try {
       console.log('Starting delete process for paciente:', paciente.id, 'Paciente name:', paciente.lead.nome);
       await deletePaciente.mutateAsync(paciente.id);
+      
       toast({
         title: "Sucesso!",
         description: `Paciente ${paciente.lead.nome} foi excluído com sucesso.`,
       });
+      
+      // Fechar o dialog e limpar o estado
       onOpenChange(false);
+      
     } catch (error) {
       console.error('Error deleting paciente:', error);
       toast({
@@ -47,6 +51,12 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!isDeleting) {
+      onOpenChange(false);
     }
   };
 
@@ -84,7 +94,12 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
             >
               {isDeleting ? "Excluindo..." : "Excluir Paciente"}
             </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            <Button 
+              variant="outline" 
+              onClick={handleCancel} 
+              className="flex-1"
+              disabled={isDeleting}
+            >
               Cancelar
             </Button>
           </div>
