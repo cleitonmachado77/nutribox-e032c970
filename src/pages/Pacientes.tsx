@@ -24,17 +24,6 @@ const Pacientes = () => {
     }
   }, [pacientes, selectedPatient]);
 
-  // Forçar limpeza da seleção quando pacientes mudarem drasticamente
-  React.useEffect(() => {
-    if (selectedPatient && pacientes.length > 0) {
-      const exists = pacientes.some(p => p.id === selectedPatient.id);
-      if (!exists) {
-        console.log('Forçando limpeza da seleção - paciente não encontrado');
-        setSelectedPatient(null);
-      }
-    }
-  }, [pacientes]);
-
   const handleDeletePatient = (paciente: any) => {
     console.log('Selecionando paciente para deleção:', paciente.lead.nome);
     setSelectedPacienteForDelete(paciente);

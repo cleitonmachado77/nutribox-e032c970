@@ -109,25 +109,15 @@ export const useDeletePaciente = () => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Resultado:', result);
       
-      // Aguardar um pequeno delay para garantir que a exclusão foi processada no servidor
-      setTimeout(() => {
-        // Remover o paciente do cache de forma mais específica
-        queryClient.setQueryData(['pacientes'], (oldData: any) => {
-          if (!oldData) return [];
-          const filteredData = oldData.filter((p: any) => p.id !== result.pacienteId);
-          console.log('Cache atualizado - pacientes restantes:', filteredData.length);
-          return filteredData;
-        });
-        
-        // Invalidar queries relacionadas
-        queryClient.invalidateQueries({ queryKey: ['pacientes'], exact: true });
-        queryClient.invalidateQueries({ queryKey: ['leads'] });
-        queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
-        queryClient.invalidateQueries({ queryKey: ['consultas-realizadas'] });
-        queryClient.invalidateQueries({ queryKey: ['consultas'] });
-        
-        console.log('Queries invalidadas com delay');
-      }, 100);
+      // Atualizar o cache imediatamente removendo o paciente
+      queryClient.setQueryData(['pacientes'], (oldData: any) => {
+        if (!oldData) return [];
+        const filteredData = oldData.filter((p: any) => p.id !== result.pacienteId);
+        console.log('Cache atualizado - pacientes restantes:', filteredData.length);
+        return filteredData;
+      });
+      
+      console.log('Cache atualizado imediatamente');
     },
     onError: (error) => {
       console.error('=== MUTATION ERROR ===');
