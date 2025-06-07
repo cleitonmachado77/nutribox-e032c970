@@ -20,7 +20,7 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
 
   const handleDelete = async () => {
     if (!paciente?.id) {
-      console.error('No paciente ID provided for deletion');
+      console.error('ID do paciente não encontrado');
       toast({
         title: "Erro",
         description: "ID do paciente não encontrado",
@@ -30,23 +30,30 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
     }
 
     setIsDeleting(true);
+    console.log('=== INICIANDO PROCESSO DE EXCLUSÃO ===');
+    console.log('Paciente:', paciente.lead.nome, 'ID:', paciente.id);
+    
     try {
-      console.log('Starting delete process for paciente:', paciente.id, 'Paciente name:', paciente.lead.nome);
-      await deletePaciente.mutateAsync(paciente.id);
+      const result = await deletePaciente.mutateAsync(paciente.id);
+      console.log('Resultado da deleção:', result);
       
       toast({
         title: "Sucesso!",
-        description: `Paciente ${paciente.lead.nome} foi excluído com sucesso.`,
+        description: `Paciente ${paciente.lead.nome} foi excluído permanentemente.`,
       });
       
-      // Fechar o dialog e limpar o estado
+      // Fechar o dialog imediatamente
       onOpenChange(false);
       
-    } catch (error) {
-      console.error('Error deleting paciente:', error);
+      console.log('Dialog fechado e toast exibido');
+      
+    } catch (error: any) {
+      console.error('=== ERRO NA EXCLUSÃO ===');
+      console.error('Erro:', error);
+      
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao excluir paciente. Tente novamente.",
+        description: error?.message || "Erro ao excluir paciente. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -68,7 +75,7 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-red-500" />
-            Excluir Paciente
+            Excluir Paciente Permanentemente
           </DialogTitle>
         </DialogHeader>
         
@@ -81,8 +88,15 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
           
           <div className="border rounded-lg p-4 bg-red-50">
             <p className="text-sm text-red-800">
-              <strong>Atenção:</strong> Esta ação não pode ser desfeita. Todos os dados do paciente, incluindo consultas realizadas e arquivos, serão permanentemente removidos.
+              <strong>⚠️ ATENÇÃO:</strong> Esta ação é <strong>IRREVERSÍVEL</strong>. 
+              Todos os dados do paciente serão <strong>PERMANENTEMENTE REMOVIDOS</strong> do banco de dados, incluindo:
             </p>
+            <ul className="list-disc list-inside text-xs text-red-700 mt-2 space-y-1">
+              <li>Histórico de consultas realizadas</li>
+              <li>Arquivos e documentos anexados</li>
+              <li>Consultas agendadas</li>
+              <li>Dados pessoais e médicos</li>
+            </ul>
           </div>
           
           <div className="flex gap-2">
@@ -92,7 +106,7 @@ export const DeletePacienteDialog = ({ open, onOpenChange, paciente }: DeletePac
               variant="destructive"
               className="flex-1"
             >
-              {isDeleting ? "Excluindo..." : "Excluir Paciente"}
+              {isDeleting ? "Excluindo..." : "EXCLUIR PERMANENTEMENTE"}
             </Button>
             <Button 
               variant="outline" 
