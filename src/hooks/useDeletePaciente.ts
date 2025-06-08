@@ -117,7 +117,14 @@ export const useDeletePaciente = () => {
         return filteredData;
       });
       
-      console.log('Cache atualizado imediatamente');
+      // Invalidar todas as queries relacionadas para garantir consistência
+      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['consultas-realizadas'] });
+      queryClient.invalidateQueries({ queryKey: ['consultas'] });
+      
+      console.log('Cache atualizado e queries invalidadas');
     },
     onError: (error) => {
       console.error('=== MUTATION ERROR ===');
