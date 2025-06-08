@@ -109,22 +109,21 @@ export const useDeletePaciente = () => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Resultado:', result);
       
-      // Atualizar o cache imediatamente removendo o paciente
+      // Remover o paciente do cache de forma definitiva
       queryClient.setQueryData(['pacientes'], (oldData: any) => {
         if (!oldData) return [];
         const filteredData = oldData.filter((p: any) => p.id !== result.pacienteId);
-        console.log('Cache atualizado - pacientes restantes:', filteredData.length);
+        console.log('Cache atualizado definitivamente - pacientes restantes:', filteredData.length);
         return filteredData;
       });
       
-      // Invalidar todas as queries relacionadas para garantir consistência
-      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['consultas-realizadas'] });
-      queryClient.invalidateQueries({ queryKey: ['consultas'] });
-      
-      console.log('Cache atualizado e queries invalidadas');
+      // Aguardar um pouco e então invalidar para garantir consistência
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
+        console.log('Queries invalidadas após delay');
+      }, 100);
     },
     onError: (error) => {
       console.error('=== MUTATION ERROR ===');
