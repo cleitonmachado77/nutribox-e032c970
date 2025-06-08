@@ -91,15 +91,37 @@ export const useDeletePaciente = () => {
 
       // PASSO 4: Deletar o paciente
       console.log('Deletando paciente...');
-      const { error: deletePacienteError } = await supabase
+      const { data: deletedData, error: deletePacienteError } = await supabase
         .from('pacientes')
         .delete()
         .eq('id', pacienteId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select(); // Adicionar select para verificar o que foi deletado
 
       if (deletePacienteError) {
         console.error('Erro ao deletar paciente:', deletePacienteError);
         throw new Error('Erro ao deletar paciente: ' + deletePacienteError.message);
+      }
+
+      console.log('Dados deletados do paciente:', deletedData);
+      console.log('Quantidade de registros deletados:', deletedData?.length || 0);
+
+      // PASSO 5: Verificar se a deleção realmente aconteceu
+      console.log('Verificando se o paciente foi realmente deletado...');
+      const { data: verificacao, error: verificacaoError } = await supabase
+        .from('pacientes')
+        .select('id')
+        .eq('id', pacienteId)
+        .eq('user_id', user.id);
+
+      if (verificacaoError) {
+        console.error('Erro na verificação:', verificacaoError);
+      } else {
+        console.log('Verificação pós-deleção - pacientes encontrados:', verificacao?.length || 0);
+        if (verificacao && verificacao.length > 0) {
+          console.error('ERRO CRÍTICO: Paciente ainda existe no banco após deleção!');
+          throw new Error('Falha na deleção: paciente ainda existe no banco de dados');
+        }
       }
 
       console.log('=== PACIENTE DELETADO COM SUCESSO ===');
@@ -109,42 +131,17 @@ export const useDeletePaciente = () => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Resultado:', result);
       
-      // Log do estado atual do cache ANTES da modificação
-      const currentCache = queryClient.getQueryData(['pacientes']);
-      console.log('Cache ANTES da modificação:', currentCache);
+      // Invalidar queries imediatamente
+      console.log('Invalidando queries imediatamente...');
+      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
       
-      // Remover o paciente do cache de forma definitiva
-      queryClient.setQueryData(['pacientes'], (oldData: any) => {
-        console.log('setQueryData chamado com oldData:', oldData);
-        if (!oldData) {
-          console.log('oldData é null/undefined, retornando array vazio');
-          return [];
-        }
-        const filteredData = oldData.filter((p: any) => p.id !== result.pacienteId);
-        console.log('Paciente', result.pacienteId, 'removido do cache');
-        console.log('Cache atualizado definitivamente - pacientes restantes:', filteredData.length);
-        console.log('IDs dos pacientes restantes:', filteredData.map((p: any) => p.id));
-        return filteredData;
-      });
-      
-      // Log do estado do cache APÓS a modificação
-      const updatedCache = queryClient.getQueryData(['pacientes']);
-      console.log('Cache APÓS a modificação:', updatedCache);
-      
-      // Aguardar um pouco e então invalidar para garantir consistência
+      // Forçar um refetch após um delay pequeno
       setTimeout(() => {
-        console.log('=== INICIANDO INVALIDAÇÃO DE QUERIES ===');
-        queryClient.invalidateQueries({ queryKey: ['pacientes'] });
-        queryClient.invalidateQueries({ queryKey: ['leads'] });
-        queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
-        console.log('Queries invalidadas após delay');
-        
-        // Log do cache após invalidação
-        setTimeout(() => {
-          const finalCache = queryClient.getQueryData(['pacientes']);
-          console.log('Cache APÓS invalidação:', finalCache);
-        }, 50);
-      }, 100);
+        console.log('Forçando refetch após delay...');
+        queryClient.refetchQueries({ queryKey: ['pacientes'] });
+      }, 500);
     },
     onError: (error) => {
       console.error('=== MUTATION ERROR ===');

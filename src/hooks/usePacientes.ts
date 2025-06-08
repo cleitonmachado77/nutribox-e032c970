@@ -50,10 +50,10 @@ export const usePacientes = () => {
 
       return data as Paciente[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    gcTime: 1000 * 60 * 10, // 10 minutos
-    refetchOnWindowFocus: false, // Evitar refetch automático ao focar na janela
-    refetchOnMount: false, // Evitar refetch automático ao montar o componente
+    staleTime: 0, // Não usar cache - sempre buscar dados frescos
+    gcTime: 0, // Não manter dados em cache
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Sempre refetch ao montar
   });
 };
 
