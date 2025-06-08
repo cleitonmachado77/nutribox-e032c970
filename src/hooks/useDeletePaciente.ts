@@ -109,20 +109,41 @@ export const useDeletePaciente = () => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Resultado:', result);
       
+      // Log do estado atual do cache ANTES da modificação
+      const currentCache = queryClient.getQueryData(['pacientes']);
+      console.log('Cache ANTES da modificação:', currentCache);
+      
       // Remover o paciente do cache de forma definitiva
       queryClient.setQueryData(['pacientes'], (oldData: any) => {
-        if (!oldData) return [];
+        console.log('setQueryData chamado com oldData:', oldData);
+        if (!oldData) {
+          console.log('oldData é null/undefined, retornando array vazio');
+          return [];
+        }
         const filteredData = oldData.filter((p: any) => p.id !== result.pacienteId);
+        console.log('Paciente', result.pacienteId, 'removido do cache');
         console.log('Cache atualizado definitivamente - pacientes restantes:', filteredData.length);
+        console.log('IDs dos pacientes restantes:', filteredData.map((p: any) => p.id));
         return filteredData;
       });
       
+      // Log do estado do cache APÓS a modificação
+      const updatedCache = queryClient.getQueryData(['pacientes']);
+      console.log('Cache APÓS a modificação:', updatedCache);
+      
       // Aguardar um pouco e então invalidar para garantir consistência
       setTimeout(() => {
+        console.log('=== INICIANDO INVALIDAÇÃO DE QUERIES ===');
         queryClient.invalidateQueries({ queryKey: ['pacientes'] });
         queryClient.invalidateQueries({ queryKey: ['leads'] });
         queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
         console.log('Queries invalidadas após delay');
+        
+        // Log do cache após invalidação
+        setTimeout(() => {
+          const finalCache = queryClient.getQueryData(['pacientes']);
+          console.log('Cache APÓS invalidação:', finalCache);
+        }, 50);
       }, 100);
     },
     onError: (error) => {
