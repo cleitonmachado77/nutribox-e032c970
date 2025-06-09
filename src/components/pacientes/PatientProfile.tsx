@@ -2,13 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Users, Heart, StickyNote, CheckCircle, History, Users as UsersIcon } from "lucide-react";
+import { Users, Calendar, Clock, Users as UsersIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Paciente } from "@/hooks/usePacientes";
-import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 import { PatientTabs } from "./PatientTabs";
+import { format } from "date-fns";
 
 interface PatientProfileProps {
   selectedPatient: Paciente | null;
@@ -70,15 +68,40 @@ export const PatientProfile = ({ selectedPatient, onOpenConsultaDialog }: Patien
   return (
     <Card className="lg:col-span-2 shadow-xl border-0 bg-white/90 backdrop-blur-sm">
       <CardHeader className="bg-gradient-to-r from-slate-700 to-gray-800 text-white rounded-t-lg">
-        <CardTitle className="text-white flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={selectedPatient.lead.foto_perfil} />
-            <AvatarFallback>{selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-          </Avatar>
-          Perfil de {selectedPatient.lead.nome}
+        <CardTitle className="text-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={selectedPatient.lead.foto_perfil} />
+              <AvatarFallback>{selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+            </Avatar>
+            Perfil de {selectedPatient.lead.nome}
+          </div>
+          
+          {/* Mostrar próxima consulta se houver */}
+          {selectedPatient.lead.proxima_consulta && (
+            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm">
+                Próxima: {format(new Date(selectedPatient.lead.proxima_consulta), 'dd/MM/yyyy HH:mm')}
+              </span>
+            </div>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
+        {/* Alerta de consulta próxima */}
+        {selectedPatient.lead.proxima_consulta && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-2 text-amber-800">
+              <Clock className="h-5 w-5" />
+              <span className="font-medium">Consulta Agendada</span>
+            </div>
+            <p className="text-amber-700 mt-1">
+              {format(new Date(selectedPatient.lead.proxima_consulta), "dd 'de' MMMM 'às' HH:mm", { locale: require('date-fns/locale/pt-BR') })}
+            </p>
+          </div>
+        )}
+
         <PatientTabs 
           selectedPatient={selectedPatient}
           onOpenConsultaDialog={onOpenConsultaDialog}

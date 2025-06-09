@@ -11,7 +11,6 @@ import { Header } from "@/components/Header";
 import { useLeads } from "@/hooks/useLeads";
 import { Lead } from "@/types/lead";
 import { format } from "date-fns";
-import { ScheduleConsultationDialog } from "@/components/ScheduleConsultationDialog";
 import { LeadsFilter, FilterCriteria } from "@/components/LeadsFilter";
 import { ImportLeadsDialog } from "@/components/ImportLeadsDialog";
 import { ExportLeadsButton } from "@/components/ExportLeadsButton";
@@ -20,24 +19,26 @@ import { DeleteLeadDialog } from "@/components/DeleteLeadDialog";
 import { EditLeadDialog } from "@/components/EditLeadDialog";
 import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from "@/hooks/useLeadProgress";
 import { useArchiveLead } from "@/hooks/useArchiveLead";
+import { useUpdateLead } from "@/hooks/useUpdateLead";
+import { useCreatePaciente } from "@/hooks/usePacientes";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { useToast } from "@/hooks/use-toast";
+
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
-  const [selectedLeadForScheduling, setSelectedLeadForScheduling] = useState<Lead | null>(null);
   const [selectedLeadForTagEdit, setSelectedLeadForTagEdit] = useState<Lead | null>(null);
   const [selectedLeadForDelete, setSelectedLeadForDelete] = useState<Lead | null>(null);
   const [selectedLeadForEdit, setSelectedLeadForEdit] = useState<Lead | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
-  const {
-    data: leads,
-    isLoading,
-    error
-  } = useLeads();
+  
+  const { data: leads, isLoading, error } = useLeads();
   const archiveLead = useArchiveLead();
-  const {
-    toast
-  } = useToast();
+  const updateLead = useUpdateLead();
+  const createPaciente = useCreatePaciente();
+  const { data: userSettings } = useUserSettings();
+  const { toast } = useToast();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "novo":
@@ -133,6 +134,61 @@ const Leads = () => {
     const dataConversao = new Date(lead.data_conversao || lead.created_at);
     return dataConversao >= seteDiasAtras;
   }).length || 0;
+
+  const handleScheduleConsultation = async (lead: Lead) => {
+    if (!userSettings?.google_calendar_link) {
+      toast({
+        title: "Link do Google Calendar não configurado",
+        description: "Configure o link do Google Calendar nas configurações antes de agendar consultas.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Criar evento no Google Calendar com data/hora padrão (hoje + 1 dia às 14:00)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(14, 0, 0, 0);
+    
+    const eventTitle = encodeURIComponent(`Consulta - ${lead.nome}`);
+    const eventDetails = encodeURIComponent(`Consulta agendada para ${lead.nome}\nTelefone: ${lead.telefone}\nEmail: ${lead.email || 'Não informado'}`);
+    
+    const startTime = tomorrow.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endDate = new Date(tomorrow.getTime() + 60 * 60 * 1000); // 1 hora depois
+    const endTime = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${startTime}/${endTime}&details=${eventDetails}`;
+
+    // Abrir Google Calendar
+    window.open(calendarUrl, '_blank');
+
+    try {
+      // Atualizar o lead para "consulta_agendada" e definir próxima consulta
+      await updateLead.mutateAsync({
+        id: lead.id,
+        leadData: { 
+          status: 'consulta_agendada',
+          proxima_consulta: tomorrow.toISOString()
+        }
+      });
+
+      // Criar paciente
+      await createPaciente.mutateAsync(lead.id);
+
+      toast({
+        title: "Consulta agendada!",
+        description: `${lead.nome} foi movido para "Consulta Agendada" e convertido em paciente.`,
+      });
+    } catch (error) {
+      console.error('Error scheduling consultation:', error);
+      toast({
+        title: "Erro ao agendar consulta",
+        description: "Não foi possível atualizar o status do lead. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleArchiveLead = async (lead: Lead) => {
     const isArchived = lead.status === 'arquivado';
     try {
@@ -153,23 +209,31 @@ const Leads = () => {
       });
     }
   };
+
   if (isLoading) {
-    return <div className="p-6 space-y-6">
+    return (
+      <div className="p-6 space-y-6">
         <Header title="Leads" description="Gerencie seus potenciais clientes" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
-      </div>;
+      </div>
+    );
   }
+
   if (error) {
-    return <div className="p-6 space-y-6">
+    return (
+      <div className="p-6 space-y-6">
         <Header title="Leads" description="Gerencie seus potenciais clientes" />
         <div className="text-center text-red-500">
           Erro ao carregar leads: {error.message}
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="p-6 space-y-6 bg-indigo-950">
+
+  return (
+    <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Leads" description="Gerencie seus potenciais clientes" />
 
       {/* Estatísticas */}
@@ -269,9 +333,15 @@ const Leads = () => {
           <CardTitle>Resultados: {filteredLeads.length}</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredLeads.length === 0 ? <div className="text-center py-8 text-gray-500">
-              {(leads?.length || 0) === 0 ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para começar." : "Nenhum lead encontrado com os filtros aplicados."}
-            </div> : <Table>
+          {filteredLeads.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {(leads?.length || 0) === 0 
+                ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para começar." 
+                : "Nenhum lead encontrado com os filtros aplicados."
+              }
+            </div>
+          ) : (
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Lead</TableHead>
@@ -280,20 +350,24 @@ const Leads = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Progresso</TableHead>
                   <TableHead>Cadastro</TableHead>
-                  <TableHead>Últ. Consulta</TableHead>
+                  <TableHead>Próx. Consulta</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map(lead => {
-              const progressoAtual = getLeadProgressByStatus(lead.status);
-              const progressColor = getProgressColor(progressoAtual);
-              const isArchived = lead.status === 'arquivado';
-              return <TableRow key={lead.id}>
+                {filteredLeads.map((lead) => {
+                  const progressoAtual = getLeadProgressByStatus(lead.status);
+                  const progressColor = getProgressColor(progressoAtual);
+                  const isArchived = lead.status === 'arquivado';
+
+                  return (
+                    <TableRow key={lead.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            {lead.foto_perfil && <AvatarImage src={lead.foto_perfil} alt={lead.nome} className="object-cover" />}
+                            {lead.foto_perfil && (
+                              <AvatarImage src={lead.foto_perfil} alt={lead.nome} className="object-cover" />
+                            )}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
                               {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -306,13 +380,25 @@ const Leads = () => {
                       </TableCell>
                       <TableCell>{lead.estado || '-'}</TableCell>
                       <TableCell>
-                        {lead.objetivo_tag ? <Badge variant="secondary" className="text-white cursor-pointer" style={{
-                    backgroundColor: lead.objetivo_tag.cor
-                  }} onClick={() => setSelectedLeadForTagEdit(lead)}>
+                        {lead.objetivo_tag ? (
+                          <Badge 
+                            variant="secondary" 
+                            className="text-white cursor-pointer"
+                            style={{ backgroundColor: lead.objetivo_tag.cor }}
+                            onClick={() => setSelectedLeadForTagEdit(lead)}
+                          >
                             {lead.objetivo_tag.nome}
-                          </Badge> : <Button variant="ghost" size="sm" onClick={() => setSelectedLeadForTagEdit(lead)} className="text-gray-400 hover:text-gray-600">
+                          </Badge>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedLeadForTagEdit(lead)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
                             <Tag className="w-4 h-4" />
-                          </Button>}
+                          </Button>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(lead.status)}>
@@ -322,9 +408,10 @@ const Leads = () => {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className={`h-2 rounded-full transition-all duration-300 ${progressColor}`} style={{
-                        width: `${progressoAtual}%`
-                      }}></div>
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${progressColor}`}
+                              style={{ width: `${progressoAtual}%` }}
+                            />
                           </div>
                           <span className="text-sm text-gray-600 min-w-[35px]">{progressoAtual}%</span>
                         </div>
@@ -333,46 +420,85 @@ const Leads = () => {
                         {format(new Date(lead.created_at), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell>
-                        {lead.ultima_consulta ? format(new Date(lead.ultima_consulta), 'dd/MM/yyyy') : '-'}
+                        {lead.proxima_consulta ? (
+                          <span className="text-sm font-medium text-blue-600">
+                            {format(new Date(lead.proxima_consulta), 'dd/MM/yyyy HH:mm')}
+                          </span>
+                        ) : '-'}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="sm">
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedLeadForEdit(lead)} className="text-blue-600 hover:text-blue-700">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedLeadForEdit(lead)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          {(lead.status === 'novo' || lead.status === 'qualificado') && <Button variant="ghost" size="sm" onClick={() => setSelectedLeadForScheduling(lead)} className="text-green-600 hover:text-green-700">
+                          {(lead.status === 'novo' || lead.status === 'qualificado') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleScheduleConsultation(lead)}
+                              className="text-green-600 hover:text-green-700"
+                              disabled={updateLead.isPending || createPaciente.isPending}
+                            >
                               <Calendar className="w-4 h-4" />
-                            </Button>}
-                          <Button variant="ghost" size="sm" onClick={() => handleArchiveLead(lead)} className="text-yellow-600 hover:text-yellow-700" disabled={archiveLead.isPending}>
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleArchiveLead(lead)}
+                            className="text-yellow-600 hover:text-yellow-700"
+                            disabled={archiveLead.isPending}
+                          >
                             {isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => {
-                      console.log('Opening delete dialog for lead:', lead.id);
-                      setSelectedLeadForDelete(lead);
-                    }} className="text-red-600 hover:text-red-700">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedLeadForDelete(lead)}
+                            className="text-red-600 hover:text-red-700"
+                          >
                             <Trash className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>;
-            })}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
-            </Table>}
+            </Table>
+          )}
         </CardContent>
       </Card>
 
       <NewLeadDialog open={showNewLeadDialog} onOpenChange={setShowNewLeadDialog} />
       
-      {selectedLeadForScheduling && <ScheduleConsultationDialog open={!!selectedLeadForScheduling} onOpenChange={open => !open && setSelectedLeadForScheduling(null)} lead={selectedLeadForScheduling} />}
+      <EditLeadTagDialog 
+        open={!!selectedLeadForTagEdit} 
+        onOpenChange={(open) => !open && setSelectedLeadForTagEdit(null)} 
+        lead={selectedLeadForTagEdit} 
+      />
 
-      <EditLeadTagDialog open={!!selectedLeadForTagEdit} onOpenChange={open => !open && setSelectedLeadForTagEdit(null)} lead={selectedLeadForTagEdit} />
+      <DeleteLeadDialog 
+        open={!!selectedLeadForDelete} 
+        onOpenChange={(open) => !open && setSelectedLeadForDelete(null)} 
+        lead={selectedLeadForDelete} 
+      />
 
-      <DeleteLeadDialog open={!!selectedLeadForDelete} onOpenChange={open => !open && setSelectedLeadForDelete(null)} lead={selectedLeadForDelete} />
-
-      <EditLeadDialog open={!!selectedLeadForEdit} onOpenChange={open => !open && setSelectedLeadForEdit(null)} lead={selectedLeadForEdit} />
-    </div>;
+      <EditLeadDialog 
+        open={!!selectedLeadForEdit} 
+        onOpenChange={(open) => !open && setSelectedLeadForEdit(null)} 
+        lead={selectedLeadForEdit} 
+      />
+    </div>
+  );
 };
+
 export default Leads;
