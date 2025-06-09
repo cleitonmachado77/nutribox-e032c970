@@ -1,7 +1,7 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Lead } from './useLeads';
-import { getLeadProgressByStatus } from './useLeadProgress';
 
 export interface Paciente {
   id: string;
@@ -56,7 +56,22 @@ export const useCreatePaciente = () => {
         throw new Error('User not authenticated');
       }
 
-      // Primeiro criar o paciente
+      console.log('Creating paciente for lead:', leadId);
+
+      // Verificar se já existe um paciente para este lead
+      const { data: existingPaciente } = await supabase
+        .from('pacientes')
+        .select('id')
+        .eq('lead_id', leadId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingPaciente) {
+        console.log('Paciente already exists for this lead');
+        return existingPaciente;
+      }
+
+      // Criar o paciente
       const { data: paciente, error: pacienteError } = await supabase
         .from('pacientes')
         .insert([
@@ -64,6 +79,7 @@ export const useCreatePaciente = () => {
             lead_id: leadId,
             user_id: user.id,
             data_primeira_consulta: new Date().toISOString(),
+            status_tratamento: 'ativo'
           }
         ])
         .select()
@@ -74,21 +90,7 @@ export const useCreatePaciente = () => {
         throw pacienteError;
       }
 
-      // Depois atualizar o status do lead para "em_acompanhamento" com progresso de 100%
-      const { error: leadError } = await supabase
-        .from('leads')
-        .update({ 
-          status: 'em_acompanhamento',
-          progresso: getLeadProgressByStatus('em_acompanhamento'),
-          ultima_consulta: new Date().toISOString()
-        })
-        .eq('id', leadId);
-
-      if (leadError) {
-        console.error('Error updating lead status:', leadError);
-        throw leadError;
-      }
-
+      console.log('Paciente created successfully:', paciente);
       return paciente;
     },
     onSuccess: () => {
