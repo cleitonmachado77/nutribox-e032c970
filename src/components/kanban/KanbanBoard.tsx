@@ -112,6 +112,33 @@ export const KanbanBoard = ({ leads, columns, onEdit, onDelete, onAddNew }: Kanb
     setDragOverColumn(null);
   };
 
+  const handleConsultationScheduled = async (leadId: string) => {
+    console.log('Consultation scheduled for lead:', leadId);
+    
+    try {
+      // Atualizar o lead para incluir a próxima consulta
+      await updateLead.mutateAsync({
+        id: leadId,
+        leadData: { 
+          proxima_consulta: new Date().toISOString(),
+          status: 'consulta_agendada'
+        }
+      });
+
+      toast({
+        title: "Consulta agendada!",
+        description: "A consulta foi agendada com sucesso no Google Calendar.",
+      });
+    } catch (error) {
+      console.error('Error updating lead after consultation scheduling:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar o status do lead após agendamento.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
@@ -131,7 +158,7 @@ export const KanbanBoard = ({ leads, columns, onEdit, onDelete, onAddNew }: Kanb
             onDragEnd={handleDragEnd}
             onEdit={onEdit}
             onDelete={onDelete}
-            onAddNew={onAddNew}
+            onAddNew={column.status === 'novo' ? onAddNew : undefined} // Apenas permitir criar novos leads na coluna "Novos Leads"
             draggedLeadId={draggedLeadId}
           />
         ))}
@@ -148,6 +175,7 @@ export const KanbanBoard = ({ leads, columns, onEdit, onDelete, onAddNew }: Kanb
             }
           }}
           lead={selectedLeadForSchedule}
+          onConsultationScheduled={() => handleConsultationScheduled(selectedLeadForSchedule.id)}
         />
       )}
     </>

@@ -1,11 +1,9 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
-import { Lead } from "@/types/lead";
-import { KanbanCard } from "./KanbanCard";
 import { DragEvent } from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { KanbanCard } from "./KanbanCard";
+import { Lead } from "@/types/lead";
 
 interface KanbanColumnProps {
   id: string;
@@ -21,7 +19,7 @@ interface KanbanColumnProps {
   onDragEnd: () => void;
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
-  onAddNew: () => void;
+  onAddNew?: () => void; // Opcional - só aparece quando definido
   draggedLeadId: string | null;
 }
 
@@ -40,28 +38,39 @@ export const KanbanColumn = ({
   onEdit,
   onDelete,
   onAddNew,
-  draggedLeadId
+  draggedLeadId,
 }: KanbanColumnProps) => {
   return (
-    <Card 
-      className={`min-h-[500px] transition-all duration-200 ${
-        isDragOver 
-          ? `border-2 ${borderColor} bg-gray-50` 
-          : 'border border-gray-200'
-      }`}
+    <div
+      className={`bg-white rounded-lg border-2 ${borderColor} ${
+        isDragOver ? "border-dashed border-purple-400 bg-purple-50" : ""
+      } transition-colors duration-200`}
       onDragOver={(e) => onDragOver(e, id)}
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, id)}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-gray-700">{title}</CardTitle>
-          <Badge className={`${color} text-white`}>
+      {/* Header */}
+      <div className={`${color} text-white p-4 rounded-t-lg flex items-center justify-between`}>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm">{title}</h3>
+          <span className="bg-white/20 text-xs px-2 py-1 rounded-full">
             {leads.length}
-          </Badge>
+          </span>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+        {onAddNew && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onAddNew}
+            className="text-white hover:bg-white/20 h-6 w-6 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Cards */}
+      <div className="p-4 space-y-3 min-h-[200px]">
         {leads.map((lead) => (
           <KanbanCard
             key={lead.id}
@@ -73,16 +82,7 @@ export const KanbanColumn = ({
             isDragging={draggedLeadId === lead.id}
           />
         ))}
-        
-        <Button 
-          variant="outline" 
-          className="w-full h-16 border-dashed border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-50 text-purple-600"
-          onClick={onAddNew}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Conversa
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
