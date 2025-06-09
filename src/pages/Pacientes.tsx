@@ -16,49 +16,27 @@ const Pacientes = () => {
   const [selectedPacienteForDelete, setSelectedPacienteForDelete] = useState<any>(null);
   const { data: pacientes = [], isLoading, error } = usePacientes();
 
-  // Log sempre que a lista de pacientes mudar
-  React.useEffect(() => {
-    console.log('=== PACIENTES MUDARAM ===');
-    console.log('Nova lista de pacientes:', pacientes.length);
-    console.log('IDs dos pacientes:', pacientes.map(p => p.id));
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('========================');
-  }, [pacientes]);
-
   // Limpar paciente selecionado se ele foi deletado
   React.useEffect(() => {
     if (selectedPatient && !pacientes.find(p => p.id === selectedPatient.id)) {
-      console.log('Paciente selecionado foi deletado, limpando seleção');
-      console.log('Paciente deletado ID:', selectedPatient.id);
       setSelectedPatient(null);
     }
   }, [pacientes, selectedPatient]);
 
   const handleDeletePatient = (paciente: any) => {
-    console.log('Selecionando paciente para deleção:', paciente.lead.nome);
-    console.log('ID do paciente selecionado:', paciente.id);
     setSelectedPacienteForDelete(paciente);
   };
 
   const handleDeleteSuccess = (deletedPacienteId: string) => {
-    console.log('=== HANDLING DELETE SUCCESS ===');
-    console.log('Paciente deletado ID:', deletedPacienteId);
-    console.log('Paciente selecionado atual:', selectedPatient?.id);
-    
-    // Limpar seleção imediatamente se for o paciente deletado
+    // Limpar seleção se for o paciente deletado
     if (selectedPatient?.id === deletedPacienteId) {
-      console.log('Limpando seleção do paciente deletado');
       setSelectedPatient(null);
     }
     // Fechar dialog de exclusão
-    console.log('Fechando dialog de exclusão');
     setSelectedPacienteForDelete(null);
-    
-    console.log('=== FIM DO HANDLING DELETE SUCCESS ===');
   };
 
   if (isLoading) {
-    console.log('Componente Pacientes: Loading...');
     return (
       <div className="p-6 space-y-6">
         <Header title="Pacientes" description="Gerencie seus pacientes convertidos de leads" />
@@ -70,7 +48,6 @@ const Pacientes = () => {
   }
 
   if (error) {
-    console.error('Componente Pacientes: Erro:', error);
     return (
       <div className="p-6 space-y-6">
         <Header title="Pacientes" description="Gerencie seus pacientes convertidos de leads" />
@@ -80,8 +57,6 @@ const Pacientes = () => {
       </div>
     );
   }
-
-  console.log('Renderizando componente Pacientes com', pacientes.length, 'pacientes');
   
   return (
     <div className="p-6 space-y-8 bg-gray-950 min-h-screen">
@@ -119,7 +94,6 @@ const Pacientes = () => {
         open={!!selectedPacienteForDelete}
         onOpenChange={(open) => {
           if (!open) {
-            console.log('Fechando dialog de exclusão');
             setSelectedPacienteForDelete(null);
           }
         }}

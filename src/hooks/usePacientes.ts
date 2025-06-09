@@ -18,17 +18,11 @@ export const usePacientes = () => {
   return useQuery({
     queryKey: ['pacientes'],
     queryFn: async () => {
-      console.log('=== EXECUTANDO QUERY DE PACIENTES ===');
-      console.log('Timestamp:', new Date().toISOString());
-      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log('Usuário não autenticado');
         throw new Error('User not authenticated');
       }
-
-      console.log('Buscando pacientes para o usuário:', user.id);
 
       const { data, error } = await supabase
         .from('pacientes')
@@ -44,16 +38,10 @@ export const usePacientes = () => {
         throw error;
       }
 
-      console.log('Pacientes encontrados:', data?.length || 0);
-      console.log('IDs dos pacientes:', data?.map(p => p.id) || []);
-      console.log('=== FIM DA QUERY DE PACIENTES ===');
-
       return data as Paciente[];
     },
-    staleTime: 0, // Não usar cache - sempre buscar dados frescos
-    gcTime: 0, // Não manter dados em cache
+    staleTime: 0, // Sempre buscar dados frescos
     refetchOnWindowFocus: false,
-    refetchOnMount: true, // Sempre refetch ao montar
   });
 };
 
