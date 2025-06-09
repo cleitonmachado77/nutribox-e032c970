@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -19,6 +18,7 @@ import NutriboxIA from "./pages/NutriboxIA";
 import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import KanbanOperacional from "./pages/KanbanOperacional";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +41,7 @@ const App = () => (
                           <Route index element={<Dashboard />} />
                           <Route path="leads" element={<Leads />} />
                           <Route path="kanban" element={<Kanban />} />
+                          <Route path="kanban-operacional" element={<KanbanOperacional />} />
                           <Route path="pacientes" element={<Pacientes />} />
                           <Route path="conversas" element={<Conversas />} />
                           <Route path="nutribox-ia" element={<NutriboxIA />} />

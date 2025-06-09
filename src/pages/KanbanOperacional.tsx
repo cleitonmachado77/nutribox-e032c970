@@ -10,28 +10,7 @@ import { useLeads } from "@/hooks/useLeads";
 import { Lead } from "@/types/lead";
 import { Link } from "react-router-dom";
 
-const comercialColumns = [
-  {
-    id: "novos",
-    title: "Novos Leads",
-    color: "bg-blue-500",
-    borderColor: "border-blue-300",
-    status: "novo"
-  },
-  {
-    id: "qualificado",
-    title: "Qualificado",
-    color: "bg-green-500",
-    borderColor: "border-green-300",
-    status: "qualificado"
-  },
-  {
-    id: "agendado",
-    title: "Consulta Agendada",
-    color: "bg-yellow-500",
-    borderColor: "border-yellow-300",
-    status: "consulta_agendada"
-  },
+const operacionalColumns = [
   {
     id: "realizada",
     title: "Consulta Realizada",
@@ -40,22 +19,43 @@ const comercialColumns = [
     status: "consulta_realizada"
   },
   {
-    id: "perdido",
-    title: "Perdido",
-    color: "bg-red-500",
-    borderColor: "border-red-300",
-    status: "perdido"
+    id: "acompanhamento",
+    title: "Em Acompanhamento",
+    color: "bg-green-600",
+    borderColor: "border-green-400",
+    status: "em_acompanhamento"
   },
   {
-    id: "arquivado",
-    title: "Arquivado",
-    color: "bg-gray-500",
-    borderColor: "border-gray-300",
-    status: "arquivado"
+    id: "retorno",
+    title: "Retorno Agendado",
+    color: "bg-blue-600",
+    borderColor: "border-blue-400",
+    status: "retorno_agendado"
+  },
+  {
+    id: "alta",
+    title: "Alta Médica",
+    color: "bg-emerald-500",
+    borderColor: "border-emerald-300",
+    status: "alta_medica"
+  },
+  {
+    id: "pausado",
+    title: "Pausado",
+    color: "bg-yellow-600",
+    borderColor: "border-yellow-400",
+    status: "pausado"
+  },
+  {
+    id: "finalizado",
+    title: "Finalizado",
+    color: "bg-gray-600",
+    borderColor: "border-gray-400",
+    status: "finalizado"
   }
 ];
 
-const Kanban = () => {
+const KanbanOperacional = () => {
   const [newLeadDialogOpen, setNewLeadDialogOpen] = useState(false);
   const [editLeadDialogOpen, setEditLeadDialogOpen] = useState(false);
   const [deleteLeadDialogOpen, setDeleteLeadDialogOpen] = useState(false);
@@ -80,7 +80,7 @@ const Kanban = () => {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
+        <Header title="Kanban Operacional" description="Gerencie o fluxo operacional dos seus pacientes" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
@@ -91,7 +91,7 @@ const Kanban = () => {
   if (error) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
+        <Header title="Kanban Operacional" description="Gerencie o fluxo operacional dos seus pacientes" />
         <div className="text-center text-red-500">
           Erro ao carregar leads: {error.message}
         </div>
@@ -101,18 +101,18 @@ const Kanban = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
+      <Header title="Kanban Operacional" description="Gerencie o fluxo operacional dos seus pacientes" />
 
       <div className="flex gap-4">
-        <Button className="bg-primary text-white">COMERCIAL</Button>
         <Button variant="outline" asChild>
-          <Link to="/dashboard/kanban-operacional">OPERACIONAL</Link>
+          <Link to="/dashboard/kanban">COMERCIAL</Link>
         </Button>
+        <Button className="bg-primary text-white">OPERACIONAL</Button>
       </div>
 
       <KanbanBoard
         leads={leads}
-        columns={comercialColumns}
+        columns={operacionalColumns}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onAddNew={handleAddNew}
@@ -141,4 +141,4 @@ const Kanban = () => {
   );
 };
 
-export default Kanban;
+export default KanbanOperacional;

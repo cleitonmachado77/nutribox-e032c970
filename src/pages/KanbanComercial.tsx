@@ -55,7 +55,7 @@ const comercialColumns = [
   }
 ];
 
-const Kanban = () => {
+const KanbanComercial = () => {
   const [newLeadDialogOpen, setNewLeadDialogOpen] = useState(false);
   const [editLeadDialogOpen, setEditLeadDialogOpen] = useState(false);
   const [deleteLeadDialogOpen, setDeleteLeadDialogOpen] = useState(false);
@@ -80,7 +80,7 @@ const Kanban = () => {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
+        <Header title="Kanban Comercial" description="Gerencie o fluxo comercial dos seus leads" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
@@ -91,7 +91,7 @@ const Kanban = () => {
   if (error) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
+        <Header title="Kanban Comercial" description="Gerencie o fluxo comercial dos seus leads" />
         <div className="text-center text-red-500">
           Erro ao carregar leads: {error.message}
         </div>
@@ -101,7 +101,7 @@ const Kanban = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <Header title="Kanban de Leads" description="Gerencie o fluxo dos seus leads" />
+      <Header title="Kanban Comercial" description="Gerencie o fluxo comercial dos seus leads" />
 
       <div className="flex gap-4">
         <Button className="bg-primary text-white">COMERCIAL</Button>
@@ -141,4 +141,4 @@ const Kanban = () => {
   );
 };
 
-export default Kanban;
+export default KanbanComercial;
