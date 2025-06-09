@@ -21,7 +21,6 @@ import { EditLeadDialog } from "@/components/EditLeadDialog";
 import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from "@/hooks/useLeadProgress";
 import { useArchiveLead } from "@/hooks/useArchiveLead";
 import { useToast } from "@/hooks/use-toast";
-
 const Leads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
@@ -30,10 +29,15 @@ const Leads = () => {
   const [selectedLeadForDelete, setSelectedLeadForDelete] = useState<Lead | null>(null);
   const [selectedLeadForEdit, setSelectedLeadForEdit] = useState<Lead | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
-  const { data: leads, isLoading, error } = useLeads();
+  const {
+    data: leads,
+    isLoading,
+    error
+  } = useLeads();
   const archiveLead = useArchiveLead();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "novo":
@@ -54,14 +58,12 @@ const Leads = () => {
         return "bg-gray-500";
     }
   };
-
   const getObjetivoColor = (objetivoTag: any) => {
     if (objetivoTag) {
       return objetivoTag.cor;
     }
     return "#6B7280"; // gray color for no tag
   };
-
   const formatStatusDisplay = (status: string) => {
     switch (status) {
       case "novo":
@@ -83,20 +85,14 @@ const Leads = () => {
   const applyFilters = (leads: Lead[], filters: FilterCriteria, searchTerm: string) => {
     return leads.filter(lead => {
       // Filtro de busca por texto
-      const matchesSearch = searchTerm === "" || 
-        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.telefone.includes(searchTerm) ||
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = searchTerm === "" || lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) || lead.telefone.includes(searchTerm) || lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Filtros específicos
       const matchesStatus = !filters.status || lead.status === filters.status;
       const matchesEstado = !filters.estado || lead.estado?.toLowerCase().includes(filters.estado.toLowerCase());
       const matchesTag = !filters.objetivo_tag_id || lead.objetivo_tag_id === filters.objetivo_tag_id;
-      
       const matchesProgressoMin = filters.progresso_min === undefined || lead.progresso >= filters.progresso_min;
       const matchesProgressoMax = filters.progresso_max === undefined || lead.progresso <= filters.progresso_max;
-      
       let matchesDataRange = true;
       if (filters.data_inicio || filters.data_fim) {
         const leadDate = new Date(lead.created_at);
@@ -107,18 +103,13 @@ const Leads = () => {
           matchesDataRange = matchesDataRange && leadDate <= new Date(filters.data_fim + 'T23:59:59');
         }
       }
-
-      return matchesSearch && matchesStatus && matchesEstado && matchesTag && 
-             matchesProgressoMin && matchesProgressoMax && matchesDataRange;
+      return matchesSearch && matchesStatus && matchesEstado && matchesTag && matchesProgressoMin && matchesProgressoMax && matchesDataRange;
     });
   };
-
   const filteredLeads = leads ? applyFilters(leads, activeFilters, searchTerm) : [];
-
   const handleFilter = (filters: FilterCriteria) => {
     setActiveFilters(filters);
   };
-
   const handleClearFilters = () => {
     setActiveFilters({});
   };
@@ -130,66 +121,55 @@ const Leads = () => {
     const dataConversao = new Date(lead.data_conversao || lead.created_at);
     return dataConversao.toDateString() === hoje.toDateString();
   }).length || 0;
-
   const leadsOntem = leads?.filter(lead => {
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
     const dataConversao = new Date(lead.data_conversao || lead.created_at);
     return dataConversao.toDateString() === ontem.toDateString();
   }).length || 0;
-
   const leadsUltimos7Dias = leads?.filter(lead => {
     const seteDiasAtras = new Date();
     seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
     const dataConversao = new Date(lead.data_conversao || lead.created_at);
     return dataConversao >= seteDiasAtras;
   }).length || 0;
-
   const handleArchiveLead = async (lead: Lead) => {
     const isArchived = lead.status === 'arquivado';
     try {
-      await archiveLead.mutateAsync({ 
-        leadId: lead.id, 
-        archived: !isArchived 
+      await archiveLead.mutateAsync({
+        leadId: lead.id,
+        archived: !isArchived
       });
       toast({
         title: "Sucesso!",
-        description: `Lead ${isArchived ? 'desarquivado' : 'arquivado'} com sucesso.`,
+        description: `Lead ${isArchived ? 'desarquivado' : 'arquivado'} com sucesso.`
       });
     } catch (error) {
       console.error('Error archiving lead:', error);
       toast({
         title: "Erro",
         description: `Erro ao ${isArchived ? 'desarquivar' : 'arquivar'} lead. Tente novamente.`,
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="p-6 space-y-6">
+    return <div className="p-6 space-y-6">
         <Header title="Leads" description="Gerencie seus potenciais clientes" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (error) {
-    return (
-      <div className="p-6 space-y-6">
+    return <div className="p-6 space-y-6">
         <Header title="Leads" description="Gerencie seus potenciais clientes" />
         <div className="text-center text-red-500">
           Erro ao carregar leads: {error.message}
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="p-6 space-y-6 bg-gray-900">
+  return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Leads" description="Gerencie seus potenciais clientes" />
 
       {/* Estatísticas */}
@@ -266,33 +246,22 @@ const Leads = () => {
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input 
-              placeholder="Buscar leads..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="pl-10 w-64" 
-            />
+            <Input placeholder="Buscar leads..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 w-64" />
           </div>
           <LeadsFilter onFilter={handleFilter} onClearFilters={handleClearFilters} />
         </div>
       </div>
 
       {/* Indicador de filtros ativos */}
-      {Object.keys(activeFilters).length > 0 && (
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+      {Object.keys(activeFilters).length > 0 && <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>Filtros ativos:</span>
-          {Object.entries(activeFilters).map(([key, value]) => (
-            value && (
-              <Badge key={key} variant="secondary" className="text-xs">
+          {Object.entries(activeFilters).map(([key, value]) => value && <Badge key={key} variant="secondary" className="text-xs">
                 {key}: {String(value)}
-              </Badge>
-            )
-          ))}
+              </Badge>)}
           <Button variant="ghost" size="sm" onClick={handleClearFilters}>
             Limpar filtros
           </Button>
-        </div>
-      )}
+        </div>}
 
       {/* Tabela de Leads */}
       <Card>
@@ -300,15 +269,9 @@ const Leads = () => {
           <CardTitle>Resultados: {filteredLeads.length}</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredLeads.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {(leads?.length || 0) === 0 
-                ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para começar."
-                : "Nenhum lead encontrado com os filtros aplicados."
-              }
-            </div>
-          ) : (
-            <Table>
+          {filteredLeads.length === 0 ? <div className="text-center py-8 text-gray-500">
+              {(leads?.length || 0) === 0 ? "Nenhum lead cadastrado. Clique em 'Novo Lead' para começar." : "Nenhum lead encontrado com os filtros aplicados."}
+            </div> : <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Lead</TableHead>
@@ -322,23 +285,15 @@ const Leads = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map((lead) => {
-                  const progressoAtual = getLeadProgressByStatus(lead.status);
-                  const progressColor = getProgressColor(progressoAtual);
-                  const isArchived = lead.status === 'arquivado';
-                  
-                  return (
-                    <TableRow key={lead.id}>
+                {filteredLeads.map(lead => {
+              const progressoAtual = getLeadProgressByStatus(lead.status);
+              const progressColor = getProgressColor(progressoAtual);
+              const isArchived = lead.status === 'arquivado';
+              return <TableRow key={lead.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            {lead.foto_perfil && (
-                              <AvatarImage 
-                                src={lead.foto_perfil} 
-                                alt={lead.nome}
-                                className="object-cover"
-                              />
-                            )}
+                            {lead.foto_perfil && <AvatarImage src={lead.foto_perfil} alt={lead.nome} className="object-cover" />}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
                               {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -351,25 +306,13 @@ const Leads = () => {
                       </TableCell>
                       <TableCell>{lead.estado || '-'}</TableCell>
                       <TableCell>
-                        {lead.objetivo_tag ? (
-                          <Badge 
-                            variant="secondary" 
-                            className="text-white cursor-pointer"
-                            style={{ backgroundColor: lead.objetivo_tag.cor }}
-                            onClick={() => setSelectedLeadForTagEdit(lead)}
-                          >
+                        {lead.objetivo_tag ? <Badge variant="secondary" className="text-white cursor-pointer" style={{
+                    backgroundColor: lead.objetivo_tag.cor
+                  }} onClick={() => setSelectedLeadForTagEdit(lead)}>
                             {lead.objetivo_tag.nome}
-                          </Badge>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setSelectedLeadForTagEdit(lead)}
-                            className="text-gray-400 hover:text-gray-600"
-                          >
+                          </Badge> : <Button variant="ghost" size="sm" onClick={() => setSelectedLeadForTagEdit(lead)} className="text-gray-400 hover:text-gray-600">
                             <Tag className="w-4 h-4" />
-                          </Button>
-                        )}
+                          </Button>}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(lead.status)}>
@@ -379,10 +322,9 @@ const Leads = () => {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 ${progressColor}`}
-                              style={{ width: `${progressoAtual}%` }}
-                            ></div>
+                            <div className={`h-2 rounded-full transition-all duration-300 ${progressColor}`} style={{
+                        width: `${progressoAtual}%`
+                      }}></div>
                           </div>
                           <span className="text-sm text-gray-600 min-w-[35px]">{progressoAtual}%</span>
                         </div>
@@ -391,94 +333,46 @@ const Leads = () => {
                         {format(new Date(lead.created_at), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell>
-                        {lead.ultima_consulta 
-                          ? format(new Date(lead.ultima_consulta), 'dd/MM/yyyy') 
-                          : '-'
-                        }
+                        {lead.ultima_consulta ? format(new Date(lead.ultima_consulta), 'dd/MM/yyyy') : '-'}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="sm">
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setSelectedLeadForEdit(lead)}
-                            className="text-blue-600 hover:text-blue-700"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedLeadForEdit(lead)} className="text-blue-600 hover:text-blue-700">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          {(lead.status === 'novo' || lead.status === 'qualificado') && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedLeadForScheduling(lead)}
-                              className="text-green-600 hover:text-green-700"
-                            >
+                          {(lead.status === 'novo' || lead.status === 'qualificado') && <Button variant="ghost" size="sm" onClick={() => setSelectedLeadForScheduling(lead)} className="text-green-600 hover:text-green-700">
                               <Calendar className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleArchiveLead(lead)}
-                            className="text-yellow-600 hover:text-yellow-700"
-                            disabled={archiveLead.isPending}
-                          >
+                            </Button>}
+                          <Button variant="ghost" size="sm" onClick={() => handleArchiveLead(lead)} className="text-yellow-600 hover:text-yellow-700" disabled={archiveLead.isPending}>
                             {isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              console.log('Opening delete dialog for lead:', lead.id);
-                              setSelectedLeadForDelete(lead);
-                            }}
-                            className="text-red-600 hover:text-red-700"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => {
+                      console.log('Opening delete dialog for lead:', lead.id);
+                      setSelectedLeadForDelete(lead);
+                    }} className="text-red-600 hover:text-red-700">
                             <Trash className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    </TableRow>;
+            })}
               </TableBody>
-            </Table>
-          )}
+            </Table>}
         </CardContent>
       </Card>
 
       <NewLeadDialog open={showNewLeadDialog} onOpenChange={setShowNewLeadDialog} />
       
-      {selectedLeadForScheduling && (
-        <ScheduleConsultationDialog 
-          open={!!selectedLeadForScheduling}
-          onOpenChange={(open) => !open && setSelectedLeadForScheduling(null)}
-          lead={selectedLeadForScheduling}
-        />
-      )}
+      {selectedLeadForScheduling && <ScheduleConsultationDialog open={!!selectedLeadForScheduling} onOpenChange={open => !open && setSelectedLeadForScheduling(null)} lead={selectedLeadForScheduling} />}
 
-      <EditLeadTagDialog
-        open={!!selectedLeadForTagEdit}
-        onOpenChange={(open) => !open && setSelectedLeadForTagEdit(null)}
-        lead={selectedLeadForTagEdit}
-      />
+      <EditLeadTagDialog open={!!selectedLeadForTagEdit} onOpenChange={open => !open && setSelectedLeadForTagEdit(null)} lead={selectedLeadForTagEdit} />
 
-      <DeleteLeadDialog
-        open={!!selectedLeadForDelete}
-        onOpenChange={(open) => !open && setSelectedLeadForDelete(null)}
-        lead={selectedLeadForDelete}
-      />
+      <DeleteLeadDialog open={!!selectedLeadForDelete} onOpenChange={open => !open && setSelectedLeadForDelete(null)} lead={selectedLeadForDelete} />
 
-      <EditLeadDialog
-        open={!!selectedLeadForEdit}
-        onOpenChange={(open) => !open && setSelectedLeadForEdit(null)}
-        lead={selectedLeadForEdit}
-      />
-    </div>
-  );
+      <EditLeadDialog open={!!selectedLeadForEdit} onOpenChange={open => !open && setSelectedLeadForEdit(null)} lead={selectedLeadForEdit} />
+    </div>;
 };
-
 export default Leads;
