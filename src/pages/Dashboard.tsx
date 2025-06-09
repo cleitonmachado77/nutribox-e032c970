@@ -60,7 +60,7 @@ const Dashboard = () => {
   const taxaAgendamento = leadsQualificados > 0 ? (consultasAgendadas / leadsQualificados * 100).toFixed(1) : '0.0';
   const taxaRealizacao = consultasAgendadas > 0 ? (consultasRealizadas / consultasAgendadas * 100).toFixed(1) : '0.0';
   const taxaConversaoTotal = totalLeads > 0 ? (consultasRealizadas / totalLeads * 100).toFixed(1) : '0.0';
-  return <div className="p-6 space-y-6 bg-gray-900">
+  return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
       
       {/* Métricas de Leads */}
