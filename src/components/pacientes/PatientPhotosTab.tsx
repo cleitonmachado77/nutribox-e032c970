@@ -1,54 +1,323 @@
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Camera, Plus, Trash2, Download, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
+import { ImageUpload } from "@/components/ImageUpload";
+import { useToast } from "@/hooks/use-toast";
 
 interface PatientPhotosTabProps {
   selectedPatient: Paciente;
 }
 
+interface PatientPhoto {
+  id: string;
+  url: string;
+  tipo: 'perfil' | 'antes' | 'depois' | 'progresso';
+  data: string;
+  descricao?: string;
+}
+
 export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => {
+  const [photos, setPhotos] = useState<PatientPhoto[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<PatientPhoto | null>(null);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [photoType, setPhotoType] = useState<'antes' | 'depois' | 'progresso'>('antes');
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Carregar fotos salvas do localStorage
+    const savedPhotos = localStorage.getItem(`patient_photos_${selectedPatient.id}`);
+    if (savedPhotos) {
+      setPhotos(JSON.parse(savedPhotos));
+    }
+  }, [selectedPatient.id]);
+
+  const savePhotos = (newPhotos: PatientPhoto[]) => {
+    localStorage.setItem(`patient_photos_${selectedPatient.id}`, JSON.stringify(newPhotos));
+    setPhotos(newPhotos);
+  };
+
+  const handleAddPhoto = (url: string) => {
+    const newPhoto: PatientPhoto = {
+      id: Date.now().toString(),
+      url,
+      tipo: photoType,
+      data: new Date().toISOString(),
+      descricao: `Foto ${photoType} - ${new Date().toLocaleDateString('pt-BR')}`
+    };
+
+    const updatedPhotos = [...photos, newPhoto];
+    savePhotos(updatedPhotos);
+    setIsUploadDialogOpen(false);
+    
+    toast({
+      title: "Sucesso!",
+      description: "Foto adicionada com sucesso"
+    });
+  };
+
+  const handleUpdateProfilePhoto = (url: string) => {
+    // Atualizar foto de perfil do paciente
+    const updatedPhotos = photos.filter(p => p.tipo !== 'perfil');
+    if (url) {
+      const profilePhoto: PatientPhoto = {
+        id: 'profile_' + Date.now(),
+        url,
+        tipo: 'perfil',
+        data: new Date().toISOString(),
+        descricao: 'Foto de Perfil'
+      };
+      updatedPhotos.push(profilePhoto);
+    }
+    savePhotos(updatedPhotos);
+    
+    toast({
+      title: "Sucesso!",
+      description: "Foto de perfil atualizada"
+    });
+  };
+
+  const handleDeletePhoto = (photoId: string) => {
+    const updatedPhotos = photos.filter(p => p.id !== photoId);
+    savePhotos(updatedPhotos);
+    
+    toast({
+      title: "Foto removida",
+      description: "A foto foi removida da galeria"
+    });
+  };
+
+  const handleDownloadPhoto = (photo: PatientPhoto) => {
+    const link = document.createElement('a');
+    link.href = photo.url;
+    link.download = `${selectedPatient.lead.nome}_${photo.tipo}_${photo.data.split('T')[0]}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const profilePhoto = photos.find(p => p.tipo === 'perfil') || { url: selectedPatient.lead.foto_perfil };
+  const bodyPhotos = photos.filter(p => p.tipo !== 'perfil');
+
+  const getPhotosByType = (tipo: 'antes' | 'depois' | 'progresso') => {
+    return bodyPhotos.filter(p => p.tipo === tipo);
+  };
+
+  const getTypeColor = (tipo: string) => {
+    switch (tipo) {
+      case 'antes': return 'bg-gradient-to-r from-red-500 to-pink-500';
+      case 'depois': return 'bg-gradient-to-r from-green-500 to-emerald-500';
+      case 'progresso': return 'bg-gradient-to-r from-blue-500 to-indigo-500';
+      default: return 'bg-gradient-to-r from-purple-500 to-violet-500';
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="border-2 border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-gray-800">Foto de Perfil</CardTitle>
+    <div className="space-y-6">
+      {/* Seção Foto de Perfil */}
+      <Card className="border-2 border-purple-200 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="w-5 h-5" />
+            Foto de Perfil
+          </CardTitle>
         </CardHeader>
-        <CardContent className="text-center">
-          <Avatar className="w-32 h-32 mx-auto mb-4 ring-4 ring-gray-200">
-            <AvatarImage src={selectedPatient.lead.foto_perfil} />
-            <AvatarFallback className="text-2xl bg-gradient-to-br from-indigo-400 to-purple-500 text-white">
-              {selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
-          <Button size="sm" variant="outline" className="border-indigo-500 text-indigo-600 hover:bg-indigo-50">
-            <Camera className="w-4 h-4 mr-2" />
-            Alterar Foto
-          </Button>
-        </CardContent>
-      </Card>
-      
-      <Card className="border-2 border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-gray-800">Fotos do Corpo (Antes/Depois)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-              <Camera className="w-8 h-8 text-gray-400" />
-            </div>
-            <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-              <Camera className="w-8 h-8 text-gray-400" />
-            </div>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center space-y-4">
+            <Avatar className="w-32 h-32 ring-4 ring-purple-200 shadow-xl">
+              <AvatarImage src={profilePhoto?.url} className="object-cover" />
+              <AvatarFallback className="text-2xl bg-gradient-to-br from-purple-400 to-indigo-500 text-white">
+                {selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Alterar Foto de Perfil
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Alterar Foto de Perfil</DialogTitle>
+                </DialogHeader>
+                <ImageUpload
+                  value={profilePhoto?.url || ""}
+                  onChange={handleUpdateProfilePhoto}
+                  label="Nova Foto de Perfil"
+                />
+              </DialogContent>
+            </Dialog>
           </div>
-          <Button size="sm" variant="outline" className="w-full border-green-500 text-green-600 hover:bg-green-50">
-            <Camera className="w-4 h-4 mr-2" />
-            Adicionar Fotos
-          </Button>
         </CardContent>
       </Card>
+
+      {/* Seção Galeria de Fotos do Corpo */}
+      <Card className="border-2 border-purple-200 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Camera className="w-5 h-5" />
+              Galeria de Fotos do Progresso
+            </div>
+            <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" size="sm" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Foto
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Adicionar Nova Foto</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Tipo da Foto</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['antes', 'depois', 'progresso'] as const).map((tipo) => (
+                        <Button
+                          key={tipo}
+                          variant={photoType === tipo ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPhotoType(tipo)}
+                          className={photoType === tipo ? getTypeColor(tipo) : ""}
+                        >
+                          {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <ImageUpload
+                    value=""
+                    onChange={handleAddPhoto}
+                    label={`Foto ${photoType.charAt(0).toUpperCase() + photoType.slice(1)}`}
+                    placeholder="Adicione uma nova foto do progresso"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {bodyPhotos.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
+                <Camera className="w-12 h-12 text-purple-500" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-800 mb-2">Nenhuma foto adicionada</h3>
+              <p className="text-gray-500 mb-4">Comece adicionando fotos do progresso do paciente</p>
+              <Button 
+                onClick={() => setIsUploadDialogOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Primeira Foto
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {(['antes', 'depois', 'progresso'] as const).map((tipo) => {
+                const typedPhotos = getPhotosByType(tipo);
+                if (typedPhotos.length === 0) return null;
+                
+                return (
+                  <div key={tipo}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`w-3 h-3 rounded-full ${getTypeColor(tipo)}`}></div>
+                      <h4 className="font-semibold text-gray-800 capitalize">
+                        Fotos {tipo} ({typedPhotos.length})
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {typedPhotos.map((photo) => (
+                        <div key={photo.id} className="group relative">
+                          <div className="aspect-[3/4] overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
+                            <img
+                              src={photo.url}
+                              alt={photo.descricao}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            />
+                            
+                            {/* Overlay com ações */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  setSelectedPhoto(photo);
+                                  setIsViewerOpen(true);
+                                }}
+                                className="bg-white/90 hover:bg-white text-gray-800"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleDownloadPhoto(photo)}
+                                className="bg-white/90 hover:bg-white text-gray-800"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeletePhoto(photo.id)}
+                                className="bg-red-500/90 hover:bg-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Label do tipo */}
+                          <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium text-white ${getTypeColor(tipo)}`}>
+                            {tipo}
+                          </div>
+                          
+                          {/* Data */}
+                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                            {new Date(photo.data).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal Visualizador de Foto */}
+      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedPhoto?.descricao} - {selectedPhoto && new Date(selectedPhoto.data).toLocaleDateString('pt-BR')}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPhoto && (
+            <div className="flex items-center justify-center">
+              <img
+                src={selectedPhoto.url}
+                alt={selectedPhoto.descricao}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
