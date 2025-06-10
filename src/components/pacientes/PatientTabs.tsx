@@ -25,13 +25,13 @@ export const PatientTabs = ({
 }: PatientTabsProps) => {
   return (
     <Tabs defaultValue="geral" className="w-full">
-      <TabsList className="grid w-full grid-cols-6 bg-gray-100">
-        <TabsTrigger value="geral" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Geral</TabsTrigger>
-        <TabsTrigger value="clinico" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Histórico Clínico</TabsTrigger>
-        <TabsTrigger value="plano" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Plano Alimentar</TabsTrigger>
-        <TabsTrigger value="fotos" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Fotos</TabsTrigger>
-        <TabsTrigger value="compras" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Lista de Compras</TabsTrigger>
-        <TabsTrigger value="historico" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">Histórico</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-6 bg-purple-100">
+        <TabsTrigger value="geral" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Geral</TabsTrigger>
+        <TabsTrigger value="clinico" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Histórico Clínico</TabsTrigger>
+        <TabsTrigger value="plano" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Plano Alimentar</TabsTrigger>
+        <TabsTrigger value="fotos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Fotos</TabsTrigger>
+        <TabsTrigger value="compras" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Lista de Compras</TabsTrigger>
+        <TabsTrigger value="historico" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Histórico</TabsTrigger>
       </TabsList>
 
       <TabsContent value="geral" className="space-y-6 mt-6">
