@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientGeneralTab } from "./PatientGeneralTab";
 import { PatientPlanTab } from "./PatientPlanTab";
@@ -7,7 +6,6 @@ import { PatientShoppingTab } from "./PatientShoppingTab";
 import { PatientHistoryTab } from "./PatientHistoryTab";
 import { PatientClinicalHistory } from "./PatientClinicalHistory";
 import { Paciente } from "@/hooks/usePacientes";
-
 interface PatientTabsProps {
   selectedPatient: Paciente;
   onOpenConsultaDialog: () => void;
@@ -15,33 +13,25 @@ interface PatientTabsProps {
   getStatusColor: (status: string) => string;
   getProgressColor: (progress: number) => string;
 }
-
-export const PatientTabs = ({ 
-  selectedPatient, 
+export const PatientTabs = ({
+  selectedPatient,
   onOpenConsultaDialog,
   getObjetivoColor,
   getStatusColor,
   getProgressColor
 }: PatientTabsProps) => {
-  return (
-    <Tabs defaultValue="geral" className="w-full">
+  return <Tabs defaultValue="geral" className="w-full">
       <TabsList className="grid w-full grid-cols-6 bg-purple-100">
         <TabsTrigger value="geral" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Geral</TabsTrigger>
         <TabsTrigger value="clinico" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Histórico Clínico</TabsTrigger>
         <TabsTrigger value="plano" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Plano Alimentar</TabsTrigger>
         <TabsTrigger value="fotos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Fotos</TabsTrigger>
         <TabsTrigger value="compras" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Lista de Compras</TabsTrigger>
-        <TabsTrigger value="historico" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Histórico</TabsTrigger>
+        
       </TabsList>
 
       <TabsContent value="geral" className="space-y-6 mt-6">
-        <PatientGeneralTab 
-          selectedPatient={selectedPatient}
-          onOpenConsultaDialog={onOpenConsultaDialog}
-          getObjetivoColor={getObjetivoColor}
-          getStatusColor={getStatusColor}
-          getProgressColor={getProgressColor}
-        />
+        <PatientGeneralTab selectedPatient={selectedPatient} onOpenConsultaDialog={onOpenConsultaDialog} getObjetivoColor={getObjetivoColor} getStatusColor={getStatusColor} getProgressColor={getProgressColor} />
       </TabsContent>
 
       <TabsContent value="clinico" className="space-y-6 mt-6">
@@ -61,11 +51,7 @@ export const PatientTabs = ({
       </TabsContent>
 
       <TabsContent value="historico" className="space-y-6 mt-6">
-        <PatientHistoryTab 
-          selectedPatient={selectedPatient}
-          onOpenConsultaDialog={onOpenConsultaDialog}
-        />
+        <PatientHistoryTab selectedPatient={selectedPatient} onOpenConsultaDialog={onOpenConsultaDialog} />
       </TabsContent>
-    </Tabs>
-  );
+    </Tabs>;
 };
