@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { PatientTabs } from "./PatientTabs";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface PatientProfileProps {
   selectedPatient: Paciente | null;
@@ -97,7 +98,7 @@ export const PatientProfile = ({ selectedPatient, onOpenConsultaDialog }: Patien
               <span className="font-medium">Consulta Agendada</span>
             </div>
             <p className="text-amber-700 mt-1">
-              {format(new Date(selectedPatient.lead.proxima_consulta), "dd 'de' MMMM 'às' HH:mm", { locale: require('date-fns/locale/pt-BR') })}
+              {format(new Date(selectedPatient.lead.proxima_consulta), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
             </p>
           </div>
         )}
