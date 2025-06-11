@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Camera, Plus, Trash2, Download, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
@@ -109,7 +110,7 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
         </CardContent>
       </Card>
 
-      {/* Seção Galeria de Fotos do Corpo - Layout Horizontal */}
+      {/* Seção Galeria de Fotos do Corpo - Layout com Carousel */}
       <Card className="border-2 border-purple-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
           <CardTitle className="flex items-center justify-between">
@@ -188,83 +189,82 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                       </h4>
                     </div>
                     
-                    {/* Layout horizontal forçado */}
-                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-gray-100">
-                      <div 
-                        className="flex gap-4 pb-4" 
-                        style={{ 
-                          width: `${typedPhotos.length * 200}px`, 
-                          minWidth: '100%' 
+                    {/* Carousel Horizontal */}
+                    <div className="relative px-12">
+                      <Carousel
+                        opts={{
+                          align: "start",
+                          loop: false,
                         }}
+                        className="w-full"
                       >
-                        {typedPhotos.map((photo) => (
-                          <div key={photo.id} className="group relative flex-shrink-0" style={{ width: '192px' }}>
-                            <div className="w-48 h-64 overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
-                              <img
-                                src={photo.url}
-                                alt={photo.descricao}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                              />
-                              
-                              {/* Overlay com ações */}
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => {
-                                    setSelectedPhoto(photo);
-                                    setIsViewerOpen(true);
-                                  }}
-                                  className="bg-white/90 hover:bg-white text-gray-800"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => handleDownloadPhoto(photo)}
-                                  className="bg-white/90 hover:bg-white text-gray-800"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleDeletePhoto(photo.id)}
-                                  className="bg-red-500/90 hover:bg-red-600"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                        <CarouselContent className="-ml-2 md:-ml-4">
+                          {typedPhotos.map((photo) => (
+                            <CarouselItem key={photo.id} className="pl-2 md:pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
+                              <div className="group relative">
+                                <div className="w-full h-64 overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
+                                  <img
+                                    src={photo.url}
+                                    alt={photo.descricao}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
+                                  
+                                  {/* Overlay com ações */}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => {
+                                        setSelectedPhoto(photo);
+                                        setIsViewerOpen(true);
+                                      }}
+                                      className="bg-white/90 hover:bg-white text-gray-800"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => handleDownloadPhoto(photo)}
+                                      className="bg-white/90 hover:bg-white text-gray-800"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleDeletePhoto(photo.id)}
+                                      className="bg-red-500/90 hover:bg-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                {/* Label do tipo */}
+                                <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium text-white ${getTypeColor(tipo)}`}>
+                                  {tipo}
+                                </div>
+                                
+                                {/* Data */}
+                                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                  {new Date(photo.data).toLocaleDateString('pt-BR')}
+                                </div>
+                                
+                                {/* Descrição abaixo da foto */}
+                                <div className="mt-2 text-center">
+                                  <p className="text-sm text-gray-600 truncate" title={photo.descricao}>
+                                    {photo.descricao}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                            
-                            {/* Label do tipo */}
-                            <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium text-white ${getTypeColor(tipo)}`}>
-                              {tipo}
-                            </div>
-                            
-                            {/* Data */}
-                            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                              {new Date(photo.data).toLocaleDateString('pt-BR')}
-                            </div>
-                            
-                            {/* Descrição abaixo da foto */}
-                            <div className="mt-2 text-center" style={{ width: '192px' }}>
-                              <p className="text-sm text-gray-600 truncate" title={photo.descricao}>
-                                {photo.descricao}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                      </Carousel>
                     </div>
-                    
-                    {/* Indicador de scroll quando há muitas fotos */}
-                    {typedPhotos.length > 3 && (
-                      <div className="text-center">
-                        <div className="text-xs text-gray-500">← Deslize horizontalmente para ver mais fotos →</div>
-                      </div>
-                    )}
                   </div>
                 );
               })}

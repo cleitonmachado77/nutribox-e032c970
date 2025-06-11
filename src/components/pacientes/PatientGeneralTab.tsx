@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { useToast } from "@/hooks/use-toast";
+import { usePatientPhotos } from "@/hooks/usePatientPhotos";
 
 interface PatientGeneralTabProps {
   selectedPatient: Paciente;
@@ -19,14 +19,6 @@ interface PatientGeneralTabProps {
   getObjetivoColor: (objetivo: string) => string;
   getStatusColor: (status: string) => string;
   getProgressColor: (progress: number) => string;
-}
-
-interface PatientPhoto {
-  id: string;
-  url: string;
-  tipo: 'perfil' | 'antes' | 'depois' | 'progresso';
-  data: string;
-  descricao?: string;
 }
 
 export const PatientGeneralTab = ({ 
@@ -37,18 +29,13 @@ export const PatientGeneralTab = ({
   getProgressColor
 }: PatientGeneralTabProps) => {
   const [anotacoes, setAnotacoes] = useState(selectedPatient.lead.anotacoes || "");
-  const [photos, setPhotos] = useState<PatientPhoto[]>([]);
+  const { photos } = usePatientPhotos(selectedPatient.id);
   const [clinicalHistory, setClinicalHistory] = useState<any>({});
   const [consultasRealizadas, setConsultasRealizadas] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     // Carregar dados salvos do localStorage
-    const savedPhotos = localStorage.getItem(`patient_photos_${selectedPatient.id}`);
-    if (savedPhotos) {
-      setPhotos(JSON.parse(savedPhotos));
-    }
-
     const savedClinicalHistory = localStorage.getItem(`patient_clinical_${selectedPatient.id}`);
     if (savedClinicalHistory) {
       setClinicalHistory(JSON.parse(savedClinicalHistory));
@@ -67,10 +54,6 @@ export const PatientGeneralTab = ({
       title: "Sucesso!",
       description: "Anotações salvas com sucesso"
     });
-  };
-
-  const getPhotosByType = (tipo: string) => {
-    return photos.filter(p => p.tipo === tipo);
   };
 
   const getLastConsulta = () => {
