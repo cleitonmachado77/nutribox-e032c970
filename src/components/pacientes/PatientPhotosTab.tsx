@@ -1,132 +1,41 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Camera, Plus, Trash2, Download, Eye, AlertCircle } from "lucide-react";
+import { Camera, Plus, Trash2, Download, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { ImageUpload } from "@/components/ImageUpload";
-import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePatientPhotos } from "@/hooks/usePatientPhotos";
 
 interface PatientPhotosTabProps {
   selectedPatient: Paciente;
 }
 
-interface PatientPhoto {
-  id: string;
-  url: string;
-  tipo: 'perfil' | 'antes' | 'depois' | 'progresso';
-  data: string;
-  descricao?: string;
-}
-
 export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => {
-  const [photos, setPhotos] = useState<PatientPhoto[]>([]);
-  const [selectedPhoto, setSelectedPhoto] = useState<PatientPhoto | null>(null);
+  const { photos, isLoading, addPhoto, deletePhoto } = usePatientPhotos(selectedPatient.id);
+  const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [photoType, setPhotoType] = useState<'antes' | 'depois' | 'progresso'>('antes');
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const { toast } = useToast();
 
-  useEffect(() => {
-    loadPhotos();
-  }, [selectedPatient.id]);
-
-  const loadPhotos = () => {
-    try {
-      // Tentar carregar do localStorage primeiro
-      const savedPhotos = localStorage.getItem(`patient_photos_${selectedPatient.id}`);
-      if (savedPhotos) {
-        const parsedPhotos = JSON.parse(savedPhotos);
-        setPhotos(parsedPhotos);
-        console.log('Fotos carregadas do localStorage:', parsedPhotos);
-      } else {
-        console.log('Nenhuma foto encontrada no localStorage para o paciente:', selectedPatient.id);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar fotos:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar fotos salvas",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const savePhotos = (newPhotos: PatientPhoto[]) => {
-    try {
-      // Salvar no localStorage
-      localStorage.setItem(`patient_photos_${selectedPatient.id}`, JSON.stringify(newPhotos));
-      
-      // Também salvar em uma chave global para backup
-      const allPhotos = JSON.parse(localStorage.getItem('all_patient_photos') || '{}');
-      allPhotos[selectedPatient.id] = newPhotos;
-      localStorage.setItem('all_patient_photos', JSON.stringify(allPhotos));
-      
-      setPhotos(newPhotos);
-      console.log('Fotos salvas:', newPhotos);
-    } catch (error) {
-      console.error('Erro ao salvar fotos:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar fotos",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAddPhoto = (url: string) => {
-    const newPhoto: PatientPhoto = {
-      id: Date.now().toString(),
-      url,
-      tipo: photoType,
-      data: new Date().toISOString(),
-      descricao: `Foto ${photoType} - ${new Date().toLocaleDateString('pt-BR')}`
-    };
-
-    const updatedPhotos = [...photos, newPhoto];
-    savePhotos(updatedPhotos);
+  const handleAddPhoto = async (url: string) => {
+    await addPhoto(url, photoType);
     setIsUploadDialogOpen(false);
-    
-    toast({
-      title: "Sucesso!",
-      description: "Foto adicionada com sucesso"
-    });
   };
 
-  const handleUpdateProfilePhoto = (url: string) => {
-    const updatedPhotos = photos.filter(p => p.tipo !== 'perfil');
+  const handleUpdateProfilePhoto = async (url: string) => {
     if (url) {
-      const profilePhoto: PatientPhoto = {
-        id: 'profile_' + Date.now(),
-        url,
-        tipo: 'perfil',
-        data: new Date().toISOString(),
-        descricao: 'Foto de Perfil'
-      };
-      updatedPhotos.push(profilePhoto);
+      await addPhoto(url, 'perfil', 'Foto de Perfil');
     }
-    savePhotos(updatedPhotos);
-    
-    toast({
-      title: "Sucesso!",
-      description: "Foto de perfil atualizada"
-    });
   };
 
-  const handleDeletePhoto = (photoId: string) => {
-    const updatedPhotos = photos.filter(p => p.id !== photoId);
-    savePhotos(updatedPhotos);
-    
-    toast({
-      title: "Foto removida",
-      description: "A foto foi removida da galeria"
-    });
+  const handleDeletePhoto = async (photoId: string) => {
+    await deletePhoto(photoId);
   };
 
-  const handleDownloadPhoto = (photo: PatientPhoto) => {
+  const handleDownloadPhoto = (photo: any) => {
     const link = document.createElement('a');
     link.href = photo.url;
     link.download = `${selectedPatient.lead.nome}_${photo.tipo}_${photo.data.split('T')[0]}.jpg`;
@@ -151,17 +60,16 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Alerta sobre persistência de dados */}
-      <Alert className="border-amber-200 bg-amber-50">
-        <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800">
-          <strong>Importante:</strong> As fotos são salvas temporariamente no navegador. Para evitar perda de dados, 
-          recomendamos fazer backup das fotos importantes.
-        </AlertDescription>
-      </Alert>
-
       {/* Seção Foto de Perfil */}
       <Card className="border-2 border-purple-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
@@ -280,9 +188,9 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                       </h4>
                     </div>
                     
-                    {/* Layout horizontal com scroll */}
-                    <div className="relative">
-                      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-100">
+                    {/* Layout horizontal com scroll - Força display horizontal */}
+                    <div className="w-full overflow-x-auto">
+                      <div className="flex gap-4 min-w-max pb-4">
                         {typedPhotos.map((photo) => (
                           <div key={photo.id} className="group relative flex-shrink-0">
                             <div className="w-48 h-64 overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
@@ -335,7 +243,7 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                             </div>
                             
                             {/* Descrição abaixo da foto */}
-                            <div className="mt-2 text-center">
+                            <div className="mt-2 text-center w-48">
                               <p className="text-sm text-gray-600 truncate" title={photo.descricao}>
                                 {photo.descricao}
                               </p>
@@ -345,9 +253,9 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                       </div>
                       
                       {/* Indicador de scroll */}
-                      {typedPhotos.length > 3 && (
-                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white p-2 rounded-l-lg shadow-lg">
-                          <div className="text-xs">Arraste →</div>
+                      {typedPhotos.length > 2 && (
+                        <div className="text-center mt-2">
+                          <div className="text-xs text-gray-500">← Arraste para ver mais fotos →</div>
                         </div>
                       )}
                     </div>

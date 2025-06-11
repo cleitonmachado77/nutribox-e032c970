@@ -608,6 +608,42 @@ export type Database = {
           },
         ]
       }
+      patient_photos: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          patient_id: string
+          tipo: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          patient_id: string
+          tipo: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          patient_id?: string
+          tipo?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
