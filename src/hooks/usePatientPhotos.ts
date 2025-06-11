@@ -39,7 +39,8 @@ export const usePatientPhotos = (patientId: string) => {
         return;
       }
 
-      setPhotos(data || []);
+      // Type assertion para garantir que os tipos estão corretos
+      setPhotos((data || []) as PatientPhoto[]);
     } catch (error) {
       console.error('Erro ao carregar fotos:', error);
       toast({
@@ -97,7 +98,8 @@ export const usePatientPhotos = (patientId: string) => {
         return;
       }
 
-      setPhotos(prev => [data, ...prev]);
+      // Type assertion para o novo item
+      setPhotos(prev => [data as PatientPhoto, ...prev]);
       toast({
         title: "Sucesso!",
         description: "Foto adicionada com sucesso"
