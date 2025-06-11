@@ -188,11 +188,17 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                       </h4>
                     </div>
                     
-                    {/* Layout horizontal com scroll - Força display horizontal */}
-                    <div className="w-full overflow-x-auto">
-                      <div className="flex gap-4 min-w-max pb-4">
+                    {/* Layout horizontal forçado */}
+                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-gray-100">
+                      <div 
+                        className="flex gap-4 pb-4" 
+                        style={{ 
+                          width: `${typedPhotos.length * 200}px`, 
+                          minWidth: '100%' 
+                        }}
+                      >
                         {typedPhotos.map((photo) => (
-                          <div key={photo.id} className="group relative flex-shrink-0">
+                          <div key={photo.id} className="group relative flex-shrink-0" style={{ width: '192px' }}>
                             <div className="w-48 h-64 overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
                               <img
                                 src={photo.url}
@@ -243,7 +249,7 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                             </div>
                             
                             {/* Descrição abaixo da foto */}
-                            <div className="mt-2 text-center w-48">
+                            <div className="mt-2 text-center" style={{ width: '192px' }}>
                               <p className="text-sm text-gray-600 truncate" title={photo.descricao}>
                                 {photo.descricao}
                               </p>
@@ -251,14 +257,14 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
                           </div>
                         ))}
                       </div>
-                      
-                      {/* Indicador de scroll */}
-                      {typedPhotos.length > 2 && (
-                        <div className="text-center mt-2">
-                          <div className="text-xs text-gray-500">← Arraste para ver mais fotos →</div>
-                        </div>
-                      )}
                     </div>
+                    
+                    {/* Indicador de scroll quando há muitas fotos */}
+                    {typedPhotos.length > 3 && (
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500">← Deslize horizontalmente para ver mais fotos →</div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
