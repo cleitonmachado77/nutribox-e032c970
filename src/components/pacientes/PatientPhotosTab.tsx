@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Camera, Plus, Trash2, Download, Eye } from "lucide-react";
+import { Camera, Plus, Trash2, Download, Eye, AlertCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PatientPhotosTabProps {
   selectedPatient: Paciente;
@@ -30,16 +31,50 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
   const { toast } = useToast();
 
   useEffect(() => {
-    // Carregar fotos salvas do localStorage
-    const savedPhotos = localStorage.getItem(`patient_photos_${selectedPatient.id}`);
-    if (savedPhotos) {
-      setPhotos(JSON.parse(savedPhotos));
-    }
+    loadPhotos();
   }, [selectedPatient.id]);
 
+  const loadPhotos = () => {
+    try {
+      // Tentar carregar do localStorage primeiro
+      const savedPhotos = localStorage.getItem(`patient_photos_${selectedPatient.id}`);
+      if (savedPhotos) {
+        const parsedPhotos = JSON.parse(savedPhotos);
+        setPhotos(parsedPhotos);
+        console.log('Fotos carregadas do localStorage:', parsedPhotos);
+      } else {
+        console.log('Nenhuma foto encontrada no localStorage para o paciente:', selectedPatient.id);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar fotos:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar fotos salvas",
+        variant: "destructive"
+      });
+    }
+  };
+
   const savePhotos = (newPhotos: PatientPhoto[]) => {
-    localStorage.setItem(`patient_photos_${selectedPatient.id}`, JSON.stringify(newPhotos));
-    setPhotos(newPhotos);
+    try {
+      // Salvar no localStorage
+      localStorage.setItem(`patient_photos_${selectedPatient.id}`, JSON.stringify(newPhotos));
+      
+      // Também salvar em uma chave global para backup
+      const allPhotos = JSON.parse(localStorage.getItem('all_patient_photos') || '{}');
+      allPhotos[selectedPatient.id] = newPhotos;
+      localStorage.setItem('all_patient_photos', JSON.stringify(allPhotos));
+      
+      setPhotos(newPhotos);
+      console.log('Fotos salvas:', newPhotos);
+    } catch (error) {
+      console.error('Erro ao salvar fotos:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar fotos",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddPhoto = (url: string) => {
@@ -62,7 +97,6 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
   };
 
   const handleUpdateProfilePhoto = (url: string) => {
-    // Atualizar foto de perfil do paciente
     const updatedPhotos = photos.filter(p => p.tipo !== 'perfil');
     if (url) {
       const profilePhoto: PatientPhoto = {
@@ -119,6 +153,15 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
 
   return (
     <div className="space-y-6">
+      {/* Alerta sobre persistência de dados */}
+      <Alert className="border-amber-200 bg-amber-50">
+        <AlertCircle className="h-4 w-4 text-amber-600" />
+        <AlertDescription className="text-amber-800">
+          <strong>Importante:</strong> As fotos são salvas temporariamente no navegador. Para evitar perda de dados, 
+          recomendamos fazer backup das fotos importantes.
+        </AlertDescription>
+      </Alert>
+
       {/* Seção Foto de Perfil */}
       <Card className="border-2 border-purple-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
@@ -158,13 +201,13 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
         </CardContent>
       </Card>
 
-      {/* Seção Galeria de Fotos do Corpo */}
+      {/* Seção Galeria de Fotos do Corpo - Layout Horizontal */}
       <Card className="border-2 border-purple-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Camera className="w-5 h-5" />
-              Galeria de Fotos do Progresso
+              Galeria de Fotos do Progresso ({bodyPhotos.length} fotos)
             </div>
             <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
               <DialogTrigger asChild>
@@ -223,73 +266,90 @@ export const PatientPhotosTab = ({ selectedPatient }: PatientPhotosTabProps) => 
               </Button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-8">
               {(['antes', 'depois', 'progresso'] as const).map((tipo) => {
                 const typedPhotos = getPhotosByType(tipo);
                 if (typedPhotos.length === 0) return null;
                 
                 return (
-                  <div key={tipo}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className={`w-3 h-3 rounded-full ${getTypeColor(tipo)}`}></div>
-                      <h4 className="font-semibold text-gray-800 capitalize">
+                  <div key={tipo} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 rounded-full ${getTypeColor(tipo)}`}></div>
+                      <h4 className="text-lg font-semibold text-gray-800 capitalize">
                         Fotos {tipo} ({typedPhotos.length})
                       </h4>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {typedPhotos.map((photo) => (
-                        <div key={photo.id} className="group relative">
-                          <div className="aspect-[3/4] overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
-                            <img
-                              src={photo.url}
-                              alt={photo.descricao}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
+                    {/* Layout horizontal com scroll */}
+                    <div className="relative">
+                      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-100">
+                        {typedPhotos.map((photo) => (
+                          <div key={photo.id} className="group relative flex-shrink-0">
+                            <div className="w-48 h-64 overflow-hidden rounded-lg border-2 border-purple-200 shadow-md hover:shadow-lg transition-all duration-200">
+                              <img
+                                src={photo.url}
+                                alt={photo.descricao}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                              
+                              {/* Overlay com ações */}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    setSelectedPhoto(photo);
+                                    setIsViewerOpen(true);
+                                  }}
+                                  className="bg-white/90 hover:bg-white text-gray-800"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => handleDownloadPhoto(photo)}
+                                  className="bg-white/90 hover:bg-white text-gray-800"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeletePhoto(photo.id)}
+                                  className="bg-red-500/90 hover:bg-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
                             
-                            {/* Overlay com ações */}
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => {
-                                  setSelectedPhoto(photo);
-                                  setIsViewerOpen(true);
-                                }}
-                                className="bg-white/90 hover:bg-white text-gray-800"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => handleDownloadPhoto(photo)}
-                                className="bg-white/90 hover:bg-white text-gray-800"
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeletePhoto(photo.id)}
-                                className="bg-red-500/90 hover:bg-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                            {/* Label do tipo */}
+                            <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium text-white ${getTypeColor(tipo)}`}>
+                              {tipo}
+                            </div>
+                            
+                            {/* Data */}
+                            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              {new Date(photo.data).toLocaleDateString('pt-BR')}
+                            </div>
+                            
+                            {/* Descrição abaixo da foto */}
+                            <div className="mt-2 text-center">
+                              <p className="text-sm text-gray-600 truncate" title={photo.descricao}>
+                                {photo.descricao}
+                              </p>
                             </div>
                           </div>
-                          
-                          {/* Label do tipo */}
-                          <div className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-medium text-white ${getTypeColor(tipo)}`}>
-                            {tipo}
-                          </div>
-                          
-                          {/* Data */}
-                          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                            {new Date(photo.data).toLocaleDateString('pt-BR')}
-                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Indicador de scroll */}
+                      {typedPhotos.length > 3 && (
+                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white p-2 rounded-l-lg shadow-lg">
+                          <div className="text-xs">Arraste →</div>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 );
