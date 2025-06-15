@@ -3,15 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
-import { format, isToday, isTomorrow, isThisWeek } from "date-fns";
+import { format, isToday, isTomorrow, isThisWeek, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const ConsultasProximas = () => {
   const { data: leads = [] } = useLeads();
 
-  // Filtrar leads com consultas agendadas nas próximas semanas
+  // Filtrar leads com consultas agendadas futuras
   const proximasConsultas = leads
-    .filter(lead => lead.proxima_consulta && lead.status === 'consulta_agendada')
+    .filter(lead => {
+      if (!lead.proxima_consulta || lead.status !== 'consulta_agendada') {
+        return false;
+      }
+      
+      const dataConsulta = new Date(lead.proxima_consulta);
+      const agora = new Date();
+      
+      // Só mostrar consultas que são futuras
+      return isAfter(dataConsulta, agora);
+    })
     .map(lead => ({
       ...lead,
       dataConsulta: new Date(lead.proxima_consulta!)

@@ -6,7 +6,7 @@ import { Users, Calendar, Clock, Users as UsersIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { PatientTabs } from "./PatientTabs";
-import { format } from "date-fns";
+import { format, isAfter, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface PatientProfileProps {
@@ -47,6 +47,13 @@ export const PatientProfile = ({ selectedPatient, onOpenConsultaDialog }: Patien
     return "bg-gradient-to-r from-rose-400 to-red-500";
   };
 
+  // Função para verificar se a consulta é futura
+  const isConsultaFutura = (dataConsulta: string) => {
+    const agora = new Date();
+    const dataConsultaDate = new Date(dataConsulta);
+    return isAfter(dataConsultaDate, agora);
+  };
+
   if (!selectedPatient) {
     return (
       <Card className="lg:col-span-2 shadow-xl border-0 bg-white/90 backdrop-blur-sm">
@@ -66,6 +73,10 @@ export const PatientProfile = ({ selectedPatient, onOpenConsultaDialog }: Patien
     );
   }
 
+  // Verificar se há consulta futura agendada
+  const hasConsultaFutura = selectedPatient.lead.proxima_consulta && 
+    isConsultaFutura(selectedPatient.lead.proxima_consulta);
+
   return (
     <Card className="lg:col-span-2 shadow-xl border-0 bg-white/90 backdrop-blur-sm">
       <CardHeader className="bg-gradient-to-r from-slate-700 to-gray-800 text-white rounded-t-lg">
@@ -78,8 +89,8 @@ export const PatientProfile = ({ selectedPatient, onOpenConsultaDialog }: Patien
             Perfil de {selectedPatient.lead.nome}
           </div>
           
-          {/* Mostrar próxima consulta se houver */}
-          {selectedPatient.lead.proxima_consulta && (
+          {/* Mostrar próxima consulta apenas se for futura */}
+          {hasConsultaFutura && (
             <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-lg">
               <Calendar className="h-4 w-4" />
               <span className="text-sm">
@@ -90,8 +101,8 @@ export const PatientProfile = ({ selectedPatient, onOpenConsultaDialog }: Patien
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        {/* Alerta de consulta próxima */}
-        {selectedPatient.lead.proxima_consulta && (
+        {/* Alerta de consulta próxima - apenas para consultas futuras */}
+        {hasConsultaFutura && (
           <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-center gap-2 text-amber-800">
               <Clock className="h-5 w-5" />
