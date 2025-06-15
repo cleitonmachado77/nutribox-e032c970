@@ -1,11 +1,32 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientGeneralTab } from "./PatientGeneralTab";
-import { PatientPlanTab } from "./PatientPlanTab";
-import { PatientPhotosTab } from "./PatientPhotosTab";
-import { PatientShoppingTab } from "./PatientShoppingTab";
 import { PatientHistoryTab } from "./PatientHistoryTab";
+import { PatientPhotosTab } from "./PatientPhotosTab";
+import { PatientPlanTab } from "./PatientPlanTab";
+import { PatientShoppingTab } from "./PatientShoppingTab";
 import { PatientClinicalHistory } from "./PatientClinicalHistory";
+import { PatientDashboardTab } from "./PatientDashboardTab";
+import { PatientCoachHistoryTab } from "./PatientCoachHistoryTab";
+import { NewConsultationTab } from "./NewConsultationTab";
+import { PatientSummaryTab } from "./PatientSummaryTab";
+import { PatientComparisonTab } from "./PatientComparisonTab";
 import { Paciente } from "@/hooks/usePacientes";
+import { 
+  User, 
+  Calendar, 
+  BarChart3, 
+  History, 
+  Bot,
+  FileText,
+  Camera,
+  ShoppingCart,
+  Stethoscope,
+  Plus,
+  TrendingUp,
+  FileBarChart
+} from "lucide-react";
+
 interface PatientTabsProps {
   selectedPatient: Paciente;
   onOpenConsultaDialog: () => void;
@@ -13,45 +34,83 @@ interface PatientTabsProps {
   getStatusColor: (status: string) => string;
   getProgressColor: (progress: number) => string;
 }
-export const PatientTabs = ({
-  selectedPatient,
+
+export const PatientTabs = ({ 
+  selectedPatient, 
   onOpenConsultaDialog,
   getObjetivoColor,
   getStatusColor,
   getProgressColor
 }: PatientTabsProps) => {
-  return <Tabs defaultValue="geral" className="w-full">
-      <TabsList className="grid w-full grid-cols-6 bg-purple-100">
-        <TabsTrigger value="geral" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Geral</TabsTrigger>
-        <TabsTrigger value="clinico" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Histórico Clínico</TabsTrigger>
-        <TabsTrigger value="plano" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Plano Alimentar</TabsTrigger>
-        <TabsTrigger value="fotos" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Fotos</TabsTrigger>
-        <TabsTrigger value="compras" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">Lista de Compras</TabsTrigger>
-        
+  return (
+    <Tabs defaultValue="geral" className="w-full">
+      <TabsList className="grid w-full grid-cols-7 bg-muted h-12">
+        <TabsTrigger value="geral" className="flex items-center gap-2 text-xs">
+          <User className="w-4 h-4" />
+          Geral
+        </TabsTrigger>
+        <TabsTrigger value="nova-consulta" className="flex items-center gap-2 text-xs">
+          <Plus className="w-4 h-4" />
+          Nova Consulta
+        </TabsTrigger>
+        <TabsTrigger value="painel" className="flex items-center gap-2 text-xs">
+          <BarChart3 className="w-4 h-4" />
+          Painel
+        </TabsTrigger>
+        <TabsTrigger value="historico" className="flex items-center gap-2 text-xs">
+          <History className="w-4 h-4" />
+          Histórico
+        </TabsTrigger>
+        <TabsTrigger value="nutricoach" className="flex items-center gap-2 text-xs">
+          <Bot className="w-4 h-4" />
+          NutriCoach
+        </TabsTrigger>
+        <TabsTrigger value="resumo" className="flex items-center gap-2 text-xs">
+          <FileBarChart className="w-4 h-4" />
+          Resumo
+        </TabsTrigger>
+        <TabsTrigger value="comparativo" className="flex items-center gap-2 text-xs">
+          <TrendingUp className="w-4 h-4" />
+          Comparativo
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="geral" className="space-y-6 mt-6">
-        <PatientGeneralTab selectedPatient={selectedPatient} onOpenConsultaDialog={onOpenConsultaDialog} getObjetivoColor={getObjetivoColor} getStatusColor={getStatusColor} getProgressColor={getProgressColor} />
+        <PatientGeneralTab 
+          selectedPatient={selectedPatient}
+          onOpenConsultaDialog={onOpenConsultaDialog}
+          getObjetivoColor={getObjetivoColor}
+          getStatusColor={getStatusColor}
+          getProgressColor={getProgressColor}
+        />
       </TabsContent>
 
-      <TabsContent value="clinico" className="space-y-6 mt-6">
-        <PatientClinicalHistory selectedPatient={selectedPatient} />
+      <TabsContent value="nova-consulta" className="space-y-6 mt-6">
+        <NewConsultationTab selectedPatient={selectedPatient} />
       </TabsContent>
 
-      <TabsContent value="plano" className="space-y-6 mt-6">
-        <PatientPlanTab selectedPatient={selectedPatient} />
-      </TabsContent>
-
-      <TabsContent value="fotos" className="space-y-6 mt-6">
-        <PatientPhotosTab selectedPatient={selectedPatient} />
-      </TabsContent>
-
-      <TabsContent value="compras" className="space-y-6 mt-6">
-        <PatientShoppingTab />
+      <TabsContent value="painel" className="space-y-6 mt-6">
+        <PatientDashboardTab selectedPatient={selectedPatient} />
       </TabsContent>
 
       <TabsContent value="historico" className="space-y-6 mt-6">
-        <PatientHistoryTab selectedPatient={selectedPatient} onOpenConsultaDialog={onOpenConsultaDialog} />
+        <PatientHistoryTab 
+          selectedPatient={selectedPatient}
+          onOpenConsultaDialog={onOpenConsultaDialog}
+        />
       </TabsContent>
-    </Tabs>;
+
+      <TabsContent value="nutricoach" className="space-y-6 mt-6">
+        <PatientCoachHistoryTab selectedPatient={selectedPatient} />
+      </TabsContent>
+
+      <TabsContent value="resumo" className="space-y-6 mt-6">
+        <PatientSummaryTab selectedPatient={selectedPatient} />
+      </TabsContent>
+
+      <TabsContent value="comparativo" className="space-y-6 mt-6">
+        <PatientComparisonTab selectedPatient={selectedPatient} />
+      </TabsContent>
+    </Tabs>
+  );
 };
