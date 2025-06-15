@@ -44,8 +44,8 @@ const items = [
     icon: MessageSquare,
   },
   {
-    title: "Nutribox IA",
-    url: "/dashboard/nutribox-ia",
+    title: "NutriCoach",
+    url: "/dashboard/nutricoach",
     icon: Brain,
   },
   {

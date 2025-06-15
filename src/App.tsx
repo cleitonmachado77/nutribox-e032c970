@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,12 +15,14 @@ import Leads from "./pages/Leads";
 import Kanban from "./pages/Kanban";
 import Pacientes from "./pages/Pacientes";
 import Conversas from "./pages/Conversas";
-import NutriboxIA from "./pages/NutriboxIA";
+import NutriCoach from "./pages/NutriCoach";
 import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import KanbanOperacional from "./pages/KanbanOperacional";
+
 const queryClient = new QueryClient();
+
 const App = () => <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -40,7 +43,7 @@ const App = () => <QueryClientProvider client={queryClient}>
                           <Route path="kanban-operacional" element={<KanbanOperacional />} />
                           <Route path="pacientes" element={<Pacientes />} />
                           <Route path="conversas" element={<Conversas />} />
-                          <Route path="nutribox-ia" element={<NutriboxIA />} />
+                          <Route path="nutricoach" element={<NutriCoach />} />
                           <Route path="plans" element={<Plans />} />
                           <Route path="settings" element={<Settings />} />
                         </Routes>
@@ -56,4 +59,5 @@ const App = () => <QueryClientProvider client={queryClient}>
     </TooltipProvider>
     <Toaster />
   </QueryClientProvider>;
+
 export default App;
