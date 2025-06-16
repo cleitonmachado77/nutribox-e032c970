@@ -1,0 +1,128 @@
+
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Heart } from "lucide-react";
+
+interface NutritionalPlanPersonalizationSectionProps {
+  patientId: string;
+}
+
+export const NutritionalPlanPersonalizationSection = ({ patientId }: NutritionalPlanPersonalizationSectionProps) => {
+  const [formData, setFormData] = useState({
+    preferredMeals: "",
+    avoidedMeals: "",
+    preferredFoods: "",
+    avoidedFoods: "",
+    perfectMeals: "",
+    vegetables: "",
+    fruits: "",
+    objects: "",
+    limitations: ""
+  });
+
+  const handleSave = () => {
+    console.log("Saving nutritional plan personalization for patient:", patientId, formData);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Heart className="w-5 h-5" />
+          Personalização do Plano Alimentar
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Refeições Preferidas</Label>
+            <Textarea 
+              value={formData.preferredMeals}
+              onChange={(e) => setFormData({...formData, preferredMeals: e.target.value})}
+              placeholder="Quais as refeições de um dia mais te dá prazer e/ou apetite?"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Refeições Preteridas</Label>
+            <Textarea 
+              value={formData.avoidedMeals}
+              onChange={(e) => setFormData({...formData, avoidedMeals: e.target.value})}
+              placeholder="Quais as refeições de um dia menos te dá prazer e/ou apetite?"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Alimentos Preferidos</Label>
+            <Textarea 
+              value={formData.preferredFoods}
+              onChange={(e) => setFormData({...formData, preferredFoods: e.target.value})}
+              placeholder="Quais alimentos você mais gosta e gostaria que estivessem no plano?"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Alimentos Preteridos</Label>
+            <Textarea 
+              value={formData.avoidedFoods}
+              onChange={(e) => setFormData({...formData, avoidedFoods: e.target.value})}
+              placeholder="Quais alimentos você não gosta e gostaria de se evitar no plano?"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Refeição Perfeita</Label>
+            <Textarea 
+              value={formData.perfectMeals}
+              onChange={(e) => setFormData({...formData, perfectMeals: e.target.value})}
+              placeholder="Cite 2 refeições que você considera perfeita e você comeria todos os dias"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Verduras ou Legumes</Label>
+            <Textarea 
+              value={formData.vegetables}
+              onChange={(e) => setFormData({...formData, vegetables: e.target.value})}
+              placeholder="Quais as verduras ou legumes você mais gosta ou é mais suscetível a comer?"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Frutas</Label>
+            <Textarea 
+              value={formData.fruits}
+              onChange={(e) => setFormData({...formData, fruits: e.target.value})}
+              placeholder="Quais frutas você mais gosta ou é mais suscetível a comer?"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Objetos</Label>
+            <Textarea 
+              value={formData.objects}
+              onChange={(e) => setFormData({...formData, objects: e.target.value})}
+              placeholder="Você tem acessos a micro-ondas, fogão, airfryer e marmitas?"
+            />
+          </div>
+          
+          <div className="space-y-2 md:col-span-2">
+            <Label>Limitações</Label>
+            <Textarea 
+              value={formData.limitations}
+              onChange={(e) => setFormData({...formData, limitations: e.target.value})}
+              placeholder="Tem alguma limitação de tempo ou recursos para cozinhar?"
+            />
+          </div>
+        </div>
+        
+        <Button onClick={handleSave} className="w-full">
+          Salvar Dados
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
