@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { usePatientData } from "@/hooks/usePatientData";
 import { useNutriCoachAI } from "@/hooks/useNutriCoachAI";
 import { useToast } from "@/hooks/use-toast";
+import { usePacientes } from "@/hooks/usePacientes";
 import { 
   User, 
   Phone, 
@@ -16,16 +17,23 @@ import {
   MessageSquare,
   Target,
   Clock,
-  Send
+  Send,
+  Calendar,
+  Mail,
+  MapPin,
+  Scale,
+  Ruler
 } from "lucide-react";
 
 export const PatientProfiles = () => {
-  const { patients, insights, loading } = usePatientData();
-  const { generateMessage, loading: aiLoading } = useNutriCoachAI();
+  const { patients: aiPatients, insights, loading: aiLoading } = usePatientData();
+  const { data: cadastredPatients = [], isLoading: patientsLoading } = usePacientes();
+  const { generateMessage, loading: aiMessageLoading } = useNutriCoachAI();
   const { toast } = useToast();
 
   const sendPersonalizedMessage = async (patientId: string, patientName: string, patientPhone: string) => {
     const patientInsight = insights.find(i => i.patient_id === patientId);
+    const cadastredPatient = cadastredPatients.find(p => p.lead.telefone === patientPhone);
     
     try {
       const message = await generateMessage({
@@ -35,7 +43,12 @@ export const PatientProfiles = () => {
         patientData: {
           engagement_level: patientInsight?.engagement_level,
           recommendations: patientInsight?.recommendations,
-          behavioral_patterns: patientInsight?.behavioral_patterns
+          behavioral_patterns: patientInsight?.behavioral_patterns,
+          weight: cadastredPatient?.lead.peso,
+          height: cadastredPatient?.lead.altura,
+          imc: cadastredPatient?.lead.imc,
+          objective: cadastredPatient?.lead.objetivo,
+          progress: cadastredPatient?.lead.progresso
         }
       });
 
@@ -71,7 +84,23 @@ export const PatientProfiles = () => {
     }
   };
 
-  if (loading) {
+  const getStatusBadgeColor = (status: string) => {
+    return status === 'ativo' ? 'bg-green-500' : 'bg-gray-500';
+  };
+
+  // Combinar dados dos pacientes cadastrados com insights da IA
+  const combinedPatients = cadastredPatients.map(cadastredPatient => {
+    const aiPatient = aiPatients.find(ai => ai.phone === cadastredPatient.lead.telefone);
+    const insight = insights.find(i => i.patient_id === cadastredPatient.id);
+    
+    return {
+      ...cadastredPatient,
+      aiData: aiPatient,
+      insight: insight
+    };
+  });
+
+  if (patientsLoading || aiLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
@@ -84,17 +113,19 @@ export const PatientProfiles = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Perfis dos Pacientes</h2>
-          <p className="text-gray-600">Análise personalizada com IA para cada paciente</p>
+          <p className="text-gray-600">Análise personalizada com IA para cada paciente ativo</p>
         </div>
         <Badge variant="outline" className="text-purple-600">
           <Brain className="w-4 h-4 mr-1" />
-          {patients.length} Perfis Analisados
+          {combinedPatients.length} Pacientes Ativos
         </Badge>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {patients.map((patient) => {
-          const insight = insights.find(i => i.patient_id === patient.id);
+        {combinedPatients.map((patient) => {
+          const lead = patient.lead;
+          const insight = patient.insight;
+          const aiData = patient.aiData;
           
           return (
             <Card key={patient.id} className="border-2 border-purple-100 hover:border-purple-200 transition-colors">
@@ -102,70 +133,138 @@ export const PatientProfiles = () => {
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-medium">
-                      {patient.name.charAt(0).toUpperCase()}
+                      {lead.nome.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold">{patient.name}</h3>
+                      <h3 className="font-semibold">{lead.nome}</h3>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="w-3 h-3" />
-                        {patient.phone}
+                        {lead.telefone}
                       </div>
                     </div>
                   </div>
-                  <Badge 
-                    className={`${getEngagementColor(insight?.engagement_level || 'low')} text-white`}
-                  >
-                    {insight?.engagement_level || 'low'} engagement
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge className={`${getStatusBadgeColor(patient.status_tratamento)} text-white`}>
+                      {patient.status_tratamento}
+                    </Badge>
+                    <Badge 
+                      className={`${getEngagementColor(insight?.engagement_level || 'low')} text-white`}
+                    >
+                      {insight?.engagement_level || 'low'} engagement
+                    </Badge>
+                  </div>
                 </CardTitle>
               </CardHeader>
               
               <CardContent className="p-6 space-y-4">
+                {/* Informações do Paciente */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Mail className="w-3 h-3" />
+                      <span>Email:</span>
+                    </div>
+                    <span className="font-medium">{lead.email || 'Não informado'}</span>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Target className="w-3 h-3" />
+                      <span>Objetivo:</span>
+                    </div>
+                    <span className="font-medium">{lead.objetivo || 'Não definido'}</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Scale className="w-3 h-3" />
+                      <span>Peso:</span>
+                    </div>
+                    <span className="font-medium">{lead.peso ? `${lead.peso}kg` : 'Não informado'}</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Ruler className="w-3 h-3" />
+                      <span>Altura:</span>
+                    </div>
+                    <span className="font-medium">{lead.altura ? `${lead.altura}cm` : 'Não informado'}</span>
+                  </div>
+
+                  {lead.imc && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <span>IMC:</span>
+                      </div>
+                      <span className="font-medium">{lead.imc}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Calendar className="w-3 h-3" />
+                      <span>Última consulta:</span>
+                    </div>
+                    <span className="font-medium">
+                      {lead.ultima_consulta 
+                        ? new Date(lead.ultima_consulta).toLocaleDateString('pt-BR')
+                        : 'Nenhuma'
+                      }
+                    </span>
+                  </div>
+                </div>
+
                 {/* Métricas de Engajamento */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Score de Engajamento</span>
-                      <span className="font-medium">{patient.engagement_score || 0}%</span>
+                      <span>Progresso Geral</span>
+                      <span className="font-medium">{lead.progresso || 0}%</span>
                     </div>
-                    <Progress value={patient.engagement_score || 0} className="h-2" />
+                    <Progress value={lead.progresso || 0} className="h-2" />
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Taxa de Resposta</span>
-                      <span className="font-medium">{insight?.response_rate || 0}%</span>
+                      <span>Engajamento IA</span>
+                      <span className="font-medium">{aiData?.engagement_score || 0}%</span>
                     </div>
-                    <Progress value={insight?.response_rate || 0} className="h-2" />
+                    <Progress value={aiData?.engagement_score || 0} className="h-2" />
                   </div>
                 </div>
 
-                {/* Dados Comportamentais */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Brain className="w-4 h-4" />
-                    Análise Comportamental
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Interações Totais:</span>
-                      <span className="font-medium">{insight?.interaction_frequency || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Horário Preferido:</span>
-                      <span className="font-medium capitalize">{insight?.preferred_time || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Tendência:</span>
-                      <div className="flex items-center gap-1">
-                        {getTrendIcon(patient.progress_data?.improvement_trend || 'stable')}
-                        <span className="font-medium capitalize">
-                          {patient.progress_data?.improvement_trend || 'stable'}
-                        </span>
+                {/* Dados Comportamentais da IA */}
+                {insight && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4" />
+                      Análise Comportamental IA
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Interações Totais:</span>
+                        <span className="font-medium">{insight.interaction_frequency || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Taxa de Resposta:</span>
+                        <span className="font-medium">{insight.response_rate || 0}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Horário Preferido:</span>
+                        <span className="font-medium capitalize">{insight.preferred_time || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Tendência:</span>
+                        <div className="flex items-center gap-1">
+                          {getTrendIcon(aiData?.progress_data?.improvement_trend || 'stable')}
+                          <span className="font-medium capitalize">
+                            {aiData?.progress_data?.improvement_trend || 'stable'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Recomendações da IA */}
                 {insight?.recommendations && insight.recommendations.length > 0 && (
@@ -189,8 +288,8 @@ export const PatientProfiles = () => {
                 <div className="flex gap-2 pt-2">
                   <Button
                     size="sm"
-                    onClick={() => sendPersonalizedMessage(patient.id, patient.name, patient.phone)}
-                    disabled={aiLoading}
+                    onClick={() => sendPersonalizedMessage(patient.id, lead.nome, lead.telefone)}
+                    disabled={aiMessageLoading}
                     className="flex-1"
                   >
                     <Send className="w-3 h-3 mr-1" />
@@ -207,11 +306,11 @@ export const PatientProfiles = () => {
         })}
       </div>
 
-      {patients.length === 0 && (
+      {combinedPatients.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium mb-2">Nenhum paciente encontrado</h3>
+            <h3 className="text-lg font-medium mb-2">Nenhum paciente ativo encontrado</h3>
             <p className="text-gray-600">
               Converta leads em pacientes para começar a análise com IA
             </p>

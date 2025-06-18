@@ -41,12 +41,15 @@ export const usePatientData = () => {
     if (!user) return;
 
     try {
-      // Carregar dados dos pacientes dos leads convertidos
-      const { data: leadsData } = await supabase
-        .from('leads')
-        .select('*')
+      // Carregar pacientes ativos do sistema
+      const { data: patientsData } = await supabase
+        .from('pacientes')
+        .select(`
+          *,
+          lead:leads(*)
+        `)
         .eq('user_id', user.id)
-        .eq('status', 'convertido');
+        .eq('status_tratamento', 'ativo');
 
       // Carregar conversas do WhatsApp
       const { data: conversationsData } = await supabase
@@ -60,8 +63,9 @@ export const usePatientData = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Combinar dados para criar perfis completos
-      const patientProfiles: PatientProfile[] = (leadsData || []).map(lead => {
+      // Processar dados dos pacientes ativos
+      const patientProfiles: PatientProfile[] = (patientsData || []).map(paciente => {
+        const lead = paciente.lead;
         const conversation = conversationsData?.find(conv => conv.contact_phone === lead.telefone);
         const patientInteractions = interactionsData?.filter((interaction: any) => 
           interaction.patient_phone === lead.telefone
@@ -71,7 +75,7 @@ export const usePatientData = () => {
         const engagementScore = calculateEngagementScore(patientInteractions);
 
         return {
-          id: lead.id,
+          id: paciente.id,
           name: lead.nome,
           phone: lead.telefone,
           email: lead.email,

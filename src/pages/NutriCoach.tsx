@@ -16,6 +16,7 @@ import { PatientInteractions } from "@/components/coach/PatientInteractions";
 import { ProgressTracking } from "@/components/coach/ProgressTracking";
 import { WhatsAppIntegration } from "@/components/coach/WhatsAppIntegration";
 import { CoachMessaging } from "@/components/coach/CoachMessaging";
+import { PatientProfiles } from "@/components/coach/PatientProfiles";
 
 export default function NutriCoach() {
   return (
@@ -69,7 +70,7 @@ export default function NutriCoach() {
         </TabsContent>
 
         <TabsContent value="pacientes" className="space-y-6">
-          <ProgressTracking />
+          <PatientProfiles />
         </TabsContent>
 
         <TabsContent value="questionarios" className="space-y-6">
