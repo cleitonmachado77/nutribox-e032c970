@@ -39,23 +39,15 @@ export const useNutriCoachData = () => {
     if (!user) return;
 
     try {
-      // Buscar interações do coach usando rpc ou query direta
+      // Buscar interações do coach usando query direta
       const { data: interactionsData, error: interactionsError } = await supabase
-        .rpc('get_coach_interactions')
-        .then(async (result) => {
-          // Se RPC falhar, tentar query direta
-          if (result.error) {
-            return await supabase
-              .from('whatsapp_coach_interactions' as any)
-              .select('*')
-              .order('created_at', { ascending: false })
-              .limit(50);
-          }
-          return result;
-        });
+        .from('whatsapp_coach_interactions' as any)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (interactionsError) {
-        console.log('Using fallback data for interactions');
+        console.log('Using fallback data for interactions:', interactionsError);
         // Usar dados de fallback enquanto a tabela não está sincronizada
         setInteractions([]);
         setStats({
@@ -96,13 +88,24 @@ export const useNutriCoachData = () => {
         ? Math.round((responses.length / questionarios.length) * 100)
         : 0;
 
-      setInteractions(interactionsData || []);
+      // Converter dados para o tipo correto
+      const typedInteractions: CoachInteraction[] = (interactionsData || []).map((item: any) => ({
+        id: item.id,
+        patient_phone: item.patient_phone,
+        patient_name: item.patient_name,
+        action_type: item.action_type,
+        generated_message: item.generated_message,
+        patient_data: item.patient_data,
+        created_at: item.created_at
+      }));
+
+      setInteractions(typedInteractions);
       setStats({
         pacientesConectados: conversationsData?.length || 0,
         mensagensEnviadas: todayInteractions.length,
         questionariosRespondidos: responses.length,
         lembretesPendentes: Math.max(0, questionarios.length - responses.length),
-        interacoesTotais: interactionsData?.length || 0,
+        interacoesTotais: typedInteractions.length,
         taxaResposta
       });
     } catch (error) {
