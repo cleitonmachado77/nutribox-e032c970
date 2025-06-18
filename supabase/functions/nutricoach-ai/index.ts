@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, patientName, patientPhone, messageType, patientData } = await req.json()
+    const { action, patientName, patientPhone, messageType, patientData, conversationHistory } = await req.json()
 
     console.log('NutriCoach AI request:', { action, patientName, patientPhone, messageType })
 
@@ -23,31 +23,101 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
+    // Buscar histórico de interações do paciente para personalização
+    let patientHistory = [];
+    if (patientPhone) {
+      const { data: historyData } = await supabase
+        .from('whatsapp_coach_interactions')
+        .select('*')
+        .eq('patient_phone', patientPhone)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      patientHistory = historyData || [];
+    }
+
+    // Buscar dados do lead/paciente para mais contexto
+    let patientProfile = null;
+    if (patientPhone) {
+      const { data: leadData } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('telefone', patientPhone)
+        .single();
+      
+      patientProfile = leadData;
+    }
+
     let prompt = '';
     let generatedMessage = '';
 
+    // Criar contexto personalizado baseado no histórico e perfil
+    const personalContext = createPersonalizedContext(patientProfile, patientHistory, patientData);
+
     switch (action) {
       case 'generate_questionnaire':
-        prompt = `Você é um NutriCoach especialista em nutrição. Crie um questionário personalizado para o paciente ${patientName} focado em hábitos alimentares, objetivos nutricionais e estilo de vida. O questionário deve ter 5-7 perguntas objetivas e ser enviado via WhatsApp. Seja direto e profissional.`;
+        prompt = `Você é um NutriCoach especialista em nutrição. Crie um questionário personalizado para o paciente ${patientName} focado em hábitos alimentares, objetivos nutricionais e estilo de vida.
+
+        Contexto do paciente: ${personalContext}
+        
+        O questionário deve:
+        - Ter 5-7 perguntas objetivas
+        - Ser adaptado ao perfil e histórico do paciente
+        - Incluir perguntas sobre progresso se houver histórico
+        - Ser enviado via WhatsApp
+        - Ser direto e profissional
+        
+        Use emojis apropriados e mantenha tom motivacional.`;
         break;
       
       case 'generate_motivational':
-        prompt = `Você é um NutriCoach motivacional. Crie uma mensagem motivacional personalizada para ${patientName} sobre nutrição e bem-estar. A mensagem deve ser positiva, encorajadora e incluir uma dica prática de nutrição. Máximo 150 palavras.`;
+        prompt = `Você é um NutriCoach motivacional. Crie uma mensagem motivacional personalizada para ${patientName} sobre nutrição e bem-estar.
+
+        Contexto do paciente: ${personalContext}
+        
+        A mensagem deve:
+        - Ser personalizada baseada no histórico e perfil
+        - Ser positiva e encorajadora
+        - Incluir uma dica prática de nutrição relevante
+        - Reconhecer progresso se houver
+        - Máximo 150 palavras
+        - Usar emojis apropriados`;
         break;
       
       case 'generate_reminder':
-        prompt = `Você é um NutriCoach assistente. Crie um lembrete amigável para ${patientName} sobre ${messageType || 'cuidados nutricionais'}. O lembrete deve ser útil e motivador. Máximo 100 palavras.`;
+        prompt = `Você é um NutriCoach assistente. Crie um lembrete amigável para ${patientName} sobre ${messageType || 'cuidados nutricionais'}.
+
+        Contexto do paciente: ${personalContext}
+        
+        O lembrete deve:
+        - Ser personalizado baseado no perfil
+        - Ser útil e motivador
+        - Incluir dicas específicas se relevante
+        - Máximo 100 palavras
+        - Usar tom amigável com emojis`;
         break;
       
       case 'analyze_responses':
-        prompt = `Você é um NutriCoach analista. Analise as respostas do paciente ${patientName}: ${JSON.stringify(patientData)}. Forneça insights sobre hábitos alimentares e recomendações personalizadas. Seja específico e prático.`;
+        prompt = `Você é um NutriCoach analista. Analise as respostas do paciente ${patientName} e forneça insights personalizados.
+
+        Respostas atuais: ${JSON.stringify(patientData)}
+        Contexto do paciente: ${personalContext}
+        
+        Sua análise deve:
+        - Comparar com respostas anteriores se houver
+        - Identificar padrões e tendências
+        - Fornecer insights sobre hábitos alimentares
+        - Dar recomendações personalizadas específicas
+        - Celebrar progressos e abordar desafios
+        - Ser específico e prático
+        - Usar tom profissional mas empático`;
         break;
       
       default:
         throw new Error('Ação não reconhecida');
     }
 
-    // Chamar OpenAI
+    // Chamar OpenAI com contexto personalizado
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -59,7 +129,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Você é um NutriCoach especialista em nutrição, sempre responda em português brasileiro de forma profissional e empática.'
+            content: 'Você é um NutriCoach especialista em nutrição com IA avançada que aprende com cada paciente. Sempre responda em português brasileiro de forma profissional, empática e personalizada baseada no histórico e perfil de cada paciente.'
           },
           {
             role: 'user',
@@ -80,7 +150,7 @@ serve(async (req) => {
 
     console.log('Generated message:', generatedMessage)
 
-    // Salvar interação no banco
+    // Salvar interação no banco com contexto adicional
     const { error: insertError } = await supabase
       .from('whatsapp_coach_interactions')
       .insert({
@@ -88,7 +158,12 @@ serve(async (req) => {
         patient_name: patientName,
         action_type: action,
         generated_message: generatedMessage,
-        patient_data: patientData || null
+        patient_data: {
+          ...patientData,
+          patient_profile: patientProfile,
+          interaction_count: patientHistory.length + 1,
+          personalization_context: personalContext
+        }
       })
 
     if (insertError) {
@@ -120,7 +195,8 @@ serve(async (req) => {
         success: true,
         message: generatedMessage,
         action: action,
-        patient: patientName
+        patient: patientName,
+        personalization_applied: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -141,3 +217,61 @@ serve(async (req) => {
     )
   }
 })
+
+// Função para criar contexto personalizado
+function createPersonalizedContext(patientProfile: any, patientHistory: any[], currentData: any) {
+  let context = '';
+
+  if (patientProfile) {
+    context += `Perfil: ${patientProfile.nome}, objetivo: ${patientProfile.objetivo || 'não definido'}`;
+    if (patientProfile.peso) context += `, peso: ${patientProfile.peso}kg`;
+    if (patientProfile.altura) context += `, altura: ${patientProfile.altura}cm`;
+    if (patientProfile.imc) context += `, IMC: ${patientProfile.imc}`;
+  }
+
+  if (patientHistory.length > 0) {
+    context += `. Histórico: ${patientHistory.length} interações anteriores`;
+    
+    const recentInteractions = patientHistory.slice(0, 3);
+    const behaviorPatterns = analyzeBehaviorPatterns(recentInteractions);
+    
+    if (behaviorPatterns.length > 0) {
+      context += `. Padrões comportamentais: ${behaviorPatterns.join(', ')}`;
+    }
+  }
+
+  if (currentData) {
+    context += `. Dados atuais: ${JSON.stringify(currentData)}`;
+  }
+
+  return context || 'Novo paciente sem histórico disponível';
+}
+
+// Função para analisar padrões comportamentais
+function analyzeBehaviorPatterns(interactions: any[]) {
+  const patterns = [];
+
+  const responsiveInteractions = interactions.filter(i => i.action_type === 'analyze_responses');
+  if (responsiveInteractions.length >= 2) {
+    patterns.push('paciente engajado com questionários');
+  }
+
+  const motivationalCount = interactions.filter(i => i.action_type === 'generate_motivational').length;
+  if (motivationalCount > 3) {
+    patterns.push('recebe mensagens motivacionais frequentemente');
+  }
+
+  // Analisar consistência temporal
+  const recentDays = interactions.filter(i => {
+    const daysDiff = (Date.now() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    return daysDiff <= 7;
+  });
+
+  if (recentDays.length >= 3) {
+    patterns.push('ativo na última semana');
+  } else if (recentDays.length === 0) {
+    patterns.push('inativo recentemente');
+  }
+
+  return patterns;
+}
