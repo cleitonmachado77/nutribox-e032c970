@@ -800,6 +800,39 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_coach_interactions: {
+        Row: {
+          action_type: string
+          created_at: string
+          generated_message: string
+          id: string
+          patient_data: Json | null
+          patient_name: string
+          patient_phone: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          generated_message: string
+          id?: string
+          patient_data?: Json | null
+          patient_name: string
+          patient_phone: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          generated_message?: string
+          id?: string
+          patient_data?: Json | null
+          patient_name?: string
+          patient_phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_conversations: {
         Row: {
           contact_name: string | null

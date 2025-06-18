@@ -1,137 +1,143 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const OPENAI_API_KEY = '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';
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { action, patientName, patientPhone, messageType, patientData } = await req.json()
 
-    const { 
-      action, 
-      patientName, 
-      patientPhone, 
-      messageType, 
-      patientData,
-      conversationHistory 
-    } = await req.json();
+    console.log('NutriCoach AI request:', { action, patientName, patientPhone, messageType })
 
-    console.log('NutriCoach AI Request:', { action, patientName, messageType });
+    // Criar cliente Supabase
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    )
 
-    let systemPrompt = '';
-    let userMessage = '';
+    let prompt = '';
+    let generatedMessage = '';
 
     switch (action) {
       case 'generate_questionnaire':
-        systemPrompt = `Você é o NutriCoach, um assistente virtual especializado em nutrição. 
-        Sua função é enviar questionários comportamentais personalizados para pacientes.
-        Seja empático, motivacional e use emojis apropriados.
-        Mantenha um tom amigável mas profissional.`;
-        
-        userMessage = `Gere um questionário comportamental para ${patientName}. 
-        Inclua perguntas sobre consistência no plano alimentar, frequência de refeições, 
-        tempo de refeição, consumo de vegetais/frutas e ingestão de líquidos.
-        Use escala de 1-3 ou sim/não para facilitar as respostas.`;
+        prompt = `Você é um NutriCoach especialista em nutrição. Crie um questionário personalizado para o paciente ${patientName} focado em hábitos alimentares, objetivos nutricionais e estilo de vida. O questionário deve ter 5-7 perguntas objetivas e ser enviado via WhatsApp. Seja direto e profissional.`;
         break;
-
+      
       case 'generate_motivational':
-        systemPrompt = `Você é o NutriCoach, um assistente virtual especializado em nutrição.
-        Sua função é enviar mensagens motivacionais personalizadas.
-        Seja positivo, encorajador e use emojis apropriados.`;
-        
-        userMessage = `Gere uma mensagem motivacional para ${patientName}.
-        A mensagem deve ser inspiradora e focada na jornada nutricional.
-        Mantenha entre 2-3 linhas e inclua emojis relevantes.`;
+        prompt = `Você é um NutriCoach motivacional. Crie uma mensagem motivacional personalizada para ${patientName} sobre nutrição e bem-estar. A mensagem deve ser positiva, encorajadora e incluir uma dica prática de nutrição. Máximo 150 palavras.`;
         break;
-
+      
       case 'generate_reminder':
-        systemPrompt = `Você é o NutriCoach, um assistente virtual especializado em nutrição.
-        Sua função é enviar lembretes úteis sobre hábitos alimentares.
-        Seja útil, claro e use emojis apropriados.`;
-        
-        userMessage = `Gere um lembrete de ${messageType || 'hidratação'} para ${patientName}.
-        O lembrete deve ser prático e motivador.
-        Mantenha conciso e inclua emojis relevantes.`;
+        prompt = `Você é um NutriCoach assistente. Crie um lembrete amigável para ${patientName} sobre ${messageType || 'cuidados nutricionais'}. O lembrete deve ser útil e motivador. Máximo 100 palavras.`;
         break;
-
+      
       case 'analyze_responses':
-        systemPrompt = `Você é o NutriCoach, um assistente virtual especializado em nutrição.
-        Analise as respostas do questionário e forneça feedback construtivo.
-        Identifique pontos fortes e áreas de melhoria.`;
-        
-        userMessage = `Analise as respostas do questionário de ${patientName}: ${JSON.stringify(patientData)}.
-        Forneça feedback personalizado destacando progressos e sugerindo melhorias.`;
+        prompt = `Você é um NutriCoach analista. Analise as respostas do paciente ${patientName}: ${JSON.stringify(patientData)}. Forneça insights sobre hábitos alimentares e recomendações personalizadas. Seja específico e prático.`;
         break;
-
+      
       default:
         throw new Error('Ação não reconhecida');
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Chamar OpenAI
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
+          {
+            role: 'system',
+            content: 'Você é um NutriCoach especialista em nutrição, sempre responda em português brasileiro de forma profissional e empática.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
         ],
         max_tokens: 500,
         temperature: 0.7,
       }),
-    });
+    })
 
-    const data = await response.json();
-    const generatedMessage = data.choices[0].message.content;
-
-    // Salvar interação no banco de dados
-    if (patientPhone) {
-      await supabase
-        .from('whatsapp_coach_interactions')
-        .insert({
-          patient_phone: patientPhone,
-          patient_name: patientName,
-          action_type: action,
-          generated_message: generatedMessage,
-          patient_data: patientData || null,
-          created_at: new Date().toISOString()
-        });
+    if (!openaiResponse.ok) {
+      throw new Error(`OpenAI API error: ${openaiResponse.statusText}`)
     }
 
-    console.log('Generated message:', generatedMessage);
+    const openaiData = await openaiResponse.json()
+    generatedMessage = openaiData.choices[0].message.content
 
-    return new Response(JSON.stringify({ 
-      message: generatedMessage,
-      success: true 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log('Generated message:', generatedMessage)
 
+    // Salvar interação no banco
+    const { error: insertError } = await supabase
+      .from('whatsapp_coach_interactions')
+      .insert({
+        patient_phone: patientPhone || 'N/A',
+        patient_name: patientName,
+        action_type: action,
+        generated_message: generatedMessage,
+        patient_data: patientData || null
+      })
+
+    if (insertError) {
+      console.error('Error saving interaction:', insertError)
+      // Não falhar a requisição por causa do erro de salvamento
+    }
+
+    // Enviar mensagem via WhatsApp (se patientPhone fornecido)
+    if (patientPhone) {
+      try {
+        const { error: whatsappError } = await supabase.functions.invoke('whatsapp-send', {
+          body: {
+            to: patientPhone,
+            message: generatedMessage
+          }
+        })
+
+        if (whatsappError) {
+          console.error('WhatsApp send error:', whatsappError)
+        }
+      } catch (whatsappError) {
+        console.error('WhatsApp integration error:', whatsappError)
+        // Não falhar por erro do WhatsApp
+      }
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: generatedMessage,
+        action: action,
+        patient: patientName
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
   } catch (error) {
-    console.error('Error in nutricoach-ai function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('NutriCoach AI error:', error)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message || 'Erro interno do servidor'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      },
+    )
   }
-});
+})
