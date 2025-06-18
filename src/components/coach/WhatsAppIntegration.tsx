@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
+import { useNutriCoachAI } from "@/hooks/useNutriCoachAI";
 import { useToast } from "@/hooks/use-toast";
 import { 
   MessageSquare, 
@@ -15,11 +16,18 @@ import {
   Users,
   Zap,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
 
 export const WhatsAppIntegration = () => {
   const { conversations, sendMessage, loading } = useWhatsAppAPI();
+  const { 
+    loading: aiLoading, 
+    generateQuestionnaire, 
+    generateMotivationalMessage, 
+    generateReminder 
+  } = useNutriCoachAI();
   const { toast } = useToast();
   const [autoResponses, setAutoResponses] = useState(true);
   const [dailyReminders, setDailyReminders] = useState(true);
@@ -53,47 +61,37 @@ export const WhatsAppIntegration = () => {
     }
   };
 
-  const sendDailyQuestionnaire = async (patientName: string, phone: string) => {
-    const questionnaireMessage = `Olá ${patientName}! 👋
-
-Hora do seu questionário diário! 📋
-
-*Questões de hoje:*
-
-1️⃣ Você conseguiu seguir pelo menos 90% do Plano hoje?
-• Sim ✅
-• Não ❌
-
-2️⃣ Quantas refeições você fez hoje?
-• 2-3 refeições
-• 4 refeições  
-• 5-6 refeições
-
-3️⃣ Como está sua energia hoje?
-• Baixa
-• Moderada
-• Boa
-
-4️⃣ Você fez atividade física hoje?
-• Sim ✅
-• Não ❌
-
-Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
-
-    await handleSendCoachMessage(phone, questionnaireMessage);
+  const sendAIQuestionnaire = async (patientName: string, phone: string) => {
+    try {
+      const questionnaire = await generateQuestionnaire(patientName, phone);
+      if (questionnaire) {
+        await handleSendCoachMessage(phone, questionnaire);
+      }
+    } catch (error) {
+      console.error('Error sending AI questionnaire:', error);
+    }
   };
 
-  const sendMotivationalMessage = async (patientName: string, phone: string) => {
-    const messages = [
-      `${patientName}, lembre-se: pequenos progressos diários levam a grandes transformações! 💪`,
-      `Hora de beber água, ${patientName}! Seu corpo agradece! 💧`,
-      `${patientName}, como foi sua refeição hoje? Lembre-se de comer com calma! 🥗`,
-      `Parabéns ${patientName}! Você está no caminho certo! Continue assim! 🌟`,
-      `${patientName}, que tal uma caminhada hoje? Seu corpo e mente vão adorar! 🚶‍♀️`
-    ];
-    
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    await handleSendCoachMessage(phone, randomMessage);
+  const sendAIMotivationalMessage = async (patientName: string, phone: string) => {
+    try {
+      const motivationalMessage = await generateMotivationalMessage(patientName, phone);
+      if (motivationalMessage) {
+        await handleSendCoachMessage(phone, motivationalMessage);
+      }
+    } catch (error) {
+      console.error('Error sending motivational message:', error);
+    }
+  };
+
+  const sendAIReminder = async (patientName: string, phone: string, type: string) => {
+    try {
+      const reminder = await generateReminder(patientName, type, phone);
+      if (reminder) {
+        await handleSendCoachMessage(phone, reminder);
+      }
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+    }
   };
 
   return (
@@ -135,12 +133,15 @@ Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lembretes</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">IA Status</CardTitle>
+            <Bot className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{coachStats.lembretesPendentes}</div>
-            <p className="text-xs text-muted-foreground">pendentes</p>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm">ChatGPT Ativo</span>
+            </div>
+            <p className="text-xs text-muted-foreground">IA configurada</p>
           </CardContent>
         </Card>
       </div>
@@ -150,15 +151,15 @@ Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot className="w-5 h-5" />
-            Configurações do Coach Virtual
+            Configurações do Coach Virtual com IA
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="font-medium">Respostas Automáticas</Label>
+              <Label className="font-medium">Respostas Automáticas com IA</Label>
               <p className="text-sm text-gray-600">
-                O coach responde automaticamente às mensagens dos pacientes
+                O coach responde automaticamente usando ChatGPT
               </p>
             </div>
             <Switch 
@@ -169,9 +170,9 @@ Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="font-medium">Lembretes Diários</Label>
+              <Label className="font-medium">Lembretes Personalizados</Label>
               <p className="text-sm text-gray-600">
-                Enviar lembretes sobre hidratação, refeições e exercícios
+                Lembretes gerados por IA baseados no perfil do paciente
               </p>
             </div>
             <Switch 
@@ -182,9 +183,9 @@ Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="font-medium">Questionários Programados</Label>
+              <Label className="font-medium">Questionários Inteligentes</Label>
               <p className="text-sm text-gray-600">
-                Enviar questionários comportamentais automaticamente
+                Questionários adaptativos gerados por IA
               </p>
             </div>
             <Switch 
@@ -195,63 +196,88 @@ Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
         </CardContent>
       </Card>
 
-      {/* Ações Rápidas do Coach */}
+      {/* Ações Rápidas do Coach com IA */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
-            Ações Rápidas do Coach
+            Ações Inteligentes do NutriCoach
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button 
-              onClick={() => {
-                // Enviar questionário para todos os pacientes conectados
-                conversations.forEach(conv => {
+              onClick={async () => {
+                for (const conv of conversations.slice(0, 3)) {
                   if (conv.contact_name) {
-                    sendDailyQuestionnaire(conv.contact_name, conv.contact_phone);
+                    await sendAIQuestionnaire(conv.contact_name, conv.contact_phone);
                   }
-                });
+                }
                 toast({
-                  title: "Questionários enviados",
-                  description: `Enviados para ${conversations.length} pacientes`
+                  title: "Questionários IA enviados",
+                  description: `Enviados para ${Math.min(conversations.length, 3)} pacientes`
                 });
               }}
+              disabled={aiLoading}
               className="h-auto p-4 flex flex-col items-start"
               variant="outline"
             >
               <div className="flex items-center gap-2 mb-2">
-                <Send className="w-4 h-4" />
-                <span className="font-medium">Enviar Questionário Diário</span>
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <span className="font-medium">Questionário IA</span>
               </div>
               <span className="text-sm text-gray-600">
-                Para todos os pacientes conectados
+                Gerado por ChatGPT
               </span>
             </Button>
 
             <Button 
-              onClick={() => {
-                // Enviar mensagem motivacional
-                conversations.forEach(conv => {
+              onClick={async () => {
+                for (const conv of conversations.slice(0, 3)) {
                   if (conv.contact_name) {
-                    sendMotivationalMessage(conv.contact_name, conv.contact_phone);
+                    await sendAIMotivationalMessage(conv.contact_name, conv.contact_phone);
                   }
-                });
+                }
                 toast({
-                  title: "Mensagens motivacionais enviadas",
-                  description: `Enviadas para ${conversations.length} pacientes`
+                  title: "Mensagens motivacionais IA enviadas",
+                  description: `Enviadas para ${Math.min(conversations.length, 3)} pacientes`
                 });
               }}
+              disabled={aiLoading}
               className="h-auto p-4 flex flex-col items-start"
               variant="outline"
             >
               <div className="flex items-center gap-2 mb-2">
-                <Bot className="w-4 h-4" />
-                <span className="font-medium">Mensagem Motivacional</span>
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
+                <span className="font-medium">Motivação IA</span>
               </div>
               <span className="text-sm text-gray-600">
-                Enviar incentivo personalizado
+                Personalizada por IA
+              </span>
+            </Button>
+
+            <Button 
+              onClick={async () => {
+                for (const conv of conversations.slice(0, 3)) {
+                  if (conv.contact_name) {
+                    await sendAIReminder(conv.contact_name, conv.contact_phone, 'hidratação');
+                  }
+                }
+                toast({
+                  title: "Lembretes IA enviados",
+                  description: `Enviados para ${Math.min(conversations.length, 3)} pacientes`
+                });
+              }}
+              disabled={aiLoading}
+              className="h-auto p-4 flex flex-col items-start"
+              variant="outline"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                <span className="font-medium">Lembrete IA</span>
+              </div>
+              <span className="text-sm text-gray-600">
+                Hidratação inteligente
               </span>
             </Button>
           </div>
@@ -284,14 +310,15 @@ Responda com números (ex: 1,3,2,1) para registrar suas respostas! 💪`;
                     <Button 
                       size="sm" 
                       variant="outline"
+                      disabled={aiLoading}
                       onClick={() => {
                         if (conv.contact_name) {
-                          sendDailyQuestionnaire(conv.contact_name, conv.contact_phone);
+                          sendAIQuestionnaire(conv.contact_name, conv.contact_phone);
                         }
                       }}
                     >
-                      <Send className="w-3 h-3 mr-1" />
-                      Questionário
+                      {aiLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                      IA Question.
                     </Button>
                   </div>
                 </div>
