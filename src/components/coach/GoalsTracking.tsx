@@ -1,13 +1,13 @@
-
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { GoalCreateDialog } from "./GoalCreateDialog";
+import { GoalEditDialog } from "./GoalEditDialog";
+import { GoalsFilters } from "./GoalsFilters";
 import { 
   Target, 
   TrendingUp, 
@@ -17,7 +17,10 @@ import {
   Trash2,
   Calendar,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Play,
+  Pause,
+  Send
 } from "lucide-react";
 
 interface PatientGoal {
@@ -34,6 +37,7 @@ interface PatientGoal {
   progress: number;
   trend: 'improving' | 'stable' | 'declining';
   lastUpdate: string;
+  description?: string;
 }
 
 export const GoalsTracking = () => {
@@ -52,7 +56,8 @@ export const GoalsTracking = () => {
       status: 'active',
       progress: 60,
       trend: 'improving',
-      lastUpdate: '2024-01-10'
+      lastUpdate: '2024-01-10',
+      description: 'Meta para atingir peso ideal'
     },
     {
       id: '2',
@@ -86,7 +91,26 @@ export const GoalsTracking = () => {
     }
   ]);
 
-  const [showNewGoalForm, setShowNewGoalForm] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<PatientGoal | null>(null);
+  const [filters, setFilters] = useState({});
+
+  // Filter goals based on active filters
+  const filteredGoals = useMemo(() => {
+    return goals.filter(goal => {
+      const searchTerm = (filters as any).search?.toLowerCase() || '';
+      const statusFilter = (filters as any).status || '';
+      const typeFilter = (filters as any).goalType || '';
+      const patientFilter = (filters as any).patient?.toLowerCase() || '';
+
+      const matchesSearch = goal.title.toLowerCase().includes(searchTerm) ||
+                           goal.patientName.toLowerCase().includes(searchTerm);
+      const matchesStatus = !statusFilter || goal.status === statusFilter;
+      const matchesType = !typeFilter || goal.goalType === typeFilter;
+      const matchesPatient = !patientFilter || goal.patientName.toLowerCase().includes(patientFilter);
+
+      return matchesSearch && matchesStatus && matchesType && matchesPatient;
+    });
+  }, [goals, filters]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -115,6 +139,50 @@ export const GoalsTracking = () => {
       case 'custom': return 'Personalizado';
       default: return type;
     }
+  };
+
+  const handleCreateGoal = (newGoal: PatientGoal) => {
+    setGoals(prev => [...prev, newGoal]);
+  };
+
+  const handleUpdateGoal = (updatedGoal: PatientGoal) => {
+    setGoals(prev => prev.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal));
+    setEditingGoal(null);
+  };
+
+  const handleDeleteGoal = (goalId: string) => {
+    setGoals(prev => prev.filter(goal => goal.id !== goalId));
+    toast({
+      title: "Meta excluída",
+      description: "A meta foi excluída com sucesso"
+    });
+  };
+
+  const handleToggleStatus = (goalId: string) => {
+    setGoals(prev => prev.map(goal => {
+      if (goal.id === goalId) {
+        const newStatus = goal.status === 'active' ? 'paused' : 'active';
+        return { ...goal, status: newStatus };
+      }
+      return goal;
+    }));
+
+    const goal = goals.find(g => g.id === goalId);
+    const newStatus = goal?.status === 'active' ? 'pausada' : 'ativada';
+    
+    toast({
+      title: "Status alterado",
+      description: `Meta foi ${newStatus} com sucesso`
+    });
+  };
+
+  const handleSendMotivation = (goalId: string) => {
+    const goal = goals.find(g => g.id === goalId);
+    
+    toast({
+      title: "Mensagem enviada",
+      description: `Mensagem motivacional enviada para ${goal?.patientName}`
+    });
   };
 
   const updateGoalProgress = (goalId: string, newValue: number) => {
@@ -153,10 +221,7 @@ export const GoalsTracking = () => {
           <h2 className="text-2xl font-bold">Acompanhamento de Metas</h2>
           <p className="text-gray-600">Monitore o progresso das metas dos seus pacientes</p>
         </div>
-        <Button onClick={() => setShowNewGoalForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Meta
-        </Button>
+        <GoalCreateDialog onGoalCreated={handleCreateGoal} />
       </div>
 
       {/* Estatísticas das Metas */}
@@ -210,9 +275,12 @@ export const GoalsTracking = () => {
         </Card>
       </div>
 
+      {/* Filtros */}
+      <GoalsFilters onFiltersChange={setFilters} />
+
       {/* Lista de Metas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {goals.map((goal) => (
+        {filteredGoals.map((goal) => (
           <Card key={goal.id} className="border-2 hover:border-purple-200 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -260,30 +328,80 @@ export const GoalsTracking = () => {
                 </div>
               </div>
 
-              {/* Atualização rápida */}
-              <div className="flex items-center gap-2 pt-2">
-                <Input
-                  type="number"
-                  placeholder={`Valor atual (${goal.unit})`}
-                  className="flex-1"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      const newValue = parseFloat((e.target as HTMLInputElement).value);
-                      if (!isNaN(newValue)) {
-                        updateGoalProgress(goal.id, newValue);
-                        (e.target as HTMLInputElement).value = '';
+              {/* Atualização rápida e ações */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder={`Valor atual (${goal.unit})`}
+                    className="flex-1"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const newValue = parseFloat((e.target as HTMLInputElement).value);
+                        if (!isNaN(newValue)) {
+                          updateGoalProgress(goal.id, newValue);
+                          (e.target as HTMLInputElement).value = '';
+                        }
                       }
-                    }
-                  }}
-                />
-                <Button size="sm" variant="outline">
-                  <Edit className="w-3 h-3" />
-                </Button>
+                    }}
+                  />
+                  <Button size="sm" variant="outline" onClick={() => setEditingGoal(goal)}>
+                    <Edit className="w-3 h-3" />
+                  </Button>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleToggleStatus(goal.id)}
+                    className="flex-1"
+                  >
+                    {goal.status === 'active' ? (
+                      <>
+                        <Pause className="w-3 h-3 mr-1" />
+                        Pausar
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3 h-3 mr-1" />
+                        Ativar
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSendMotivation(goal.id)}
+                    className="flex-1"
+                  >
+                    <Send className="w-3 h-3 mr-1" />
+                    Motivar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDeleteGoal(goal.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Dialog de Edição */}
+      {editingGoal && (
+        <GoalEditDialog
+          goal={editingGoal}
+          open={!!editingGoal}
+          onOpenChange={(open) => !open && setEditingGoal(null)}
+          onGoalUpdated={handleUpdateGoal}
+        />
+      )}
     </div>
   );
 };
