@@ -16,11 +16,16 @@ interface QuestionnaireDetailsProps {
 }
 
 export const QuestionnaireDetails = ({ item, isOpen, onClose }: QuestionnaireDetailsProps) => {
+  // Add null check for item
+  if (!item) {
+    return null;
+  }
+
   const mockProgressData = [
     { date: '2024-01-01', value: 1 },
     { date: '2024-01-07', value: 2 },
     { date: '2024-01-14', value: 2 },
-    { date: '2024-01-21', value: item.metaAtual },
+    { date: '2024-01-21', value: item.metaAtual || 0 },
   ];
 
   const mockResponses = [
@@ -53,7 +58,7 @@ export const QuestionnaireDetails = ({ item, isOpen, onClose }: QuestionnaireDet
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
-            {item.titulo} - Detalhes
+            {item.titulo || 'Pergunta'} - Detalhes
           </DialogTitle>
         </DialogHeader>
 
@@ -65,11 +70,11 @@ export const QuestionnaireDetails = ({ item, isOpen, onClose }: QuestionnaireDet
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            <Card className={`border-2 ${getStatusColor(item.status)}`}>
+            <Card className={`border-2 ${getStatusColor(item.status || 'default')}`}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  {item.titulo}
-                  <Badge className={getStatusColor(item.status)}>
+                  {item.titulo || 'Pergunta'}
+                  <Badge className={getStatusColor(item.status || 'default')}>
                     {item.status === 'success' ? 'Ótimo' : item.status === 'warning' ? 'Atenção' : 'Crítico'}
                   </Badge>
                 </CardTitle>
@@ -82,7 +87,7 @@ export const QuestionnaireDetails = ({ item, isOpen, onClose }: QuestionnaireDet
                   </div>
                   <div>
                     <h4 className="font-medium text-sm mb-2">Pergunta Semanal:</h4>
-                    <p className="text-sm text-gray-600">{item.perguntaSemanal}</p>
+                    <p className="text-sm text-gray-600">{item.perguntaSemanal || 'Não definida'}</p>
                   </div>
                 </div>
                 
@@ -91,23 +96,23 @@ export const QuestionnaireDetails = ({ item, isOpen, onClose }: QuestionnaireDet
                   {item.tipo === "porcentagem" ? (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Atual: {item.metaAtual}%</span>
-                        <span>Meta: {item.metaObjetivo}%</span>
+                        <span>Atual: {item.metaAtual || 0}%</span>
+                        <span>Meta: {item.metaObjetivo || 0}%</span>
                       </div>
-                      <Progress value={item.metaAtual} className="h-3" />
+                      <Progress value={item.metaAtual || 0} className="h-3" />
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Atual: {getNivelText(item.metaAtual)}</span>
-                        <span>Meta: {getNivelText(item.metaObjetivo)}</span>
+                        <span>Atual: {getNivelText(item.metaAtual || 0)}</span>
+                        <span>Meta: {getNivelText(item.metaObjetivo || 0)}</span>
                       </div>
                       <div className="flex gap-1">
                         {[1, 2, 3].map((nivel) => (
                           <div
                             key={nivel}
                             className={`h-3 flex-1 rounded ${
-                              nivel <= item.metaAtual ? "bg-blue-500" : "bg-gray-200"
+                              nivel <= (item.metaAtual || 0) ? "bg-blue-500" : "bg-gray-200"
                             }`}
                           />
                         ))}
