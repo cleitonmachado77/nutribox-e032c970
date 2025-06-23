@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +11,20 @@ import {
   Plus,
   Settings,
   Calendar,
-  BarChart3
+  BarChart3,
+  Eye
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { QuestionnaireDetails } from "./QuestionnaireDetails";
+import { QuestionnaireSettings } from "./QuestionnaireSettings";
+import { NewQuestionForm } from "./NewQuestionForm";
 
 export const BehavioralQuestions = () => {
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showNewQuestion, setShowNewQuestion] = useState(false);
+
   const questionarios = {
     comportamental: [
       {
@@ -172,6 +182,11 @@ export const BehavioralQuestions = () => {
     }
   };
 
+  const handleViewDetails = (item: any) => {
+    setSelectedItem(item);
+    setShowDetails(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -180,11 +195,11 @@ export const BehavioralQuestions = () => {
           <p className="text-gray-600">Gerencie e monitore os questionários dos pacientes</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setShowSettings(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Configurar
           </Button>
-          <Button>
+          <Button onClick={() => setShowNewQuestion(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nova Pergunta
           </Button>
@@ -229,7 +244,13 @@ export const BehavioralQuestions = () => {
                     {renderMetric(item)}
                   </div>
 
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => handleViewDetails(item)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
                     Ver Detalhes
                   </Button>
                 </CardContent>
@@ -274,7 +295,13 @@ export const BehavioralQuestions = () => {
                     {renderMetric(item)}
                   </div>
 
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => handleViewDetails(item)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
                     Ver Detalhes
                   </Button>
                 </CardContent>
@@ -283,6 +310,23 @@ export const BehavioralQuestions = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <QuestionnaireDetails 
+        item={selectedItem}
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+      />
+
+      <QuestionnaireSettings 
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
+
+      <NewQuestionForm 
+        isOpen={showNewQuestion}
+        onClose={() => setShowNewQuestion(false)}
+      />
     </div>
   );
 };
