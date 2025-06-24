@@ -1,10 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -12,14 +10,19 @@ import {
   TrendingUp, 
   Users, 
   MessageSquare,
-  Download,
   Calendar,
   Target,
   Brain,
   Activity,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw,
+  Eye,
+  Send
 } from "lucide-react";
+import { ReportsCharts } from "./ReportsCharts";
+import { ReportsExport } from "./ReportsExport";
+import { ReportsFilters } from "./ReportsFilters";
 
 interface PatientEngagement {
   patientId: string;
@@ -44,6 +47,8 @@ interface WeeklyReport {
 export const AdvancedReports = () => {
   const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState('last-30-days');
+  const [filters, setFilters] = useState({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const engagementData: PatientEngagement[] = [
     {
@@ -113,6 +118,37 @@ export const AdvancedReports = () => {
     }
   ];
 
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    toast({
+      title: "Atualizando dados",
+      description: "Carregando os dados mais recentes..."
+    });
+    
+    // Simular carregamento
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast({
+        title: "Dados atualizados",
+        description: "Os relatórios foram atualizados com sucesso"
+      });
+    }, 2000);
+  };
+
+  const previewReport = () => {
+    toast({
+      title: "Visualização do relatório",
+      description: "Abrindo pré-visualização em nova janela..."
+    });
+  };
+
+  const sendReport = () => {
+    toast({
+      title: "Enviar relatório",
+      description: "Funcionalidade de envio por email será implementada em breve"
+    });
+  };
+
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'up': return <TrendingUp className="w-4 h-4 text-green-600" />;
@@ -127,13 +163,6 @@ export const AdvancedReports = () => {
     return 'text-red-600';
   };
 
-  const exportReport = () => {
-    toast({
-      title: "Relatório exportado",
-      description: "O relatório foi exportado com sucesso"
-    });
-  };
-
   const overallStats = {
     totalPatients: engagementData.length,
     avgEngagement: Math.round(engagementData.reduce((acc, p) => acc + p.responseRate, 0) / engagementData.length),
@@ -143,28 +172,35 @@ export const AdvancedReports = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header com ações */}
+      <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold">Relatórios Avançados</h2>
           <p className="text-gray-600">Análise detalhada do desempenho do NutriCoach</p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="last-7-days">Últimos 7 dias</SelectItem>
-              <SelectItem value="last-30-days">Últimos 30 dias</SelectItem>
-              <SelectItem value="last-90-days">Últimos 90 dias</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={exportReport}>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
+          <Button variant="outline" onClick={refreshData} disabled={isRefreshing}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Atualizar
           </Button>
+          <Button variant="outline" onClick={previewReport}>
+            <Eye className="w-4 h-4 mr-2" />
+            Visualizar
+          </Button>
+          <Button variant="outline" onClick={sendReport}>
+            <Send className="w-4 h-4 mr-2" />
+            Enviar
+          </Button>
+          <ReportsExport />
         </div>
       </div>
+
+      {/* Filtros Avançados */}
+      <ReportsFilters 
+        onFiltersChange={setFilters}
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+      />
 
       {/* Estatísticas Gerais */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -174,7 +210,8 @@ export const AdvancedReports = () => {
               <Users className="w-4 h-4 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Pacientes Ativos</p>
-                <p className="text-2xl font-bold">{overallStats.totalPatients}</p>
+                <p className="text-2xl font-bold">24</p>
+                <p className="text-xs text-green-600">+3 este mês</p>
               </div>
             </div>
           </CardContent>
@@ -186,7 +223,8 @@ export const AdvancedReports = () => {
               <BarChart3 className="w-4 h-4 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Engajamento Médio</p>
-                <p className="text-2xl font-bold">{overallStats.avgEngagement}%</p>
+                <p className="text-2xl font-bold">76%</p>
+                <p className="text-xs text-green-600">+8% vs mês anterior</p>
               </div>
             </div>
           </CardContent>
@@ -197,8 +235,9 @@ export const AdvancedReports = () => {
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-purple-500" />
               <div>
-                <p className="text-sm text-gray-600">Interações Totais</p>
-                <p className="text-2xl font-bold">{overallStats.totalInteractions}</p>
+                <p className="text-sm text-gray-600">Mensagens Enviadas</p>
+                <p className="text-2xl font-bold">1.247</p>
+                <p className="text-xs text-blue-600">Este período</p>
               </div>
             </div>
           </CardContent>
@@ -207,20 +246,24 @@ export const AdvancedReports = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-orange-500" />
+              <Target className="w-4 h-4 text-orange-500" />
               <div>
-                <p className="text-sm text-gray-600">Alta Performance</p>
-                <p className="text-2xl font-bold">{overallStats.activePatients}</p>
+                <p className="text-sm text-gray-600">Metas Alcançadas</p>
+                <p className="text-2xl font-bold">89</p>
+                <p className="text-xs text-green-600">74% de sucesso</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Gráficos */}
+      <ReportsCharts selectedPeriod={selectedPeriod} />
+
       <Tabs defaultValue="engagement" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="engagement">Engajamento</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="engagement">Engajamento Detalhado</TabsTrigger>
+          <TabsTrigger value="performance">Performance Semanal</TabsTrigger>
           <TabsTrigger value="insights">Insights IA</TabsTrigger>
         </TabsList>
 
@@ -229,41 +272,47 @@ export const AdvancedReports = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Engajamento por Paciente
+                Análise Detalhada de Engajamento
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {engagementData.map((patient) => (
-                  <div key={patient.patientId} className="border rounded-lg p-4">
+                {[
+                  { name: 'Maria Silva', engagement: 89, trend: 'up', interactions: 67, lastActive: '2024-01-15' },
+                  { name: 'João Santos', engagement: 72, trend: 'stable', interactions: 45, lastActive: '2024-01-14' },
+                  { name: 'Ana Costa', engagement: 56, trend: 'down', interactions: 23, lastActive: '2024-01-12' },
+                ].map((patient, index) => (
+                  <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <h4 className="font-medium">{patient.patientName}</h4>
-                        {getTrendIcon(patient.engagementTrend)}
+                        <h4 className="font-medium">{patient.name}</h4>
+                        <TrendingUp className={`w-4 h-4 ${
+                          patient.trend === 'up' ? 'text-green-600' : 
+                          patient.trend === 'down' ? 'text-red-600 rotate-180' : 'text-yellow-600'
+                        }`} />
                       </div>
-                      <Badge className={`${getEngagementColor(patient.responseRate)} bg-transparent border`}>
-                        {patient.responseRate}% de resposta
+                      <Badge className={`${
+                        patient.engagement >= 80 ? 'text-green-600' : 
+                        patient.engagement >= 60 ? 'text-yellow-600' : 'text-red-600'
+                      } bg-transparent border`}>
+                        {patient.engagement}% engajamento
                       </Badge>
                     </div>
                     
                     <div className="space-y-2">
-                      <Progress value={patient.responseRate} className="h-2" />
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                      <Progress value={patient.engagement} className="h-2" />
+                      <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <MessageSquare className="w-3 h-3" />
-                          <span>{patient.totalInteractions} interações</span>
+                          <span>{patient.interactions} interações</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>{patient.avgResponseTime}min resposta</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>Prefere: {patient.preferredTime}</span>
+                          <span>Último: {new Date(patient.lastActive).toLocaleDateString('pt-BR')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Activity className="w-3 h-3" />
-                          <span>Último: {new Date(patient.lastActivity).toLocaleDateString('pt-BR')}</span>
+                          <span>Média: 15min resposta</span>
                         </div>
                       </div>
                     </div>
@@ -279,35 +328,39 @@ export const AdvancedReports = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                Performance Semanal
+                Performance Semanal Detalhada
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {weeklyReports.map((week, index) => (
+                {[
+                  { week: 'Semana Atual', messages: 158, questionnaires: 112, motivational: 78, reminders: 58, engagement: 85 },
+                  { week: 'Semana Passada', messages: 142, questionnaires: 98, motivational: 65, reminders: 48, engagement: 79 },
+                  { week: 'Há 2 Semanas', messages: 135, questionnaires: 89, motivational: 72, reminders: 52, engagement: 82 },
+                ].map((week, index) => (
                   <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-medium">{week.week}</h4>
                       <Badge variant="outline">
-                        {week.avgEngagement}% engajamento médio
+                        {week.engagement}% engajamento médio
                       </Badge>
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="text-center p-2 bg-blue-50 rounded">
-                        <p className="text-2xl font-bold text-blue-600">{week.messagesSet}</p>
+                        <p className="text-2xl font-bold text-blue-600">{week.messages}</p>
                         <p className="text-gray-600">Mensagens</p>
                       </div>
                       <div className="text-center p-2 bg-green-50 rounded">
-                        <p className="text-2xl font-bold text-green-600">{week.questionnairesAnswered}</p>
+                        <p className="text-2xl font-bold text-green-600">{week.questionnaires}</p>
                         <p className="text-gray-600">Questionários</p>
                       </div>
                       <div className="text-center p-2 bg-purple-50 rounded">
-                        <p className="text-2xl font-bold text-purple-600">{week.motivationalSent}</p>
+                        <p className="text-2xl font-bold text-purple-600">{week.motivational}</p>
                         <p className="text-gray-600">Motivacionais</p>
                       </div>
                       <div className="text-center p-2 bg-orange-50 rounded">
-                        <p className="text-2xl font-bold text-orange-600">{week.remindersSet}</p>
+                        <p className="text-2xl font-bold text-orange-600">{week.reminders}</p>
                         <p className="text-gray-600">Lembretes</p>
                       </div>
                     </div>
@@ -323,7 +376,7 @@ export const AdvancedReports = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="w-5 h-5" />
-                Insights da IA
+                Insights Avançados da IA
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -331,12 +384,12 @@ export const AdvancedReports = () => {
                 <div className="border rounded-lg p-4 bg-blue-50">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                    <h4 className="font-medium text-blue-900">Padrão Identificado</h4>
+                    <h4 className="font-medium text-blue-900">Padrão de Comportamento Identificado</h4>
                   </div>
-                  <p className="text-sm text-blue-800">
-                    Pacientes respondem melhor às mensagens motivacionais enviadas entre 8h-10h, 
-                    com taxa de resposta 23% maior que outros horários.
+                  <p className="text-sm text-blue-800 mb-2">
+                    Pacientes respondem 34% melhor às mensagens motivacionais enviadas entre 8h-10h.
                   </p>
+                  <Badge className="text-xs bg-blue-200 text-blue-800">Alta Confiança</Badge>
                 </div>
 
                 <div className="border rounded-lg p-4 bg-green-50">
@@ -344,21 +397,32 @@ export const AdvancedReports = () => {
                     <TrendingUp className="w-4 h-4 text-green-600" />
                     <h4 className="font-medium text-green-900">Oportunidade de Melhoria</h4>
                   </div>
-                  <p className="text-sm text-green-800">
-                    3 pacientes apresentaram queda no engajamento. Recomenda-se envio de mensagens 
-                    personalizadas para reativar a participação.
+                  <p className="text-sm text-green-800 mb-2">
+                    Implementar lembretes personalizados pode aumentar a adesão em até 28%.
                   </p>
+                  <Badge className="text-xs bg-green-200 text-green-800">Recomendação Prioritária</Badge>
                 </div>
 
                 <div className="border rounded-lg p-4 bg-purple-50">
                   <div className="flex items-center gap-2 mb-2">
                     <Target className="w-4 h-4 text-purple-600" />
-                    <h4 className="font-medium text-purple-900">Recomendação Estratégica</h4>
+                    <h4 className="font-medium text-purple-900">Estratégia Sugerida</h4>
                   </div>
-                  <p className="text-sm text-purple-800">
-                    Implementar questionários semanais para pacientes com alta adesão pode 
-                    aumentar a coleta de dados comportamentais em 40%.
+                  <p className="text-sm text-purple-800 mb-2">
+                    Segmentar pacientes por perfil comportamental pode otimizar as interações.
                   </p>
+                  <Badge className="text-xs bg-purple-200 text-purple-800">Implementação Sugerida</Badge>
+                </div>
+
+                <div className="border rounded-lg p-4 bg-orange-50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="w-4 h-4 text-orange-600" />
+                    <h4 className="font-medium text-orange-900">Análise Preditiva</h4>
+                  </div>
+                  <p className="text-sm text-orange-800 mb-2">
+                    3 pacientes mostram sinais de possível abandono do tratamento.
+                  </p>
+                  <Badge className="text-xs bg-orange-200 text-orange-800">Ação Preventiva</Badge>
                 </div>
               </div>
             </CardContent>
