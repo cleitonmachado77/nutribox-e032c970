@@ -132,7 +132,7 @@ export const ReportsFilters = ({ onFiltersChange, selectedPeriod, onPeriodChange
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="new">Novos (< 30 dias)</SelectItem>
+                <SelectItem value="new">Novos (&lt; 30 dias)</SelectItem>
                 <SelectItem value="regular">Regulares</SelectItem>
                 <SelectItem value="premium">Premium</SelectItem>
               </SelectContent>
@@ -151,9 +151,9 @@ export const ReportsFilters = ({ onFiltersChange, selectedPeriod, onPeriodChange
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="high">Alto (>80%)</SelectItem>
+                <SelectItem value="high">Alto (&gt;80%)</SelectItem>
                 <SelectItem value="medium">Médio (40-80%)</SelectItem>
-                <SelectItem value="low">Baixo (<40%)</SelectItem>
+                <SelectItem value="low">Baixo (&lt;40%)</SelectItem>
               </SelectContent>
             </Select>
           </div>
