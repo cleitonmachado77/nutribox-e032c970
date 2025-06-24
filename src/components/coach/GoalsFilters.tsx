@@ -20,7 +20,9 @@ export const GoalsFilters = ({ onFiltersChange }: GoalsFiltersProps) => {
   });
 
   const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value };
+    // Convert "all" values back to empty strings for filtering logic
+    const filterValue = value === "all" ? "" : value;
+    const newFilters = { ...filters, [key]: filterValue };
     setFilters(newFilters);
     onFiltersChange(newFilters);
   };
@@ -66,12 +68,12 @@ export const GoalsFilters = ({ onFiltersChange }: GoalsFiltersProps) => {
             />
           </div>
 
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
+          <Select value={filters.status || "all"} onValueChange={(value) => handleFilterChange("status", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="active">Ativa</SelectItem>
               <SelectItem value="completed">Concluída</SelectItem>
               <SelectItem value="paused">Pausada</SelectItem>
@@ -79,12 +81,12 @@ export const GoalsFilters = ({ onFiltersChange }: GoalsFiltersProps) => {
             </SelectContent>
           </Select>
 
-          <Select value={filters.goalType} onValueChange={(value) => handleFilterChange("goalType", value)}>
+          <Select value={filters.goalType || "all"} onValueChange={(value) => handleFilterChange("goalType", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Tipo de Meta" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="weight">Peso</SelectItem>
               <SelectItem value="hydration">Hidratação</SelectItem>
               <SelectItem value="exercise">Exercício</SelectItem>
