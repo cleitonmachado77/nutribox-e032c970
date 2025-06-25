@@ -22,6 +22,10 @@ export interface Lead {
   created_at: string;
   updated_at: string;
   user_id: string;
+  idade?: number;
+  data_nascimento?: string;
+  sexo?: string;
+  consultas_realizadas?: number;
   objetivo_tag?: {
     id: string;
     nome: string;
