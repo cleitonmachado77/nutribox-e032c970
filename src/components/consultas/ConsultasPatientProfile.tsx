@@ -53,13 +53,13 @@ export const ConsultasPatientProfile = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-amber-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
       {/* Header com botão de voltar */}
       <div className="flex items-center gap-4 mb-6">
         <Button 
           variant="outline" 
           onClick={onBack}
-          className="bg-white hover:bg-gray-50 border-amber-200"
+          className="bg-white hover:bg-gray-50 border-purple-200"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
@@ -70,13 +70,13 @@ export const ConsultasPatientProfile = ({
       {/* Container principal inspirado na imagem */}
       <div className="max-w-6xl mx-auto">
         {/* Header com avatar e informações básicas */}
-        <Card className="mb-6 border-2 border-amber-200 shadow-lg bg-white">
+        <Card className="mb-6 border-2 border-purple-200 shadow-lg bg-white">
           <CardContent className="p-6">
             <div className="flex items-center gap-6 mb-6">
               <div className="relative">
-                <Avatar className="h-20 w-20 ring-4 ring-amber-200">
+                <Avatar className="h-20 w-20 ring-4 ring-purple-200">
                   <AvatarImage src={selectedPatient.lead.foto_perfil} />
-                  <AvatarFallback className="bg-gradient-to-br from-amber-400 to-yellow-500 text-white text-2xl">
+                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-violet-500 text-white text-2xl">
                     {selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
@@ -98,17 +98,17 @@ export const ConsultasPatientProfile = ({
               <div className="flex gap-2">
                 <Button 
                   onClick={onOpenConsultaDialog}
-                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  className="bg-purple-500 hover:bg-purple-600 text-white"
                 >
                   Nova Consulta
                 </Button>
-                <Button variant="outline" className="border-amber-200">
+                <Button variant="outline" className="border-purple-200">
                   Perfil do Paciente
                 </Button>
-                <Button variant="outline" className="border-amber-200">
+                <Button variant="outline" className="border-purple-200">
                   Histórico de Consultas
                 </Button>
-                <Button variant="outline" className="border-amber-200">
+                <Button variant="outline" className="border-purple-200">
                   Relatório Nutricional
                 </Button>
               </div>
@@ -117,9 +117,9 @@ export const ConsultasPatientProfile = ({
             {/* Cards de informações */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Card de Informações Básicas */}
-              <Card className="bg-gradient-to-br from-yellow-300 to-amber-400 border-0 shadow-md">
+              <Card className="bg-gradient-to-br from-purple-400 to-violet-500 border-0 shadow-md">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                     <User className="h-5 w-5" />
                     Informações Básicas
                   </CardTitle>
@@ -127,12 +127,12 @@ export const ConsultasPatientProfile = ({
                 <CardContent className="space-y-3">
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-700">Nome Completo:</span>
-                      <span className="text-sm text-gray-800">{selectedPatient.lead.nome}</span>
+                      <span className="text-sm font-medium text-purple-100">Nome Completo:</span>
+                      <span className="text-sm text-white">{selectedPatient.lead.nome}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-700">Data de Nascimento:</span>
-                      <span className="text-sm text-gray-800">
+                      <span className="text-sm font-medium text-purple-100">Data de Nascimento:</span>
+                      <span className="text-sm text-white">
                         {selectedPatient.lead.data_nascimento ? 
                           format(new Date(selectedPatient.lead.data_nascimento), 'dd/MM/yyyy') : 
                           'Não informado'
@@ -140,29 +140,29 @@ export const ConsultasPatientProfile = ({
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-700">Sexo:</span>
-                      <span className="text-sm text-gray-800">{selectedPatient.lead.sexo || 'Não informado'}</span>
+                      <span className="text-sm font-medium text-purple-100">Sexo:</span>
+                      <span className="text-sm text-white">{selectedPatient.lead.sexo || 'Não informado'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-700">WhatsApp:</span>
-                      <span className="text-sm text-gray-800">{selectedPatient.lead.telefone}</span>
+                      <span className="text-sm font-medium text-purple-100">WhatsApp:</span>
+                      <span className="text-sm text-white">{selectedPatient.lead.telefone}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-700">E-mail:</span>
-                      <span className="text-sm text-gray-800">{selectedPatient.lead.email || 'Não informado'}</span>
+                      <span className="text-sm font-medium text-purple-100">E-mail:</span>
+                      <span className="text-sm text-white">{selectedPatient.lead.email || 'Não informado'}</span>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-amber-500/30">
-                    <h4 className="font-bold text-gray-800 mb-2">Histórico</h4>
+                  <div className="pt-3 border-t border-purple-300/30">
+                    <h4 className="font-bold text-white mb-2">Histórico</h4>
                     <div className="space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-700">Nº de Consultas:</span>
-                        <span className="text-sm text-gray-800">{selectedPatient.lead.consultas_realizadas || 0}</span>
+                        <span className="text-sm font-medium text-purple-100">Nº de Consultas:</span>
+                        <span className="text-sm text-white">{selectedPatient.lead.consultas_realizadas || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-700">Primeira Consulta:</span>
-                        <span className="text-sm text-gray-800">
+                        <span className="text-sm font-medium text-purple-100">Primeira Consulta:</span>
+                        <span className="text-sm text-white">
                           {selectedPatient.data_primeira_consulta ? 
                             format(new Date(selectedPatient.data_primeira_consulta), 'dd/MM/yyyy') : 
                             'Não realizada'
@@ -170,8 +170,8 @@ export const ConsultasPatientProfile = ({
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-700">Última Consulta:</span>
-                        <span className="text-sm text-gray-800">
+                        <span className="text-sm font-medium text-purple-100">Última Consulta:</span>
+                        <span className="text-sm text-white">
                           {selectedPatient.lead.ultima_consulta ? 
                             format(new Date(selectedPatient.lead.ultima_consulta), 'dd/MM/yyyy') : 
                             'Nenhuma'
@@ -179,8 +179,8 @@ export const ConsultasPatientProfile = ({
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium text-gray-700">Objetivo:</span>
-                        <span className="text-sm text-gray-800">{selectedPatient.lead.objetivo || 'Não definido'}</span>
+                        <span className="text-sm font-medium text-purple-100">Objetivo:</span>
+                        <span className="text-sm text-white">{selectedPatient.lead.objetivo || 'Não definido'}</span>
                       </div>
                     </div>
                   </div>
@@ -189,7 +189,7 @@ export const ConsultasPatientProfile = ({
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full bg-white/20 hover:bg-white/30 border-amber-600 text-amber-800"
+                      className="w-full bg-white/20 hover:bg-white/30 border-purple-300 text-white"
                     >
                       Alterar Dados
                     </Button>
@@ -198,9 +198,9 @@ export const ConsultasPatientProfile = ({
               </Card>
 
               {/* Card de Fotos */}
-              <Card className="bg-gradient-to-br from-yellow-300 to-amber-400 border-0 shadow-md">
+              <Card className="bg-gradient-to-br from-purple-400 to-violet-500 border-0 shadow-md">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                     <Camera className="h-5 w-5" />
                     Fotos
                   </CardTitle>
@@ -208,10 +208,10 @@ export const ConsultasPatientProfile = ({
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-gray-800 mb-3">Perfil</h4>
+                      <h4 className="font-medium text-white mb-3">Perfil</h4>
                       <div className="grid grid-cols-4 gap-3">
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-amber-600">
-                          <Camera className="h-8 w-8 text-amber-700" />
+                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                          <Camera className="h-8 w-8 text-purple-100" />
                         </div>
                         <div className="aspect-square bg-white/30 rounded-lg"></div>
                         <div className="aspect-square bg-white/30 rounded-lg"></div>
@@ -220,18 +220,18 @@ export const ConsultasPatientProfile = ({
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-800 mb-3">Antes e Depois</h4>
+                      <h4 className="font-medium text-white mb-3">Antes e Depois</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-amber-600">
+                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
                           <div className="text-center">
-                            <Camera className="h-6 w-6 text-amber-700 mx-auto mb-1" />
-                            <span className="text-xs text-amber-800">Antes</span>
+                            <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                            <span className="text-xs text-purple-100">Antes</span>
                           </div>
                         </div>
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-amber-600">
+                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
                           <div className="text-center">
-                            <Camera className="h-6 w-6 text-amber-700 mx-auto mb-1" />
-                            <span className="text-xs text-amber-800">Depois</span>
+                            <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                            <span className="text-xs text-purple-100">Depois</span>
                           </div>
                         </div>
                       </div>
@@ -241,14 +241,14 @@ export const ConsultasPatientProfile = ({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1 bg-white/20 hover:bg-white/30 border-amber-600 text-amber-800"
+                        className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
                       >
                         Alterar Foto
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1 bg-white/20 hover:bg-white/30 border-amber-600 text-amber-800"
+                        className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
                       >
                         Adicionar Foto
                       </Button>
@@ -261,7 +261,7 @@ export const ConsultasPatientProfile = ({
         </Card>
 
         {/* Tabs do paciente */}
-        <Card className="border-2 border-amber-200 shadow-lg bg-white">
+        <Card className="border-2 border-purple-200 shadow-lg bg-white">
           <CardContent className="p-6">
             <PatientTabs 
               selectedPatient={selectedPatient}
