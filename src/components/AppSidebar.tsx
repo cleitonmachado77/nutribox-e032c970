@@ -29,8 +29,8 @@ const items = [
     icon: UserCheck,
   },
   {
-    title: "Pacientes",
-    url: "/dashboard/pacientes",
+    title: "Consultas",
+    url: "/dashboard/consultas",
     icon: Users,
   },
   {

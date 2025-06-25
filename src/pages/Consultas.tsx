@@ -5,19 +5,19 @@ import { usePacientes } from "@/hooks/usePacientes";
 import { ConsultaRealizadaDialog } from "@/components/ConsultaRealizadaDialog";
 import { DeletePacienteDialog } from "@/components/DeletePacienteDialog";
 import { PacientesStats } from "@/components/pacientes/PacientesStats";
-import { PacientesList } from "@/components/pacientes/PacientesList";
-import { PatientProfile } from "@/components/pacientes/PatientProfile";
 import { ConsultasProximas } from "@/components/ConsultasProximas";
 import { PacientesToolbar } from "@/components/pacientes/PacientesToolbar";
 import { PacientesFilters } from "@/components/pacientes/PacientesFilters";
+import { ConsultasPatientGrid } from "@/components/consultas/ConsultasPatientGrid";
+import { ConsultasPatientProfile } from "@/components/consultas/ConsultasPatientProfile";
 import React from "react";
 
-const Pacientes = () => {
+const Consultas = () => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [consultaDialogOpen, setConsultaDialogOpen] = useState(false);
   const [selectedPacienteForDelete, setSelectedPacienteForDelete] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [activeFilters, setActiveFilters] = useState({
@@ -34,12 +34,10 @@ const Pacientes = () => {
   };
 
   const handleExportData = () => {
-    // Lógica para exportar dados dos pacientes
     console.log('Exportando dados dos pacientes...');
   };
 
   const handleImportData = () => {
-    // Lógica para importar dados dos pacientes
     console.log('Importando dados dos pacientes...');
   };
 
@@ -122,7 +120,7 @@ const Pacientes = () => {
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <Header title="Pacientes" description="Gerencie seus pacientes convertidos de leads" />
+        <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
@@ -133,7 +131,7 @@ const Pacientes = () => {
   if (error) {
     return (
       <div className="p-6 space-y-6">
-        <Header title="Pacientes" description="Gerencie seus pacientes convertidos de leads" />
+        <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
         <div className="text-center text-red-500">
           Erro ao carregar pacientes: {error.message}
         </div>
@@ -141,9 +139,29 @@ const Pacientes = () => {
     );
   }
 
+  // Se um paciente está selecionado, mostrar perfil em tela cheia
+  if (selectedPatient) {
+    return (
+      <div className="min-h-screen bg-indigo-950">
+        <ConsultasPatientProfile
+          selectedPatient={selectedPatient}
+          onBack={() => setSelectedPatient(null)}
+          onOpenConsultaDialog={() => setConsultaDialogOpen(true)}
+        />
+        
+        {/* Dialog para registrar consulta */}
+        <ConsultaRealizadaDialog 
+          open={consultaDialogOpen} 
+          onOpenChange={setConsultaDialogOpen} 
+          paciente={selectedPatient} 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-8 min-h-screen bg-indigo-950">
-      <Header title="Pacientes" description="Gerencie seus pacientes convertidos de leads" />
+      <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
 
       <PacientesStats pacientes={pacientes} />
 
@@ -169,31 +187,15 @@ const Pacientes = () => {
         activeFilters={activeFilters}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <PacientesList 
-          pacientes={filteredAndSortedPacientes} 
-          searchTerm={searchTerm} 
-          setSearchTerm={setSearchTerm} 
-          selectedPatient={selectedPatient} 
-          setSelectedPatient={setSelectedPatient} 
-          onDeletePatient={handleDeletePatient}
-          viewMode={viewMode}
-        />
-
-        <PatientProfile 
-          selectedPatient={selectedPatient} 
-          onOpenConsultaDialog={() => setConsultaDialogOpen(true)} 
-        />
-      </div>
-
-      {/* Dialog para registrar consulta */}
-      {selectedPatient && (
-        <ConsultaRealizadaDialog 
-          open={consultaDialogOpen} 
-          onOpenChange={setConsultaDialogOpen} 
-          paciente={selectedPatient} 
-        />
-      )}
+      {/* Grid horizontal de pacientes */}
+      <ConsultasPatientGrid
+        pacientes={filteredAndSortedPacientes}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onSelectPatient={setSelectedPatient}
+        onDeletePatient={handleDeletePatient}
+        viewMode={viewMode}
+      />
 
       {/* Dialog para excluir paciente */}
       <DeletePacienteDialog 
@@ -210,4 +212,4 @@ const Pacientes = () => {
   );
 };
 
-export default Pacientes;
+export default Consultas;
