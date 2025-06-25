@@ -6,8 +6,6 @@ import { ConsultaRealizadaDialog } from "@/components/ConsultaRealizadaDialog";
 import { DeletePacienteDialog } from "@/components/DeletePacienteDialog";
 import { PacientesStats } from "@/components/pacientes/PacientesStats";
 import { ConsultasProximas } from "@/components/ConsultasProximas";
-import { PacientesToolbar } from "@/components/pacientes/PacientesToolbar";
-import { PacientesFilters } from "@/components/pacientes/PacientesFilters";
 import { ConsultasPatientGrid } from "@/components/consultas/ConsultasPatientGrid";
 import { ConsultasPatientProfile } from "@/components/consultas/ConsultasPatientProfile";
 import React from "react";
@@ -20,26 +18,8 @@ const Consultas = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [activeFilters, setActiveFilters] = useState({
-    status: '',
-    objetivo: '',
-    progresso: '',
-    dataRange: null as any
-  });
   
   const { data: pacientes = [], isLoading, error } = usePacientes();
-
-  const handleFilterChange = (filters: any) => {
-    setActiveFilters(filters);
-  };
-
-  const handleExportData = () => {
-    console.log('Exportando dados dos pacientes...');
-  };
-
-  const handleImportData = () => {
-    console.log('Importando dados dos pacientes...');
-  };
 
   // Limpar paciente selecionado se ele foi deletado
   React.useEffect(() => {
@@ -66,20 +46,7 @@ const Consultas = () => {
         paciente.lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         paciente.lead.telefone.includes(searchTerm);
 
-      const matchesStatus = !activeFilters.status || paciente.status_tratamento === activeFilters.status;
-      const matchesObjetivo = !activeFilters.objetivo || paciente.lead.objetivo === activeFilters.objetivo;
-      
-      let matchesProgresso = true;
-      if (activeFilters.progresso) {
-        const progress = paciente.lead.progresso || 0;
-        switch (activeFilters.progresso) {
-          case 'low': matchesProgresso = progress < 30; break;
-          case 'medium': matchesProgresso = progress >= 30 && progress < 70; break;
-          case 'high': matchesProgresso = progress >= 70; break;
-        }
-      }
-
-      return matchesSearch && matchesStatus && matchesObjetivo && matchesProgresso;
+      return matchesSearch;
     });
 
     // Ordenar
@@ -115,7 +82,7 @@ const Consultas = () => {
     });
 
     return filtered;
-  }, [pacientes, searchTerm, activeFilters, sortBy, sortOrder]);
+  }, [pacientes, searchTerm, sortBy, sortOrder]);
 
   if (isLoading) {
     return (
@@ -166,26 +133,6 @@ const Consultas = () => {
       <PacientesStats pacientes={pacientes} />
 
       <ConsultasProximas />
-
-      {/* Toolbar com ações principais */}
-      <PacientesToolbar 
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
-        sortOrder={sortOrder}
-        onSortOrderChange={setSortOrder}
-        onExport={handleExportData}
-        onImport={handleImportData}
-        selectedCount={0}
-        totalCount={filteredAndSortedPacientes.length}
-      />
-
-      {/* Filtros avançados */}
-      <PacientesFilters 
-        onFiltersChange={handleFilterChange}
-        activeFilters={activeFilters}
-      />
 
       {/* Grid horizontal de pacientes */}
       <ConsultasPatientGrid
