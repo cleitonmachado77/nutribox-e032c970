@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Activity } from "lucide-react";
 
 interface PhysicalAssessmentSectionProps {
@@ -12,101 +13,193 @@ interface PhysicalAssessmentSectionProps {
 
 export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSectionProps) => {
   const [formData, setFormData] = useState({
-    currentWeight: "",
-    currentIMC: "",
-    bodyFatPercentage: "",
-    waistCircumference: "",
-    hipCircumference: "",
-    armCircumference: "",
-    thighCircumference: ""
+    // Objetivos do Paciente
+    objetivos: {
+      estetica: false,
+      emagrecimento: false,
+      saudeLongevidade: false,
+      performanceEsportiva: false
+    },
+    // Avaliação Antropométrica
+    pesoAtual: "",
+    altura: "",
+    imc: "",
+    gorduraCorporal: "",
+    circunferencias: {
+      cintura: "",
+      quadril: "",
+      braco: "",
+      coxa: ""
+    }
   });
+
+  const handleObjetivoChange = (objetivo: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      objetivos: {
+        ...prev.objetivos,
+        [objetivo]: checked
+      }
+    }));
+  };
+
+  const handleCircunferenciaChange = (tipo: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      circunferencias: {
+        ...prev.circunferencias,
+        [tipo]: value
+      }
+    }));
+  };
 
   const handleSave = () => {
     console.log("Saving physical assessment for patient:", patientId, formData);
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-2 border-purple-200 shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
         <CardTitle className="flex items-center gap-2">
           <Activity className="w-5 h-5" />
           Avaliação Física
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Peso Atual</Label>
-            <Input 
-              value={formData.currentWeight}
-              onChange={(e) => setFormData({...formData, currentWeight: e.target.value})}
-              placeholder="kg"
-            />
+      <CardContent className="p-6 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Objetivo do Paciente */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Objetivo do Paciente:
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">(selecione apenas uma opção)</p>
+              
+              <div className="space-y-3">
+                {[
+                  { key: 'estetica', label: 'Estética' },
+                  { key: 'emagrecimento', label: 'Emagrecimento' },
+                  { key: 'saudeLongevidade', label: 'Saúde e Longevidade' },
+                  { key: 'performanceEsportiva', label: 'Performance Esportiva' }
+                ].map((objetivo) => (
+                  <div key={objetivo.key} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={objetivo.key}
+                      checked={formData.objetivos[objetivo.key as keyof typeof formData.objetivos]}
+                      onCheckedChange={(checked) => handleObjetivoChange(objetivo.key, checked as boolean)}
+                      className="border-purple-300"
+                    />
+                    <Label 
+                      htmlFor={objetivo.key}
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      {objetivo.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <Label>IMC</Label>
-            <Input 
-              value={formData.currentIMC}
-              onChange={(e) => setFormData({...formData, currentIMC: e.target.value})}
-              placeholder="kg/m²"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>% Gordura Corporal</Label>
-            <Input 
-              value={formData.bodyFatPercentage}
-              onChange={(e) => setFormData({...formData, bodyFatPercentage: e.target.value})}
-              placeholder="%"
-            />
+
+          {/* Avaliação Antropométrica */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Avaliação Antropométrica:
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pesoAtual" className="text-sm font-medium">
+                    Peso Atual
+                  </Label>
+                  <Input 
+                    id="pesoAtual"
+                    value={formData.pesoAtual}
+                    onChange={(e) => setFormData(prev => ({...prev, pesoAtual: e.target.value}))}
+                    placeholder="kg"
+                    className="border-purple-200 focus:border-purple-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="altura" className="text-sm font-medium">
+                    Altura
+                  </Label>
+                  <Input 
+                    id="altura"
+                    value={formData.altura}
+                    onChange={(e) => setFormData(prev => ({...prev, altura: e.target.value}))}
+                    placeholder="cm"
+                    className="border-purple-200 focus:border-purple-400"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="imc" className="text-sm font-medium">
+                    IMC
+                  </Label>
+                  <Input 
+                    id="imc"
+                    value={formData.imc}
+                    onChange={(e) => setFormData(prev => ({...prev, imc: e.target.value}))}
+                    placeholder="kg/m²"
+                    className="border-purple-200 focus:border-purple-400"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="gorduraCorporal" className="text-sm font-medium">
+                    % Gordura Corporal
+                  </Label>
+                  <Input 
+                    id="gorduraCorporal"
+                    value={formData.gorduraCorporal}
+                    onChange={(e) => setFormData(prev => ({...prev, gorduraCorporal: e.target.value}))}
+                    placeholder="%"
+                    className="border-purple-200 focus:border-purple-400"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-700">Circunferências:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: 'cintura', label: 'Cintura:' },
+                    { key: 'quadril', label: 'Quadril:' },
+                    { key: 'braco', label: 'Braço:' },
+                    { key: 'coxa', label: 'Coxa:' }
+                  ].map((circunferencia) => (
+                    <div key={circunferencia.key} className="flex items-center gap-2">
+                      <Label className="text-sm w-16 flex-shrink-0">
+                        {circunferencia.label}
+                      </Label>
+                      <Input 
+                        value={formData.circunferencias[circunferencia.key as keyof typeof formData.circunferencias]}
+                        onChange={(e) => handleCircunferenciaChange(circunferencia.key, e.target.value)}
+                        placeholder="cm"
+                        className="flex-1 border-purple-200 focus:border-purple-400"
+                        size="sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div className="space-y-3">
-          <h4 className="font-medium">Circunferências:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Cintura</Label>
-              <Input 
-                value={formData.waistCircumference}
-                onChange={(e) => setFormData({...formData, waistCircumference: e.target.value})}
-                placeholder="cm"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Quadril</Label>
-              <Input 
-                value={formData.hipCircumference}
-                onChange={(e) => setFormData({...formData, hipCircumference: e.target.value})}
-                placeholder="cm"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Braço</Label>
-              <Input 
-                value={formData.armCircumference}
-                onChange={(e) => setFormData({...formData, armCircumference: e.target.value})}
-                placeholder="cm"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Coxa</Label>
-              <Input 
-                value={formData.thighCircumference}
-                onChange={(e) => setFormData({...formData, thighCircumference: e.target.value})}
-                placeholder="cm"
-              />
-            </div>
-          </div>
+        <div className="flex justify-end pt-6 border-t border-gray-200">
+          <Button 
+            onClick={handleSave} 
+            className="bg-purple-600 hover:bg-purple-700 text-white px-8"
+          >
+            Salvar Dados
+          </Button>
         </div>
-        
-        <Button onClick={handleSave} className="w-full">
-          Salvar Dados
-        </Button>
       </CardContent>
     </Card>
   );
