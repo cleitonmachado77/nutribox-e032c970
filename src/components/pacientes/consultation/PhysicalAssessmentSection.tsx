@@ -182,7 +182,6 @@ export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSecti
                         onChange={(e) => handleCircunferenciaChange(circunferencia.key, e.target.value)}
                         placeholder="cm"
                         className="flex-1 border-purple-200 focus:border-purple-400"
-                        size="sm"
                       />
                     </div>
                   ))}
