@@ -16,49 +16,49 @@ export const EmotionalAssessmentSection = ({ patientId }: EmotionalAssessmentSec
 
   const limitacoes = [
     {
-      id: 'ansiedade',
-      label: 'Ansiedade',
-      tooltip: 'Sentimento de preocupação, nervosismo ou inquietação sobre algo com resultado incerto'
+      id: 'compulsao_alimentar_noturna',
+      label: 'Compulsão Alimentar Noturna',
+      tooltip: 'Você costuma comer em excesso à noite, mesmo sem fome real?'
     },
     {
-      id: 'depressao',
-      label: 'Depressão',
-      tooltip: 'Estado persistente de tristeza, perda de interesse e diminuição da capacidade de sentir prazer'
+      id: 'ansiedade_pre_refeicao',
+      label: 'Ansiedade Pré-Refeição',
+      tooltip: 'Você costuma ter uma cobrança excessiva com "comer certo" ou "engordar"?'
     },
     {
-      id: 'compulsao_alimentar',
-      label: 'Compulsão Alimentar',
-      tooltip: 'Episódios recorrentes de ingestão de grandes quantidades de comida em pouco tempo'
+      id: 'fome_emocional',
+      label: 'Fome Emocional',
+      tooltip: 'Você costuma ter vontade de comer quando está triste, estressada, feliz ou carente (sem fome real)?'
     },
     {
-      id: 'baixa_autoestima',
-      label: 'Baixa Autoestima',
-      tooltip: 'Percepção negativa de si mesmo, sentimentos de inadequação e falta de confiança'
+      id: 'episodios_recompensa',
+      label: 'Episódios de Recompensa Alimentar',
+      tooltip: 'É comum você comer algo "proibido" como forma de compensação (ex: "eu mereço")?'
     },
     {
-      id: 'perfeccionismo',
-      label: 'Perfeccionismo',
-      tooltip: 'Tendência a estabelecer padrões irrealisticamente altos e ser excessivamente crítico'
+      id: 'culpa_pos_alimentacao',
+      label: 'Culpa Pós-Alimentação',
+      tooltip: 'Você costuma ter raiva de si, culpa ou arrependimento após comer?'
     },
     {
-      id: 'stress',
-      label: 'Stress',
-      tooltip: 'Resposta física e emocional a pressões e demandas do dia a dia'
+      id: 'oscilacao_humor_ciclo',
+      label: 'Oscilação de Humor no Ciclo Menstrual',
+      tooltip: 'Durante o seu ciclo menstrual, você sente mais vontade de doces ou percebe episódios de compulsão? (para mulheres)'
     },
     {
-      id: 'distorcao_imagem',
-      label: 'Distorção da Imagem Corporal',
-      tooltip: 'Percepção distorcida ou negativa da própria aparência física'
+      id: 'autoimagem_negativa',
+      label: 'Autoimagem Negativa (Body-Shame)',
+      tooltip: 'É normal episódios em que você pensa que seu corpo "não tem mais jeito" ou "não vale a pena tentar" e por isso você come mal?'
     },
     {
-      id: 'culpa_alimentar',
-      label: 'Culpa Alimentar',
-      tooltip: 'Sentimentos de culpa e vergonha relacionados às escolhas alimentares'
+      id: 'falta_controle',
+      label: 'Sensação de Falta de Controle',
+      tooltip: 'É comum você sentir que "perde o controle" diante de algum tipo de comida específico?'
     },
     {
-      id: 'isolamento_social',
-      label: 'Isolamento Social',
-      tooltip: 'Tendência a se afastar do convívio social e das atividades em grupo'
+      id: 'estresse_cronico',
+      label: 'Estresse Crônico',
+      tooltip: 'Você costuma comer de forma acelerada, sem tempo ou beliscando devido ao excesso de tensão do trabalho, rotina ou família?'
     }
   ];
 
