@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock, Camera, User, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
-import { PatientTabs } from "@/components/pacientes/PatientTabs";
+import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState } from "react";
 
 interface ConsultasPatientProfileProps {
   selectedPatient: Paciente;
@@ -20,6 +21,8 @@ export const ConsultasPatientProfile = ({
   onBack, 
   onOpenConsultaDialog 
 }: ConsultasPatientProfileProps) => {
+  const [showConsultationForm, setShowConsultationForm] = useState(false);
+
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
       case "Perda de Peso":
@@ -51,6 +54,34 @@ export const ConsultasPatientProfile = ({
     if (progress >= 60) return "bg-gradient-to-r from-amber-400 to-yellow-500";
     return "bg-gradient-to-r from-rose-400 to-red-500";
   };
+
+  const handleNovaConsulta = () => {
+    setShowConsultationForm(true);
+  };
+
+  const handleBackToProfile = () => {
+    setShowConsultationForm(false);
+  };
+
+  // Se o formulário de consulta está ativo, mostrar apenas ele
+  if (showConsultationForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToProfile}
+            className="bg-white hover:bg-gray-50 border-purple-200"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Perfil
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-800">Nova Consulta</h1>
+        </div>
+        <NewConsultationTab selectedPatient={selectedPatient} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
@@ -97,7 +128,7 @@ export const ConsultasPatientProfile = ({
 
               <div className="flex gap-2">
                 <Button 
-                  onClick={onOpenConsultaDialog}
+                  onClick={handleNovaConsulta}
                   className="bg-purple-500 hover:bg-purple-600 text-white"
                 >
                   Nova Consulta
@@ -257,19 +288,6 @@ export const ConsultasPatientProfile = ({
                 </CardContent>
               </Card>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabs do paciente */}
-        <Card className="border-2 border-purple-200 shadow-lg bg-white">
-          <CardContent className="p-6">
-            <PatientTabs 
-              selectedPatient={selectedPatient}
-              onOpenConsultaDialog={onOpenConsultaDialog}
-              getObjetivoColor={getObjetivoColor}
-              getStatusColor={getStatusColor}
-              getProgressColor={getProgressColor}
-            />
           </CardContent>
         </Card>
       </div>
