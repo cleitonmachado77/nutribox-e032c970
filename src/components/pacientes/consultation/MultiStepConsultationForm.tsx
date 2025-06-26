@@ -22,38 +22,101 @@ interface MultiStepConsultationFormProps {
 
 const steps = [
   { id: 1, title: "Histórico Clínico", description: "Informações médicas e histórico de saúde" },
-  { id: 2, title: "Avaliação Física", description: "Medidas corporais e composição" },
-  { id: 3, title: "Avaliação Emocional", description: "Aspectos psicológicos e comportamentais" },
-  { id: 4, title: "Avaliação Comportamental", description: "Hábitos alimentares e rotina" },
-  { id: 5, title: "Bem-Estar", description: "Qualidade de vida e satisfação" },
-  { id: 6, title: "Estrutura do Plano", description: "Base nutricional e macronutrientes" },
-  { id: 7, title: "Personalização", description: "Preferências e restrições alimentares" },
-  { id: 8, title: "Plano Alimentar", description: "Cardápio personalizado" },
-  { id: 9, title: "Metas e Objetivos", description: "Definição de metas e acompanhamento" },
-  { id: 10, title: "Documentos", description: "Impressos e materiais de apoio" }
+  { 
+    id: 2, 
+    title: "Avaliação", 
+    description: "Avaliações física, emocional, comportamental e bem-estar",
+    subSteps: [
+      { id: "2a", title: "Física", description: "Medidas corporais e composição" },
+      { id: "2b", title: "Emocional", description: "Aspectos psicológicos e comportamentais" },
+      { id: "2c", title: "Comportamental", description: "Hábitos alimentares e rotina" },
+      { id: "2d", title: "Bem-Estar", description: "Qualidade de vida e satisfação" }
+    ]
+  },
+  { id: 3, title: "Estrutura do Plano", description: "Base nutricional e macronutrientes" },
+  { id: 4, title: "Personalização", description: "Preferências e restrições alimentares" },
+  { id: 5, title: "Plano Alimentar", description: "Cardápio personalizado" },
+  { id: 6, title: "Metas e Objetivos", description: "Definição de metas e acompanhamento" },
+  { id: 7, title: "Documentos", description: "Impressos e materiais de apoio" }
 ];
 
 export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsultationFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [currentSubStep, setCurrentSubStep] = useState<string>("2a");
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-  const progress = (currentStep / steps.length) * 100;
+  const totalSteps = steps.length;
+  const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
-    if (currentStep < steps.length) {
-      setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
-      setCurrentStep(currentStep + 1);
+    if (currentStep === 2) {
+      // Navegar pelos substeps da Avaliação
+      const subSteps = ["2a", "2b", "2c", "2d"];
+      const currentIndex = subSteps.indexOf(currentSubStep);
+      
+      if (currentIndex < subSteps.length - 1) {
+        setCurrentSubStep(subSteps[currentIndex + 1]);
+      } else {
+        // Finalizar o step 2 e ir para o próximo
+        setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
+        setCurrentStep(currentStep + 1);
+        setCurrentSubStep("2a"); // Reset para o primeiro substep
+      }
+    } else {
+      if (currentStep < totalSteps) {
+        setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+    if (currentStep === 2) {
+      // Navegar pelos substeps da Avaliação
+      const subSteps = ["2a", "2b", "2c", "2d"];
+      const currentIndex = subSteps.indexOf(currentSubStep);
+      
+      if (currentIndex > 0) {
+        setCurrentSubStep(subSteps[currentIndex - 1]);
+      } else {
+        // Voltar para o step anterior
+        setCurrentStep(currentStep - 1);
+      }
+    } else if (currentStep === 3) {
+      // Ao voltar do step 3, ir para o último substep da Avaliação
+      setCurrentStep(2);
+      setCurrentSubStep("2d");
+    } else {
+      if (currentStep > 1) {
+        setCurrentStep(currentStep - 1);
+      }
     }
   };
 
   const handleStepClick = (stepId: number) => {
     setCurrentStep(stepId);
+    if (stepId === 2) {
+      setCurrentSubStep("2a"); // Sempre começar no primeiro substep
+    }
+  };
+
+  const handleSubStepClick = (subStepId: string) => {
+    setCurrentSubStep(subStepId);
+  };
+
+  const getCurrentStepInfo = () => {
+    const step = steps.find(s => s.id === currentStep);
+    if (currentStep === 2) {
+      const subStep = step?.subSteps?.find(s => s.id === currentSubStep);
+      return {
+        title: `${step?.title} - ${subStep?.title}`,
+        description: subStep?.description || step?.description
+      };
+    }
+    return {
+      title: step?.title || "",
+      description: step?.description || ""
+    };
   };
 
   const renderStepContent = () => {
@@ -61,27 +124,34 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
       case 1:
         return <ClinicalHistorySection patientId={selectedPatient.id} />;
       case 2:
-        return <PhysicalAssessmentSection patientId={selectedPatient.id} />;
+        switch (currentSubStep) {
+          case "2a":
+            return <PhysicalAssessmentSection patientId={selectedPatient.id} />;
+          case "2b":
+            return <EmotionalAssessmentSection patientId={selectedPatient.id} />;
+          case "2c":
+            return <BehavioralAssessmentSection patientId={selectedPatient.id} />;
+          case "2d":
+            return <WellnessAssessmentSection patientId={selectedPatient.id} />;
+          default:
+            return <PhysicalAssessmentSection patientId={selectedPatient.id} />;
+        }
       case 3:
-        return <EmotionalAssessmentSection patientId={selectedPatient.id} />;
-      case 4:
-        return <BehavioralAssessmentSection patientId={selectedPatient.id} />;
-      case 5:
-        return <WellnessAssessmentSection patientId={selectedPatient.id} />;
-      case 6:
         return <NutritionalPlanStructureSection patientId={selectedPatient.id} />;
-      case 7:
+      case 4:
         return <NutritionalPlanPersonalizationSection patientId={selectedPatient.id} />;
-      case 8:
+      case 5:
         return <NutritionalPlanSection patientId={selectedPatient.id} />;
-      case 9:
+      case 6:
         return <GoalsSection patientId={selectedPatient.id} />;
-      case 10:
+      case 7:
         return <PrintsSection patientId={selectedPatient.id} />;
       default:
         return null;
     }
   };
+
+  const currentStepInfo = getCurrentStepInfo();
 
   return (
     <div className="space-y-6">
@@ -92,7 +162,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             <div>
               <h2 className="text-xl font-bold">Nova Consulta - {selectedPatient.lead.nome}</h2>
               <p className="text-purple-100 text-sm mt-1">
-                Etapa {currentStep} de {steps.length}: {steps[currentStep - 1]?.title}
+                Etapa {currentStep} de {totalSteps}: {currentStepInfo.title}
               </p>
             </div>
             <div className="text-right">
@@ -104,7 +174,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
         <CardContent className="p-6">
           <div className="mb-6">
             <Progress value={progress} className="w-full h-2 mb-4" />
-            <p className="text-sm text-gray-600">{steps[currentStep - 1]?.description}</p>
+            <p className="text-sm text-gray-600">{currentStepInfo.description}</p>
           </div>
         </CardContent>
       </Card>
@@ -112,7 +182,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
       {/* Navegação por etapas */}
       <Card className="shadow-lg">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap gap-2 justify-center mb-4">
             {steps.map((step) => (
               <Button
                 key={step.id}
@@ -135,6 +205,27 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
               </Button>
             ))}
           </div>
+
+          {/* Substeps da Avaliação */}
+          {currentStep === 2 && (
+            <div className="flex flex-wrap gap-2 justify-center pt-2 border-t border-gray-200">
+              {steps[1].subSteps?.map((subStep) => (
+                <Button
+                  key={subStep.id}
+                  variant={currentSubStep === subStep.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSubStepClick(subStep.id)}
+                  className={`text-xs ${
+                    currentSubStep === subStep.id 
+                      ? "bg-purple-500 hover:bg-purple-600 text-white" 
+                      : "hover:bg-purple-50 text-purple-700 border-purple-200"
+                  }`}
+                >
+                  {subStep.title}
+                </Button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -150,7 +241,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 && currentSubStep === "2a"}
               className="flex items-center gap-2"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -158,15 +249,19 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             </Button>
 
             <div className="text-sm text-gray-500">
-              Etapa {currentStep} de {steps.length}
+              {currentStep === 2 ? (
+                <span>Avaliação: {steps[1].subSteps?.find(s => s.id === currentSubStep)?.title}</span>
+              ) : (
+                <span>Etapa {currentStep} de {totalSteps}</span>
+              )}
             </div>
 
             <Button
               onClick={handleNext}
-              disabled={currentStep === steps.length}
+              disabled={currentStep === totalSteps}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
             >
-              {currentStep === steps.length ? "Finalizar" : "Próximo"}
+              {currentStep === totalSteps ? "Finalizar" : "Próximo"}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
