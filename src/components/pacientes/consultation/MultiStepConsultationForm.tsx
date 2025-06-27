@@ -33,11 +33,18 @@ const steps = [
       { id: "2d", title: "Bem-Estar", description: "Qualidade de vida e satisfação" }
     ]
   },
-  { id: 3, title: "Estrutura do Plano", description: "Base nutricional e macronutrientes" },
-  { id: 4, title: "Personalização", description: "Preferências e restrições alimentares" },
-  { id: 5, title: "Plano Alimentar", description: "Cardápio personalizado" },
-  { id: 6, title: "Metas e Objetivos", description: "Definição de metas e acompanhamento" },
-  { id: 7, title: "Documentos", description: "Impressos e materiais de apoio" }
+  { 
+    id: 3, 
+    title: "Plano Alimentar", 
+    description: "Estrutura, personalização e criação do plano nutricional",
+    subSteps: [
+      { id: "3a", title: "Estrutura", description: "Base nutricional e macronutrientes" },
+      { id: "3b", title: "Personalização", description: "Preferências e restrições alimentares" },
+      { id: "3c", title: "Plano", description: "Cardápio personalizado" }
+    ]
+  },
+  { id: 4, title: "Metas e Objetivos", description: "Definição de metas e acompanhamento" },
+  { id: 5, title: "Documentos", description: "Impressos e materiais de apoio" }
 ];
 
 export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsultationFormProps) => {
@@ -58,6 +65,19 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
         setCurrentSubStep(subSteps[currentIndex + 1]);
       } else {
         // Finalizar o step 2 e ir para o próximo
+        setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
+        setCurrentStep(currentStep + 1);
+        setCurrentSubStep("3a"); // Ir para o primeiro substep do Plano Alimentar
+      }
+    } else if (currentStep === 3) {
+      // Navegar pelos substeps do Plano Alimentar
+      const subSteps = ["3a", "3b", "3c"];
+      const currentIndex = subSteps.indexOf(currentSubStep);
+      
+      if (currentIndex < subSteps.length - 1) {
+        setCurrentSubStep(subSteps[currentIndex + 1]);
+      } else {
+        // Finalizar o step 3 e ir para o próximo
         setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
         setCurrentStep(currentStep + 1);
         setCurrentSubStep("2a"); // Reset para o primeiro substep
@@ -83,9 +103,21 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
         setCurrentStep(currentStep - 1);
       }
     } else if (currentStep === 3) {
-      // Ao voltar do step 3, ir para o último substep da Avaliação
-      setCurrentStep(2);
-      setCurrentSubStep("2d");
+      // Navegar pelos substeps do Plano Alimentar
+      const subSteps = ["3a", "3b", "3c"];
+      const currentIndex = subSteps.indexOf(currentSubStep);
+      
+      if (currentIndex > 0) {
+        setCurrentSubStep(subSteps[currentIndex - 1]);
+      } else {
+        // Voltar para o step anterior (Avaliação)
+        setCurrentStep(2);
+        setCurrentSubStep("2d"); // Ir para o último substep da Avaliação
+      }
+    } else if (currentStep === 4) {
+      // Ao voltar do step 4, ir para o último substep do Plano Alimentar
+      setCurrentStep(3);
+      setCurrentSubStep("3c");
     } else {
       if (currentStep > 1) {
         setCurrentStep(currentStep - 1);
@@ -96,7 +128,9 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const handleStepClick = (stepId: number) => {
     setCurrentStep(stepId);
     if (stepId === 2) {
-      setCurrentSubStep("2a"); // Sempre começar no primeiro substep
+      setCurrentSubStep("2a"); // Sempre começar no primeiro substep da Avaliação
+    } else if (stepId === 3) {
+      setCurrentSubStep("3a"); // Sempre começar no primeiro substep do Plano Alimentar
     }
   };
 
@@ -107,6 +141,12 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const getCurrentStepInfo = () => {
     const step = steps.find(s => s.id === currentStep);
     if (currentStep === 2) {
+      const subStep = step?.subSteps?.find(s => s.id === currentSubStep);
+      return {
+        title: `${step?.title} - ${subStep?.title}`,
+        description: subStep?.description || step?.description
+      };
+    } else if (currentStep === 3) {
       const subStep = step?.subSteps?.find(s => s.id === currentSubStep);
       return {
         title: `${step?.title} - ${subStep?.title}`,
@@ -137,14 +177,19 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             return <PhysicalAssessmentSection patientId={selectedPatient.id} />;
         }
       case 3:
-        return <NutritionalPlanStructureSection patientId={selectedPatient.id} />;
+        switch (currentSubStep) {
+          case "3a":
+            return <NutritionalPlanStructureSection patientId={selectedPatient.id} />;
+          case "3b":
+            return <NutritionalPlanPersonalizationSection patientId={selectedPatient.id} />;
+          case "3c":
+            return <NutritionalPlanSection patientId={selectedPatient.id} />;
+          default:
+            return <NutritionalPlanStructureSection patientId={selectedPatient.id} />;
+        }
       case 4:
-        return <NutritionalPlanPersonalizationSection patientId={selectedPatient.id} />;
-      case 5:
-        return <NutritionalPlanSection patientId={selectedPatient.id} />;
-      case 6:
         return <GoalsSection patientId={selectedPatient.id} />;
-      case 7:
+      case 5:
         return <PrintsSection patientId={selectedPatient.id} />;
       default:
         return null;
@@ -226,6 +271,27 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
               ))}
             </div>
           )}
+
+          {/* Substeps do Plano Alimentar */}
+          {currentStep === 3 && (
+            <div className="flex flex-wrap gap-2 justify-center pt-2 border-t border-gray-200">
+              {steps[2].subSteps?.map((subStep) => (
+                <Button
+                  key={subStep.id}
+                  variant={currentSubStep === subStep.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSubStepClick(subStep.id)}
+                  className={`text-xs ${
+                    currentSubStep === subStep.id 
+                      ? "bg-purple-500 hover:bg-purple-600 text-white" 
+                      : "hover:bg-purple-50 text-purple-700 border-purple-200"
+                  }`}
+                >
+                  {subStep.title}
+                </Button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -251,6 +317,8 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             <div className="text-sm text-gray-500">
               {currentStep === 2 ? (
                 <span>Avaliação: {steps[1].subSteps?.find(s => s.id === currentSubStep)?.title}</span>
+              ) : currentStep === 3 ? (
+                <span>Plano Alimentar: {steps[2].subSteps?.find(s => s.id === currentSubStep)?.title}</span>
               ) : (
                 <span>Etapa {currentStep} de {totalSteps}</span>
               )}
