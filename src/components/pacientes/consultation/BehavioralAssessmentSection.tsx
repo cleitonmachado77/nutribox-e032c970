@@ -5,12 +5,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface BehavioralAssessmentSectionProps {
   patientId: string;
 }
 
 export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentSectionProps) => {
+  const { saveBehavioralAssessment, isLoading } = useConsultationData(patientId);
+  
   const [formData, setFormData] = useState({
     planConsistency: "",
     mealFrequency: "",
@@ -19,8 +23,19 @@ export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentS
     fluidIntake: ""
   });
 
-  const handleSave = () => {
-    console.log("Saving behavioral assessment for patient:", patientId, formData);
+  const handleSave = async () => {
+    try {
+      await saveBehavioralAssessment({
+        plan_consistency: formData.planConsistency,
+        meal_frequency: formData.mealFrequency,
+        meal_time: formData.mealTime,
+        vegetable_fruits: formData.vegetableFruits,
+        fluid_intake: formData.fluidIntake
+      });
+      toast.success("Avaliação comportamental salva com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar avaliação comportamental");
+    }
   };
 
   return (
@@ -103,8 +118,12 @@ export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentS
           </div>
         </div>
         
-        <Button onClick={handleSave} className="w-full">
-          Salvar Dados
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
       </CardContent>
     </Card>

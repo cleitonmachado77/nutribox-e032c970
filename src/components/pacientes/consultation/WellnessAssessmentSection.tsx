@@ -5,12 +5,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Smile } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface WellnessAssessmentSectionProps {
   patientId: string;
 }
 
 export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSectionProps) => {
+  const { saveWellnessAssessment, isLoading } = useConsultationData(patientId);
+  
   const [formData, setFormData] = useState({
     bodyImage: "",
     physicalEnergy: "",
@@ -19,8 +23,19 @@ export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSecti
     journeyConfidence: ""
   });
 
-  const handleSave = () => {
-    console.log("Saving wellness assessment for patient:", patientId, formData);
+  const handleSave = async () => {
+    try {
+      await saveWellnessAssessment({
+        body_image: formData.bodyImage,
+        physical_energy: formData.physicalEnergy,
+        physical_activity: formData.physicalActivity,
+        sleep: formData.sleep,
+        journey_confidence: formData.journeyConfidence
+      });
+      toast.success("Avaliação de bem-estar salva com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar avaliação de bem-estar");
+    }
   };
 
   return (
@@ -103,8 +118,12 @@ export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSecti
           </div>
         </div>
         
-        <Button onClick={handleSave} className="w-full">
-          Salvar Dados
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
       </CardContent>
     </Card>

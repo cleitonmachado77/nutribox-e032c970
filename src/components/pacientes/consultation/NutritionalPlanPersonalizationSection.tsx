@@ -5,12 +5,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface NutritionalPlanPersonalizationSectionProps {
   patientId: string;
 }
 
 export const NutritionalPlanPersonalizationSection = ({ patientId }: NutritionalPlanPersonalizationSectionProps) => {
+  const { saveNutritionalPersonalization, isLoading } = useConsultationData(patientId);
+  
   const [formData, setFormData] = useState({
     preferredMeals: "",
     avoidedMeals: "",
@@ -23,8 +27,23 @@ export const NutritionalPlanPersonalizationSection = ({ patientId }: Nutritional
     limitations: ""
   });
 
-  const handleSave = () => {
-    console.log("Saving nutritional plan personalization for patient:", patientId, formData);
+  const handleSave = async () => {
+    try {
+      await saveNutritionalPersonalization({
+        preferred_meals: formData.preferredMeals,
+        avoided_meals: formData.avoidedMeals,
+        preferred_foods: formData.preferredFoods,
+        avoided_foods: formData.avoidedFoods,
+        perfect_meals: formData.perfectMeals,
+        vegetables: formData.vegetables,
+        fruits: formData.fruits,
+        objects: formData.objects,
+        limitations: formData.limitations
+      });
+      toast.success("Personalização do plano alimentar salva com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar personalização do plano alimentar");
+    }
   };
 
   return (
@@ -119,8 +138,12 @@ export const NutritionalPlanPersonalizationSection = ({ patientId }: Nutritional
           </div>
         </div>
         
-        <Button onClick={handleSave} className="w-full">
-          Salvar Dados
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
       </CardContent>
     </Card>

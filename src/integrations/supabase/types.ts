@@ -175,6 +175,336 @@ export type Database = {
           },
         ]
       }
+      consultation_behavioral_assessment: {
+        Row: {
+          consultation_id: string | null
+          created_at: string
+          fluid_intake: string | null
+          id: string
+          meal_frequency: string | null
+          meal_time: string | null
+          patient_id: string
+          plan_consistency: string | null
+          updated_at: string
+          user_id: string
+          vegetable_fruits: string | null
+        }
+        Insert: {
+          consultation_id?: string | null
+          created_at?: string
+          fluid_intake?: string | null
+          id?: string
+          meal_frequency?: string | null
+          meal_time?: string | null
+          patient_id: string
+          plan_consistency?: string | null
+          updated_at?: string
+          user_id: string
+          vegetable_fruits?: string | null
+        }
+        Update: {
+          consultation_id?: string | null
+          created_at?: string
+          fluid_intake?: string | null
+          id?: string
+          meal_frequency?: string | null
+          meal_time?: string | null
+          patient_id?: string
+          plan_consistency?: string | null
+          updated_at?: string
+          user_id?: string
+          vegetable_fruits?: string | null
+        }
+        Relationships: []
+      }
+      consultation_emotional_assessment: {
+        Row: {
+          consultation_id: string | null
+          created_at: string
+          eating_triggers: string | null
+          emotional_state: string | null
+          food_anxiety: string | null
+          id: string
+          patient_id: string
+          relationship_with_food: string | null
+          stress_level: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consultation_id?: string | null
+          created_at?: string
+          eating_triggers?: string | null
+          emotional_state?: string | null
+          food_anxiety?: string | null
+          id?: string
+          patient_id: string
+          relationship_with_food?: string | null
+          stress_level?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consultation_id?: string | null
+          created_at?: string
+          eating_triggers?: string | null
+          emotional_state?: string | null
+          food_anxiety?: string | null
+          id?: string
+          patient_id?: string
+          relationship_with_food?: string | null
+          stress_level?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      consultation_nutritional_personalization: {
+        Row: {
+          avoided_foods: string | null
+          avoided_meals: string | null
+          consultation_id: string | null
+          created_at: string
+          fruits: string | null
+          id: string
+          limitations: string | null
+          objects: string | null
+          patient_id: string
+          perfect_meals: string | null
+          preferred_foods: string | null
+          preferred_meals: string | null
+          updated_at: string
+          user_id: string
+          vegetables: string | null
+        }
+        Insert: {
+          avoided_foods?: string | null
+          avoided_meals?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          fruits?: string | null
+          id?: string
+          limitations?: string | null
+          objects?: string | null
+          patient_id: string
+          perfect_meals?: string | null
+          preferred_foods?: string | null
+          preferred_meals?: string | null
+          updated_at?: string
+          user_id: string
+          vegetables?: string | null
+        }
+        Update: {
+          avoided_foods?: string | null
+          avoided_meals?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          fruits?: string | null
+          id?: string
+          limitations?: string | null
+          objects?: string | null
+          patient_id?: string
+          perfect_meals?: string | null
+          preferred_foods?: string | null
+          preferred_meals?: string | null
+          updated_at?: string
+          user_id?: string
+          vegetables?: string | null
+        }
+        Relationships: []
+      }
+      consultation_nutritional_plans: {
+        Row: {
+          consultation_id: string | null
+          created_at: string
+          generation_data: Json | null
+          id: string
+          is_active: boolean | null
+          patient_id: string
+          plan_content: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consultation_id?: string | null
+          created_at?: string
+          generation_data?: Json | null
+          id?: string
+          is_active?: boolean | null
+          patient_id: string
+          plan_content?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consultation_id?: string | null
+          created_at?: string
+          generation_data?: Json | null
+          id?: string
+          is_active?: boolean | null
+          patient_id?: string
+          plan_content?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      consultation_nutritional_structure: {
+        Row: {
+          carbs_grams: string | null
+          carbs_percentage: string | null
+          consultation_id: string | null
+          created_at: string
+          daily_calories: string | null
+          fats_grams: string | null
+          fats_percentage: string | null
+          id: string
+          patient_id: string
+          proteins_grams: string | null
+          proteins_percentage: string | null
+          selected_meals: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carbs_grams?: string | null
+          carbs_percentage?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          daily_calories?: string | null
+          fats_grams?: string | null
+          fats_percentage?: string | null
+          id?: string
+          patient_id: string
+          proteins_grams?: string | null
+          proteins_percentage?: string | null
+          selected_meals?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carbs_grams?: string | null
+          carbs_percentage?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          daily_calories?: string | null
+          fats_grams?: string | null
+          fats_percentage?: string | null
+          id?: string
+          patient_id?: string
+          proteins_grams?: string | null
+          proteins_percentage?: string | null
+          selected_meals?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      consultation_physical_assessment: {
+        Row: {
+          altura: string | null
+          circunferencia_braco: string | null
+          circunferencia_cintura: string | null
+          circunferencia_coxa: string | null
+          circunferencia_quadril: string | null
+          consultation_id: string | null
+          created_at: string
+          gordura_corporal: string | null
+          id: string
+          imc: string | null
+          objetivo_emagrecimento: boolean | null
+          objetivo_estetica: boolean | null
+          objetivo_performance_esportiva: boolean | null
+          objetivo_saude_longevidade: boolean | null
+          patient_id: string
+          peso_atual: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          altura?: string | null
+          circunferencia_braco?: string | null
+          circunferencia_cintura?: string | null
+          circunferencia_coxa?: string | null
+          circunferencia_quadril?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          gordura_corporal?: string | null
+          id?: string
+          imc?: string | null
+          objetivo_emagrecimento?: boolean | null
+          objetivo_estetica?: boolean | null
+          objetivo_performance_esportiva?: boolean | null
+          objetivo_saude_longevidade?: boolean | null
+          patient_id: string
+          peso_atual?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          altura?: string | null
+          circunferencia_braco?: string | null
+          circunferencia_cintura?: string | null
+          circunferencia_coxa?: string | null
+          circunferencia_quadril?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          gordura_corporal?: string | null
+          id?: string
+          imc?: string | null
+          objetivo_emagrecimento?: boolean | null
+          objetivo_estetica?: boolean | null
+          objetivo_performance_esportiva?: boolean | null
+          objetivo_saude_longevidade?: boolean | null
+          patient_id?: string
+          peso_atual?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      consultation_wellness_assessment: {
+        Row: {
+          body_image: string | null
+          consultation_id: string | null
+          created_at: string
+          id: string
+          journey_confidence: string | null
+          patient_id: string
+          physical_activity: string | null
+          physical_energy: string | null
+          sleep: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_image?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          id?: string
+          journey_confidence?: string | null
+          patient_id: string
+          physical_activity?: string | null
+          physical_energy?: string | null
+          sleep?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_image?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          id?: string
+          journey_confidence?: string | null
+          patient_id?: string
+          physical_activity?: string | null
+          physical_energy?: string | null
+          sleep?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       Contact: {
         Row: {
           createdAt: string | null

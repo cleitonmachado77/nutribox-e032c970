@@ -1,17 +1,21 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Activity } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface PhysicalAssessmentSectionProps {
   patientId: string;
 }
 
 export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSectionProps) => {
+  const { savePhysicalAssessment, isLoading } = useConsultationData(patientId);
+  
   const [formData, setFormData] = useState({
     // Objetivos do Paciente
     objetivos: {
@@ -53,8 +57,26 @@ export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSecti
     }));
   };
 
-  const handleSave = () => {
-    console.log("Saving physical assessment for patient:", patientId, formData);
+  const handleSave = async () => {
+    try {
+      await savePhysicalAssessment({
+        objetivo_estetica: formData.objetivos.estetica,
+        objetivo_emagrecimento: formData.objetivos.emagrecimento,
+        objetivo_saude_longevidade: formData.objetivos.saudeLongevidade,
+        objetivo_performance_esportiva: formData.objetivos.performanceEsportiva,
+        peso_atual: formData.pesoAtual,
+        altura: formData.altura,
+        imc: formData.imc,
+        gordura_corporal: formData.gorduraCorporal,
+        circunferencia_cintura: formData.circunferencias.cintura,
+        circunferencia_quadril: formData.circunferencias.quadril,
+        circunferencia_braco: formData.circunferencias.braco,
+        circunferencia_coxa: formData.circunferencias.coxa
+      });
+      toast.success("Avaliação física salva com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar avaliação física");
+    }
   };
 
   return (
@@ -194,9 +216,10 @@ export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSecti
         <div className="flex justify-end pt-6 border-t border-gray-200">
           <Button 
             onClick={handleSave} 
+            disabled={isLoading}
             className="bg-purple-600 hover:bg-purple-700 text-white px-8"
           >
-            Salvar Dados
+            {isLoading ? "Salvando..." : "Salvar Dados"}
           </Button>
         </div>
       </CardContent>

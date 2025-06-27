@@ -6,12 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Settings } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface NutritionalPlanStructureSectionProps {
   patientId: string;
 }
 
 export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanStructureSectionProps) => {
+  const { saveNutritionalStructure, isLoading } = useConsultationData(patientId);
+  
   const [formData, setFormData] = useState({
     dailyCalories: "",
     carbsPercentage: "",
@@ -47,8 +51,22 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
     }
   };
 
-  const handleSave = () => {
-    console.log("Saving nutritional plan structure for patient:", patientId, formData);
+  const handleSave = async () => {
+    try {
+      await saveNutritionalStructure({
+        daily_calories: formData.dailyCalories,
+        carbs_percentage: formData.carbsPercentage,
+        carbs_grams: formData.carbsGrams,
+        proteins_percentage: formData.proteinsPercentage,
+        proteins_grams: formData.proteinsGrams,
+        fats_percentage: formData.fatsPercentage,
+        fats_grams: formData.fatsGrams,
+        selected_meals: formData.selectedMeals
+      });
+      toast.success("Estrutura do plano alimentar salva com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar estrutura do plano alimentar");
+    }
   };
 
   return (
@@ -137,8 +155,12 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
           </div>
         </div>
         
-        <Button onClick={handleSave} className="w-full">
-          Salvar Dados
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
       </CardContent>
     </Card>

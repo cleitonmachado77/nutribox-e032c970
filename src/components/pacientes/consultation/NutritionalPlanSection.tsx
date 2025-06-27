@@ -1,66 +1,66 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Utensils } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface NutritionalPlanSectionProps {
   patientId: string;
 }
 
 export const NutritionalPlanSection = ({ patientId }: NutritionalPlanSectionProps) => {
+  const { generateNutritionalPlan, getSavedNutritionalPlan, isLoading } = useConsultationData(patientId);
   const [planContent, setPlanContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGeneratePlan = async () => {
-    setIsGenerating(true);
-    // Simulate AI generation
-    setTimeout(() => {
-      setPlanContent(`
-PLANO ALIMENTAR PERSONALIZADO
+  useEffect(() => {
+    loadSavedPlan();
+  }, []);
 
-CAFÉ DA MANHÃ (7h00)
-- 1 fatia de pão integral
-- 1 ovo cozido
-- 1 copo de leite desnatado
-- 1 banana média
-
-LANCHE DA MANHÃ (10h00)
-- 1 iogurte natural
-- 1 colher de sopa de granola
-
-ALMOÇO (12h30)
-- 150g de frango grelhado
-- 3 colheres de sopa de arroz integral
-- 2 colheres de sopa de feijão
-- Salada verde à vontade
-- 1 colher de sopa de azeite
-
-LANCHE DA TARDE (15h30)
-- 1 maçã
-- 10 castanhas
-
-JANTAR (19h00)
-- 120g de peixe grelhado
-- 2 colheres de sopa de quinoa
-- Legumes refogados
-- Salada de folhas verdes
-
-CEIA (21h30)
-- 1 copo de leite desnatado
-- 2 castanhas do Brasil
-      `);
-      setIsGenerating(false);
-    }, 2000);
+  const loadSavedPlan = async () => {
+    try {
+      const savedPlan = await getSavedNutritionalPlan();
+      if (savedPlan) {
+        setPlanContent(savedPlan);
+      }
+    } catch (error) {
+      console.error("Error loading saved plan:", error);
+    }
   };
 
-  const handleSavePlan = () => {
-    console.log("Saving nutritional plan for patient:", patientId, planContent);
+  const handleGeneratePlan = async () => {
+    setIsGenerating(true);
+    try {
+      const generatedPlan = await generateNutritionalPlan();
+      setPlanContent(generatedPlan);
+      toast.success("Plano alimentar gerado com sucesso!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao gerar plano alimentar. Certifique-se de que todas as avaliações foram preenchidas.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleExportPlan = () => {
-    console.log("Exporting nutritional plan for patient:", patientId);
+    if (!planContent) {
+      toast.error("Nenhum plano para exportar");
+      return;
+    }
+
+    const blob = new Blob([planContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `plano-alimentar-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Plano exportado com sucesso!");
   };
 
   return (
@@ -75,12 +75,16 @@ CEIA (21h30)
         <div className="flex gap-2 mb-4">
           <Button 
             onClick={handleGeneratePlan} 
-            disabled={isGenerating}
+            disabled={isGenerating || isLoading}
             className="flex-1"
           >
-            {isGenerating ? "Gerando..." : "Gerar Novo Plano"}
+            {isGenerating ? "Gerando..." : "Gerar Plano Inteligente"}
           </Button>
-          <Button variant="outline" onClick={handleExportPlan}>
+          <Button 
+            variant="outline" 
+            onClick={handleExportPlan}
+            disabled={!planContent}
+          >
             Exportar Plano
           </Button>
         </div>
@@ -88,18 +92,16 @@ CEIA (21h30)
         <Textarea
           value={planContent}
           onChange={(e) => setPlanContent(e.target.value)}
-          placeholder="O plano alimentar será gerado aqui com base nas informações coletadas..."
+          placeholder="O plano alimentar será gerado aqui com base nas informações coletadas das avaliações..."
           className="min-h-[400px] font-mono text-sm"
         />
         
-        <div className="flex gap-2">
-          <Button onClick={handleSavePlan} className="flex-1">
-            Salvar Plano
-          </Button>
-          <Button variant="outline">
-            Editar Plano
-          </Button>
-        </div>
+        {planContent && (
+          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+            💡 <strong>Dica:</strong> Este plano foi gerado automaticamente baseado nas avaliações preenchidas. 
+            Você pode editá-lo diretamente no campo acima para personalizar ainda mais conforme necessário.
+          </div>
+        )}
       </CardContent>
     </Card>
   );
