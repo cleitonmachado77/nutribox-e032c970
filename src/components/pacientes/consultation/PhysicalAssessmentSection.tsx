@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Activity } from "lucide-react";
 import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
 import { toast } from "sonner";
 
 interface PhysicalAssessmentSectionProps {
@@ -15,6 +16,7 @@ interface PhysicalAssessmentSectionProps {
 
 export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSectionProps) => {
   const { savePhysicalAssessment, isLoading } = useConsultationData(patientId);
+  const { loadPhysicalAssessment } = useConsultationDataLoader(patientId);
   
   const [formData, setFormData] = useState({
     // Objetivos do Paciente
@@ -36,6 +38,43 @@ export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSecti
       coxa: ""
     }
   });
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadPhysicalAssessment();
+        if (data) {
+          setFormData({
+            objetivos: {
+              estetica: data.objetivo_estetica,
+              emagrecimento: data.objetivo_emagrecimento,
+              saudeLongevidade: data.objetivo_saude_longevidade,
+              performanceEsportiva: data.objetivo_performance_esportiva
+            },
+            pesoAtual: data.peso_atual,
+            altura: data.altura,
+            imc: data.imc,
+            gorduraCorporal: data.gordura_corporal,
+            circunferencias: {
+              cintura: data.circunferencia_cintura,
+              quadril: data.circunferencia_quadril,
+              braco: data.circunferencia_braco,
+              coxa: data.circunferencia_coxa
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error loading physical assessment data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
 
   const handleObjetivoChange = (objetivo: string, checked: boolean) => {
     setFormData(prev => ({
@@ -78,6 +117,22 @@ export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSecti
       toast.error("Erro ao salvar avaliação física");
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card className="border-2 border-purple-200 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Avaliação Física
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 border-purple-200 shadow-lg">

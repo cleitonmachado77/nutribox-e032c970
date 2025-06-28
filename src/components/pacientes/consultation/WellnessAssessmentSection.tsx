@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Smile } from "lucide-react";
 import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
 import { toast } from "sonner";
 
 interface WellnessAssessmentSectionProps {
@@ -14,6 +15,7 @@ interface WellnessAssessmentSectionProps {
 
 export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSectionProps) => {
   const { saveWellnessAssessment, isLoading } = useConsultationData(patientId);
+  const { loadWellnessAssessment } = useConsultationDataLoader(patientId);
   
   const [formData, setFormData] = useState({
     bodyImage: "",
@@ -22,6 +24,32 @@ export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSecti
     sleep: "",
     journeyConfidence: ""
   });
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadWellnessAssessment();
+        if (data) {
+          setFormData({
+            bodyImage: data.body_image,
+            physicalEnergy: data.physical_energy,
+            physicalActivity: data.physical_activity,
+            sleep: data.sleep,
+            journeyConfidence: data.journey_confidence
+          });
+        }
+      } catch (error) {
+        console.error('Error loading wellness assessment data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
 
   const handleSave = async () => {
     try {
@@ -37,6 +65,22 @@ export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSecti
       toast.error("Erro ao salvar avaliação de bem-estar");
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smile className="w-5 h-5" />
+            Avaliação de Bem Estar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

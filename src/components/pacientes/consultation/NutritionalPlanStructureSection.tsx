@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Settings } from "lucide-react";
 import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
 import { toast } from "sonner";
 
 interface NutritionalPlanStructureSectionProps {
@@ -15,6 +16,7 @@ interface NutritionalPlanStructureSectionProps {
 
 export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanStructureSectionProps) => {
   const { saveNutritionalStructure, isLoading } = useConsultationData(patientId);
+  const { loadNutritionalStructure } = useConsultationDataLoader(patientId);
   
   const [formData, setFormData] = useState({
     dailyCalories: "",
@@ -27,6 +29,8 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
     selectedMeals: [] as string[]
   });
 
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
   const meals = [
     "Café da Manhã",
     "Lanche da Manhã", 
@@ -36,6 +40,33 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
     "Jantar",
     "Ceia"
   ];
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadNutritionalStructure();
+        if (data) {
+          setFormData({
+            dailyCalories: data.daily_calories,
+            carbsPercentage: data.carbs_percentage,
+            carbsGrams: data.carbs_grams,
+            proteinsPercentage: data.proteins_percentage,
+            proteinsGrams: data.proteins_grams,
+            fatsPercentage: data.fats_percentage,
+            fatsGrams: data.fats_grams,
+            selectedMeals: data.selected_meals
+          });
+        }
+      } catch (error) {
+        console.error('Error loading nutritional structure data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
 
   const toggleMeal = (meal: string) => {
     if (formData.selectedMeals.includes(meal)) {
@@ -68,6 +99,22 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
       toast.error("Erro ao salvar estrutura do plano alimentar");
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Estrutura do Plano Alimentar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

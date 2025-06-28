@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Heart } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
+import { toast } from "sonner";
 
 interface EmotionalAssessmentSectionProps {
   patientId: string;
@@ -18,10 +21,14 @@ interface LimitacaoResponse {
 }
 
 export const EmotionalAssessmentSection = ({ patientId }: EmotionalAssessmentSectionProps) => {
+  const { saveEmotionalAssessment, isLoading } = useConsultationData(patientId);
+  const { loadEmotionalAssessment } = useConsultationDataLoader(patientId);
+  
   const [selectedLimitations, setSelectedLimitations] = useState<LimitacaoResponse[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentLimitacao, setCurrentLimitacao] = useState<any>(null);
   const [currentIntensity, setCurrentIntensity] = useState<string>('');
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const limitacoes = [
     {
@@ -77,6 +84,38 @@ export const EmotionalAssessmentSection = ({ patientId }: EmotionalAssessmentSec
     { value: 'raramente', label: 'Raramente ou Nunca (Boa)', color: 'text-green-600' }
   ];
 
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadEmotionalAssessment();
+        if (data) {
+          // Parse the emotional assessment data and restore selected limitations
+          const triggers = data.eating_triggers ? data.eating_triggers.split(',') : [];
+          const restoredLimitations: LimitacaoResponse[] = [];
+          
+          triggers.forEach(trigger => {
+            const [id, intensity] = trigger.split(':');
+            if (id && intensity) {
+              restoredLimitations.push({
+                id: id.trim(),
+                intensity: intensity.trim() as 'demais' | 'as_vezes' | 'raramente'
+              });
+            }
+          });
+          
+          setSelectedLimitations(restoredLimitations);
+        }
+      } catch (error) {
+        console.error('Error loading emotional assessment data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
+
   const handleLimitationClick = (limitacao: any) => {
     // Se já está selecionada, remover
     const isSelected = selectedLimitations.find(l => l.id === limitacao.id);
@@ -128,9 +167,43 @@ export const EmotionalAssessmentSection = ({ patientId }: EmotionalAssessmentSec
     return option ? option.label : '';
   };
 
-  const handleSave = () => {
-    console.log("Saving emotional assessment for patient:", patientId, selectedLimitations);
+  const handleSave = async () => {
+    try {
+      // Convert selected limitations to string format for storage
+      const eatingTriggersString = selectedLimitations
+        .map(l => `${l.id}:${l.intensity}`)
+        .join(',');
+
+      await saveEmotionalAssessment({
+        relationship_with_food: selectedLimitations.length > 0 ? 'assessed' : '',
+        eating_triggers: eatingTriggersString,
+        emotional_state: selectedLimitations.some(l => l.intensity === 'demais') ? 'high_stress' : 'normal',
+        stress_level: selectedLimitations.filter(l => l.intensity === 'demais').length.toString(),
+        food_anxiety: selectedLimitations.some(l => l.id.includes('ansiedade')) ? 'present' : 'absent'
+      });
+      
+      toast.success("Avaliação emocional salva com sucesso!");
+    } catch (error) {
+      console.error('Error saving emotional assessment:', error);
+      toast.error("Erro ao salvar avaliação emocional");
+    }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card className="border-2 border-purple-200 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5" />
+            Avaliação Emocional
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 border-purple-200 shadow-lg">
@@ -204,9 +277,10 @@ export const EmotionalAssessmentSection = ({ patientId }: EmotionalAssessmentSec
         <div className="flex justify-end pt-6 border-t border-gray-200">
           <Button 
             onClick={handleSave} 
+            disabled={isLoading}
             className="bg-purple-600 hover:bg-purple-700 text-white px-8"
           >
-            Salvar Dados
+            {isLoading ? "Salvando..." : "Salvar Dados"}
           </Button>
         </div>
       </CardContent>

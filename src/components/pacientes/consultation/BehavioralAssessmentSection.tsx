@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
 import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
 import { toast } from "sonner";
 
 interface BehavioralAssessmentSectionProps {
@@ -14,6 +15,7 @@ interface BehavioralAssessmentSectionProps {
 
 export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentSectionProps) => {
   const { saveBehavioralAssessment, isLoading } = useConsultationData(patientId);
+  const { loadBehavioralAssessment } = useConsultationDataLoader(patientId);
   
   const [formData, setFormData] = useState({
     planConsistency: "",
@@ -22,6 +24,32 @@ export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentS
     vegetableFruits: "",
     fluidIntake: ""
   });
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadBehavioralAssessment();
+        if (data) {
+          setFormData({
+            planConsistency: data.plan_consistency,
+            mealFrequency: data.meal_frequency,
+            mealTime: data.meal_time,
+            vegetableFruits: data.vegetable_fruits,
+            fluidIntake: data.fluid_intake
+          });
+        }
+      } catch (error) {
+        console.error('Error loading behavioral assessment data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
 
   const handleSave = async () => {
     try {
@@ -37,6 +65,22 @@ export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentS
       toast.error("Erro ao salvar avaliação comportamental");
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-5 h-5" />
+            Avaliação Comportamental
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

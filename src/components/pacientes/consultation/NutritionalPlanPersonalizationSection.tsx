@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
 import { toast } from "sonner";
 
 interface NutritionalPlanPersonalizationSectionProps {
@@ -14,6 +15,7 @@ interface NutritionalPlanPersonalizationSectionProps {
 
 export const NutritionalPlanPersonalizationSection = ({ patientId }: NutritionalPlanPersonalizationSectionProps) => {
   const { saveNutritionalPersonalization, isLoading } = useConsultationData(patientId);
+  const { loadNutritionalPersonalization } = useConsultationDataLoader(patientId);
   
   const [formData, setFormData] = useState({
     preferredMeals: "",
@@ -26,6 +28,36 @@ export const NutritionalPlanPersonalizationSection = ({ patientId }: Nutritional
     objects: "",
     limitations: ""
   });
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadNutritionalPersonalization();
+        if (data) {
+          setFormData({
+            preferredMeals: data.preferred_meals,
+            avoidedMeals: data.avoided_meals,
+            preferredFoods: data.preferred_foods,
+            avoidedFoods: data.avoided_foods,
+            perfectMeals: data.perfect_meals,
+            vegetables: data.vegetables,
+            fruits: data.fruits,
+            objects: data.objects,
+            limitations: data.limitations
+          });
+        }
+      } catch (error) {
+        console.error('Error loading nutritional personalization data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
 
   const handleSave = async () => {
     try {
@@ -45,6 +77,22 @@ export const NutritionalPlanPersonalizationSection = ({ patientId }: Nutritional
       toast.error("Erro ao salvar personalização do plano alimentar");
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5" />
+            Personalização do Plano Alimentar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
