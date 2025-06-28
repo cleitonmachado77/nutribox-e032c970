@@ -1,12 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Stethoscope } from "lucide-react";
 import { useConsultationData } from "@/hooks/useConsultationData";
+import { useConsultationDataLoader } from "@/hooks/useConsultationDataLoader";
 import { toast } from "sonner";
 
 interface ClinicalHistorySectionProps {
@@ -15,6 +15,7 @@ interface ClinicalHistorySectionProps {
 
 export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProps) => {
   const { saveClinicalHistory, isLoading } = useConsultationData(patientId);
+  const { loadClinicalHistory } = useConsultationDataLoader(patientId);
   
   const [formData, setFormData] = useState({
     preExistingConditions: "",
@@ -25,6 +26,34 @@ export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProp
     familyHistory: "",
     hereditaryDiseases: ""
   });
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await loadClinicalHistory();
+        if (data) {
+          setFormData({
+            preExistingConditions: data.pre_existing_conditions,
+            surgeries: data.surgeries,
+            medications: data.medications,
+            supplements: data.supplements,
+            allergies: data.allergies,
+            familyHistory: data.family_history,
+            hereditaryDiseases: data.hereditary_diseases
+          });
+        }
+      } catch (error) {
+        console.error('Error loading clinical history data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, [patientId]);
 
   const handleSave = async () => {
     try {
@@ -39,9 +68,26 @@ export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProp
       });
       toast.success("Histórico clínico salvo com sucesso!");
     } catch (error) {
+      console.error('Error saving clinical history:', error);
       toast.error("Erro ao salvar histórico clínico");
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Stethoscope className="w-5 h-5" />
+            Histórico Clínico
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">Carregando dados...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
