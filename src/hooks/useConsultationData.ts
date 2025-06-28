@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,6 +62,16 @@ export interface NutritionalPersonalizationData {
   fruits: string;
   objects: string;
   limitations: string;
+}
+
+export interface ClinicalHistoryData {
+  pre_existing_conditions: string;
+  surgeries: string;
+  medications: string;
+  supplements: string;
+  allergies: string;
+  family_history: string;
+  hereditary_diseases: string;
 }
 
 export const useConsultationData = (patientId: string) => {
@@ -239,6 +248,34 @@ export const useConsultationData = (patientId: string) => {
     }
   };
 
+  const saveClinicalHistory = async (data: ClinicalHistoryData) => {
+    if (!user) throw new Error('User not authenticated');
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase
+        .from('consultation_clinical_history')
+        .upsert({
+          patient_id: patientId,
+          user_id: user.id,
+          ...data
+        }, {
+          onConflict: 'patient_id,user_id'
+        });
+
+      if (error) throw error;
+      console.log('Clinical history saved successfully');
+    } catch (err: any) {
+      console.error('Error saving clinical history:', err);
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const generateNutritionalPlan = async () => {
     if (!user) throw new Error('User not authenticated');
     
@@ -246,14 +283,15 @@ export const useConsultationData = (patientId: string) => {
     setError(null);
     
     try {
-      // Buscar todos os dados salvos
-      const [physicalData, emotionalData, behavioralData, wellnessData, structureData, personalizationData] = await Promise.all([
+      // Buscar todos os dados salvos incluindo histórico clínico
+      const [physicalData, emotionalData, behavioralData, wellnessData, structureData, personalizationData, clinicalData] = await Promise.all([
         supabase.from('consultation_physical_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
         supabase.from('consultation_emotional_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
         supabase.from('consultation_behavioral_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
         supabase.from('consultation_wellness_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
         supabase.from('consultation_nutritional_structure').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_nutritional_personalization').select('*').eq('patient_id', patientId).eq('user_id', user.id).single()
+        supabase.from('consultation_nutritional_personalization').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
+        supabase.from('consultation_clinical_history').select('*').eq('patient_id', patientId).eq('user_id', user.id).single()
       ]);
 
       // Compilar dados para geração do plano
@@ -263,7 +301,8 @@ export const useConsultationData = (patientId: string) => {
         behavioral: behavioralData.data,
         wellness: wellnessData.data,
         structure: structureData.data,
-        personalization: personalizationData.data
+        personalization: personalizationData.data,
+        clinical: clinicalData.data
       };
 
       // Gerar plano baseado nos dados
@@ -322,6 +361,7 @@ export const useConsultationData = (patientId: string) => {
     saveWellnessAssessment,
     saveNutritionalStructure,
     saveNutritionalPersonalization,
+    saveClinicalHistory,
     generateNutritionalPlan,
     getSavedNutritionalPlan,
     isLoading,
@@ -331,7 +371,7 @@ export const useConsultationData = (patientId: string) => {
 
 // Função para gerar o conteúdo do plano alimentar
 const generatePlanContent = (data: any): string => {
-  const { physical, structure, personalization, behavioral, wellness } = data;
+  const { physical, structure, personalization, behavioral, wellness, clinical } = data;
   
   // Determinar objetivo principal
   let mainObjective = 'Melhoria da saúde geral';
@@ -424,10 +464,31 @@ ${vegetables && `(Vegetais preferidos: ${vegetables.split(',').slice(0, 2).join(
 `;
   }
 
-  // Adicionar recomendações específicas
+  // Adicionar recomendações especiais baseadas no histórico clínico
   planContent += `RECOMENDAÇÕES ESPECIAIS:
 
 `;
+
+  // Recomendações baseadas no histórico clínico
+  if (clinical?.allergies) {
+    planContent += `- ALERGIAS/INTOLERÂNCIAS: Evitar completamente: ${clinical.allergies}
+`;
+  }
+
+  if (clinical?.medications) {
+    planContent += `- INTERAÇÕES MEDICAMENTOSAS: Considerar horários de medicação: ${clinical.medications}
+`;
+  }
+
+  if (clinical?.pre_existing_conditions) {
+    planContent += `- CONDIÇÕES PRÉ-EXISTENTES: Adaptações devido a: ${clinical.pre_existing_conditions}
+`;
+  }
+
+  if (clinical?.supplements) {
+    planContent += `- SUPLEMENTAÇÃO ATUAL: ${clinical.supplements}
+`;
+  }
 
   if (avoidedFoods) {
     planContent += `- EVITAR: ${avoidedFoods}
@@ -450,13 +511,28 @@ ${vegetables && `(Vegetais preferidos: ${vegetables.split(',').slice(0, 2).join(
   }
 
   planContent += `
-OBSERVAÇÕES:
+OBSERVAÇÕES CLÍNICAS:
+`;
+
+  if (clinical?.family_history) {
+    planContent += `- Histórico Familiar: ${clinical.family_history}
+`;
+  }
+
+  if (clinical?.hereditary_diseases) {
+    planContent += `- Doenças Hereditárias: ${clinical.hereditary_diseases}
+`;
+  }
+
+  planContent += `
+OBSERVAÇÕES GERAIS:
 - Adapte as porções conforme sua fome e saciedade
 - Mantenha horários regulares de alimentação
 - Pratique o comer consciente
 - Acompanhe sua evolução semanalmente
+- Em caso de dúvidas sobre interações medicamentosas, consulte seu médico
 
-Este plano foi personalizado com base nas suas preferências e necessidades individuais.`;
+Este plano foi personalizado com base nas suas preferências, necessidades individuais e histórico clínico.`;
 
   return planContent;
 };

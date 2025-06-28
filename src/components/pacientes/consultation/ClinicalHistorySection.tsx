@@ -6,12 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Stethoscope } from "lucide-react";
+import { useConsultationData } from "@/hooks/useConsultationData";
+import { toast } from "sonner";
 
 interface ClinicalHistorySectionProps {
   patientId: string;
 }
 
 export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProps) => {
+  const { saveClinicalHistory, isLoading } = useConsultationData(patientId);
+  
   const [formData, setFormData] = useState({
     preExistingConditions: "",
     surgeries: "",
@@ -22,8 +26,21 @@ export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProp
     hereditaryDiseases: ""
   });
 
-  const handleSave = () => {
-    console.log("Saving clinical history for patient:", patientId, formData);
+  const handleSave = async () => {
+    try {
+      await saveClinicalHistory({
+        pre_existing_conditions: formData.preExistingConditions,
+        surgeries: formData.surgeries,
+        medications: formData.medications,
+        supplements: formData.supplements,
+        allergies: formData.allergies,
+        family_history: formData.familyHistory,
+        hereditary_diseases: formData.hereditaryDiseases
+      });
+      toast.success("Histórico clínico salvo com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao salvar histórico clínico");
+    }
   };
 
   return (
@@ -100,8 +117,12 @@ export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProp
           />
         </div>
         
-        <Button onClick={handleSave} className="w-full">
-          Salvar Dados
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
       </CardContent>
     </Card>

@@ -217,6 +217,54 @@ export type Database = {
         }
         Relationships: []
       }
+      consultation_clinical_history: {
+        Row: {
+          allergies: string | null
+          consultation_id: string | null
+          created_at: string
+          family_history: string | null
+          hereditary_diseases: string | null
+          id: string
+          medications: string | null
+          patient_id: string
+          pre_existing_conditions: string | null
+          supplements: string | null
+          surgeries: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          family_history?: string | null
+          hereditary_diseases?: string | null
+          id?: string
+          medications?: string | null
+          patient_id: string
+          pre_existing_conditions?: string | null
+          supplements?: string | null
+          surgeries?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: string | null
+          consultation_id?: string | null
+          created_at?: string
+          family_history?: string | null
+          hereditary_diseases?: string | null
+          id?: string
+          medications?: string | null
+          patient_id?: string
+          pre_existing_conditions?: string | null
+          supplements?: string | null
+          surgeries?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consultation_emotional_assessment: {
         Row: {
           consultation_id: string | null
