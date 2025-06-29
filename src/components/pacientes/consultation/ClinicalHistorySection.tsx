@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,11 +10,12 @@ import { toast } from "sonner";
 
 interface ClinicalHistorySectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProps) => {
-  const { saveClinicalHistory, isLoading } = useConsultationData(patientId);
-  const { loadClinicalHistory } = useConsultationDataLoader(patientId);
+export const ClinicalHistorySection = ({ patientId, consultationId }: ClinicalHistorySectionProps) => {
+  const { saveClinicalHistory, isLoading } = useConsultationData(patientId, consultationId);
+  const { loadClinicalHistory } = useConsultationDataLoader(patientId, consultationId);
   
   const [formData, setFormData] = useState({
     preExistingConditions: "",
@@ -53,7 +53,7 @@ export const ClinicalHistorySection = ({ patientId }: ClinicalHistorySectionProp
     };
     
     loadData();
-  }, [patientId]);
+  }, [patientId, consultationId]);
 
   const handleSave = async () => {
     try {

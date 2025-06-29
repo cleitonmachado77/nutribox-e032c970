@@ -36,14 +36,20 @@ export const useConsultations = (patientId: string) => {
 
       if (error) throw error;
       
-      setConsultations(data || []);
+      // Type assertion para garantir que o status seja do tipo correto
+      const typedData = (data || []).map(consultation => ({
+        ...consultation,
+        status: consultation.status as 'em_andamento' | 'concluida' | 'cancelada'
+      }));
+      
+      setConsultations(typedData);
       
       // Definir consulta atual (em andamento ou mais recente)
-      const currentInProgress = data?.find(c => c.status === 'em_andamento');
+      const currentInProgress = typedData?.find(c => c.status === 'em_andamento');
       if (currentInProgress) {
         setCurrentConsultation(currentInProgress);
-      } else if (data && data.length > 0) {
-        setCurrentConsultation(data[0]);
+      } else if (typedData && typedData.length > 0) {
+        setCurrentConsultation(typedData[0]);
       }
     } catch (err: any) {
       console.error('Error loading consultations:', err);
@@ -83,10 +89,15 @@ export const useConsultations = (patientId: string) => {
 
       if (error) throw error;
 
-      setCurrentConsultation(data);
+      const typedData = {
+        ...data,
+        status: data.status as 'em_andamento' | 'concluida' | 'cancelada'
+      };
+
+      setCurrentConsultation(typedData);
       await loadConsultations();
       
-      return data;
+      return typedData;
     } catch (err: any) {
       console.error('Error creating new consultation:', err);
       setError(err.message);

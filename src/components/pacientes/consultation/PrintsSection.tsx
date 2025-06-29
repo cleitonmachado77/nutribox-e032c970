@@ -1,13 +1,13 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Printer, FileText, ShoppingCart, Pill, Target } from "lucide-react";
 
 interface PrintsSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const PrintsSection = ({ patientId }: PrintsSectionProps) => {
+export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps) => {
   const handlePrint = (type: string) => {
     console.log(`Printing ${type} for patient:`, patientId);
   };

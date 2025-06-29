@@ -13,7 +13,7 @@ import { NutritionalPlanPersonalizationSection } from "./NutritionalPlanPersonal
 import { NutritionalPlanSection } from "./NutritionalPlanSection";
 import { GoalsSection } from "./GoalsSection";
 import { PrintsSection } from "./PrintsSection";
-import { ConsultationManager } from "../ConsultationManager";
+import { ConsultationManager } from "@/components/consultas/ConsultationManager";
 import { Paciente } from "@/hooks/usePacientes";
 import { useConsultations, type Consultation } from "@/hooks/useConsultations";
 

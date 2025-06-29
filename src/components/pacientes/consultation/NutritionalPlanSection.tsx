@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,11 @@ import { toast } from "sonner";
 
 interface NutritionalPlanSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const NutritionalPlanSection = ({ patientId }: NutritionalPlanSectionProps) => {
-  const { generateNutritionalPlan, getSavedNutritionalPlan, isLoading } = useConsultationData(patientId);
+export const NutritionalPlanSection = ({ patientId, consultationId }: NutritionalPlanSectionProps) => {
+  const { generateNutritionalPlan, getSavedNutritionalPlan, isLoading } = useConsultationData(patientId, consultationId);
   const [planContent, setPlanContent] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -22,7 +22,7 @@ export const NutritionalPlanSection = ({ patientId }: NutritionalPlanSectionProp
 
   const loadSavedPlan = async () => {
     try {
-      const savedPlan = await getSavedNutritionalPlan();
+      const savedPlan = await getSavedNutritionalPlan(consultationId);
       if (savedPlan) {
         setPlanContent(savedPlan);
       }
@@ -34,7 +34,7 @@ export const NutritionalPlanSection = ({ patientId }: NutritionalPlanSectionProp
   const handleGeneratePlan = async () => {
     setIsGenerating(true);
     try {
-      const generatedPlan = await generateNutritionalPlan();
+      const generatedPlan = await generateNutritionalPlan(consultationId);
       setPlanContent(generatedPlan);
       toast.success("Plano alimentar gerado com sucesso!");
     } catch (error: any) {
@@ -75,7 +75,7 @@ export const NutritionalPlanSection = ({ patientId }: NutritionalPlanSectionProp
         <div className="flex gap-2 mb-4">
           <Button 
             onClick={handleGeneratePlan} 
-            disabled={isGenerating || isLoading}
+            disabled={isGenerating || isLoading || !consultationId}
             className="flex-1"
           >
             {isGenerating ? "Gerando..." : "Gerar Plano Inteligente"}
@@ -101,6 +101,12 @@ export const NutritionalPlanSection = ({ patientId }: NutritionalPlanSectionProp
             💡 <strong>Dica:</strong> Este plano foi gerado automaticamente baseado nas avaliações preenchidas. 
             Você pode editá-lo diretamente no campo acima para personalizar ainda mais conforme necessário.
           </div>
+        )}
+        
+        {!consultationId && (
+          <p className="text-sm text-amber-600 text-center">
+            Selecione uma consulta para salvar os dados
+          </p>
         )}
       </CardContent>
     </Card>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,11 +11,12 @@ import { toast } from "sonner";
 
 interface PhysicalAssessmentSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSectionProps) => {
-  const { savePhysicalAssessment, isLoading } = useConsultationData(patientId);
-  const { loadPhysicalAssessment } = useConsultationDataLoader(patientId);
+export const PhysicalAssessmentSection = ({ patientId, consultationId }: PhysicalAssessmentSectionProps) => {
+  const { savePhysicalAssessment, isLoading } = useConsultationData(patientId, consultationId);
+  const { loadPhysicalAssessment } = useConsultationDataLoader(patientId, consultationId);
   
   const [formData, setFormData] = useState({
     // Objetivos do Paciente
@@ -74,7 +74,7 @@ export const PhysicalAssessmentSection = ({ patientId }: PhysicalAssessmentSecti
     };
     
     loadData();
-  }, [patientId]);
+  }, [patientId, consultationId]);
 
   const handleObjetivoChange = (objetivo: string, checked: boolean) => {
     setFormData(prev => ({

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,11 +10,12 @@ import { toast } from "sonner";
 
 interface NutritionalPlanPersonalizationSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const NutritionalPlanPersonalizationSection = ({ patientId }: NutritionalPlanPersonalizationSectionProps) => {
-  const { saveNutritionalPersonalization, isLoading } = useConsultationData(patientId);
-  const { loadNutritionalPersonalization } = useConsultationDataLoader(patientId);
+export const NutritionalPlanPersonalizationSection = ({ patientId, consultationId }: NutritionalPlanPersonalizationSectionProps) => {
+  const { saveNutritionalPersonalization, isLoading } = useConsultationData(patientId, consultationId);
+  const { loadNutritionalPersonalization } = useConsultationDataLoader(patientId, consultationId);
   
   const [formData, setFormData] = useState({
     preferredMeals: "",
@@ -57,7 +57,7 @@ export const NutritionalPlanPersonalizationSection = ({ patientId }: Nutritional
     };
     
     loadData();
-  }, [patientId]);
+  }, [patientId, consultationId]);
 
   const handleSave = async () => {
     try {

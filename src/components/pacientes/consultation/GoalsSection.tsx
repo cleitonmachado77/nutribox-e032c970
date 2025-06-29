@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,9 +8,10 @@ import { Target } from "lucide-react";
 
 interface GoalsSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const GoalsSection = ({ patientId }: GoalsSectionProps) => {
+export const GoalsSection = ({ patientId, consultationId }: GoalsSectionProps) => {
   const [goals, setGoals] = useState({
     physical: "",
     behavioral: "",
