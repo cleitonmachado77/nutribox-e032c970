@@ -11,11 +11,12 @@ import { toast } from "sonner";
 
 interface WellnessAssessmentSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSectionProps) => {
-  const { saveWellnessAssessment, isLoading } = useConsultationData(patientId);
-  const { loadWellnessAssessment } = useConsultationDataLoader(patientId);
+export const WellnessAssessmentSection = ({ patientId, consultationId }: WellnessAssessmentSectionProps) => {
+  const { saveWellnessAssessment, isLoading } = useConsultationData(patientId, consultationId);
+  const { loadWellnessAssessment } = useConsultationDataLoader(patientId, consultationId);
   
   const [formData, setFormData] = useState({
     bodyImage: "",
@@ -88,6 +89,11 @@ export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSecti
         <CardTitle className="flex items-center gap-2">
           <Smile className="w-5 h-5" />
           Avaliação de Bem Estar
+          {consultationId && (
+            <span className="text-sm text-gray-500 ml-2">
+              (Consulta #{consultationId.slice(-4)})
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -164,11 +170,17 @@ export const WellnessAssessmentSection = ({ patientId }: WellnessAssessmentSecti
         
         <Button 
           onClick={handleSave} 
-          disabled={isLoading}
+          disabled={isLoading || !consultationId}
           className="w-full"
         >
           {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
+        
+        {!consultationId && (
+          <p className="text-sm text-amber-600 text-center">
+            Selecione uma consulta para salvar os dados
+          </p>
+        )}
       </CardContent>
     </Card>
   );

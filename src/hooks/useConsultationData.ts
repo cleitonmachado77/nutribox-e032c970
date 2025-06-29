@@ -74,13 +74,14 @@ export interface ClinicalHistoryData {
   hereditary_diseases: string;
 }
 
-export const useConsultationData = (patientId: string) => {
+export const useConsultationData = (patientId: string, consultationId?: string) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const savePhysicalAssessment = async (data: PhysicalAssessmentData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -91,9 +92,10 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -109,6 +111,7 @@ export const useConsultationData = (patientId: string) => {
 
   const saveEmotionalAssessment = async (data: EmotionalAssessmentData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -119,9 +122,10 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -137,6 +141,7 @@ export const useConsultationData = (patientId: string) => {
 
   const saveBehavioralAssessment = async (data: BehavioralAssessmentData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -147,9 +152,10 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -165,6 +171,7 @@ export const useConsultationData = (patientId: string) => {
 
   const saveWellnessAssessment = async (data: WellnessAssessmentData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -175,9 +182,10 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -193,6 +201,7 @@ export const useConsultationData = (patientId: string) => {
 
   const saveNutritionalStructure = async (data: NutritionalStructureData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -203,10 +212,11 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data,
           selected_meals: JSON.stringify(data.selected_meals)
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -222,6 +232,7 @@ export const useConsultationData = (patientId: string) => {
 
   const saveNutritionalPersonalization = async (data: NutritionalPersonalizationData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -232,9 +243,10 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -250,6 +262,7 @@ export const useConsultationData = (patientId: string) => {
 
   const saveClinicalHistory = async (data: ClinicalHistoryData) => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -260,9 +273,10 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           ...data
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -278,6 +292,7 @@ export const useConsultationData = (patientId: string) => {
 
   const generateNutritionalPlan = async () => {
     if (!user) throw new Error('User not authenticated');
+    if (!consultationId) throw new Error('Consultation ID is required');
     
     setIsLoading(true);
     setError(null);
@@ -285,13 +300,13 @@ export const useConsultationData = (patientId: string) => {
     try {
       // Buscar todos os dados salvos incluindo histórico clínico
       const [physicalData, emotionalData, behavioralData, wellnessData, structureData, personalizationData, clinicalData] = await Promise.all([
-        supabase.from('consultation_physical_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_emotional_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_behavioral_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_wellness_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_nutritional_structure').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_nutritional_personalization').select('*').eq('patient_id', patientId).eq('user_id', user.id).single(),
-        supabase.from('consultation_clinical_history').select('*').eq('patient_id', patientId).eq('user_id', user.id).single()
+        supabase.from('consultation_physical_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single(),
+        supabase.from('consultation_emotional_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single(),
+        supabase.from('consultation_behavioral_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single(),
+        supabase.from('consultation_wellness_assessment').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single(),
+        supabase.from('consultation_nutritional_structure').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single(),
+        supabase.from('consultation_nutritional_personalization').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single(),
+        supabase.from('consultation_clinical_history').select('*').eq('patient_id', patientId).eq('user_id', user.id).eq('consultation_id', consultationId).single()
       ]);
 
       // Compilar dados para geração do plano
@@ -314,11 +329,12 @@ export const useConsultationData = (patientId: string) => {
         .upsert({
           patient_id: patientId,
           user_id: user.id,
+          consultation_id: consultationId,
           plan_content: generatedPlan,
           generation_data: compiledData,
           is_active: true
         }, {
-          onConflict: 'patient_id,user_id'
+          onConflict: 'patient_id,user_id,consultation_id'
         });
 
       if (error) throw error;
@@ -335,7 +351,7 @@ export const useConsultationData = (patientId: string) => {
   };
 
   const getSavedNutritionalPlan = async () => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -343,6 +359,7 @@ export const useConsultationData = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .eq('is_active', true)
         .single();
 

@@ -11,11 +11,12 @@ import { toast } from "sonner";
 
 interface BehavioralAssessmentSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentSectionProps) => {
-  const { saveBehavioralAssessment, isLoading } = useConsultationData(patientId);
-  const { loadBehavioralAssessment } = useConsultationDataLoader(patientId);
+export const BehavioralAssessmentSection = ({ patientId, consultationId }: BehavioralAssessmentSectionProps) => {
+  const { saveBehavioralAssessment, isLoading } = useConsultationData(patientId, consultationId);
+  const { loadBehavioralAssessment } = useConsultationDataLoader(patientId, consultationId);
   
   const [formData, setFormData] = useState({
     planConsistency: "",
@@ -88,6 +89,11 @@ export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentS
         <CardTitle className="flex items-center gap-2">
           <Brain className="w-5 h-5" />
           Avaliação Comportamental
+          {consultationId && (
+            <span className="text-sm text-gray-500 ml-2">
+              (Consulta #{consultationId.slice(-4)})
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -164,11 +170,17 @@ export const BehavioralAssessmentSection = ({ patientId }: BehavioralAssessmentS
         
         <Button 
           onClick={handleSave} 
-          disabled={isLoading}
+          disabled={isLoading || !consultationId}
           className="w-full"
         >
           {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
+        
+        {!consultationId && (
+          <p className="text-sm text-amber-600 text-center">
+            Selecione uma consulta para salvar os dados
+          </p>
+        )}
       </CardContent>
     </Card>
   );

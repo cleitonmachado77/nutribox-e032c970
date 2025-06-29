@@ -553,6 +553,42 @@ export type Database = {
         }
         Relationships: []
       }
+      consultations: {
+        Row: {
+          completed_at: string | null
+          consultation_number: number
+          created_at: string
+          id: string
+          notes: string | null
+          patient_id: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          consultation_number: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          consultation_number?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       Contact: {
         Row: {
           createdAt: string | null
@@ -1335,7 +1371,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_next_consultation_number: {
+        Args: { p_patient_id: string; p_user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       InstanceConnectionStatus: "open" | "close" | "connecting"

@@ -12,11 +12,12 @@ import { toast } from "sonner";
 
 interface NutritionalPlanStructureSectionProps {
   patientId: string;
+  consultationId?: string;
 }
 
-export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanStructureSectionProps) => {
-  const { saveNutritionalStructure, isLoading } = useConsultationData(patientId);
-  const { loadNutritionalStructure } = useConsultationDataLoader(patientId);
+export const NutritionalPlanStructureSection = ({ patientId, consultationId }: NutritionalPlanStructureSectionProps) => {
+  const { saveNutritionalStructure, isLoading } = useConsultationData(patientId, consultationId);
+  const { loadNutritionalStructure } = useConsultationDataLoader(patientId, consultationId);
   
   const [formData, setFormData] = useState({
     dailyCalories: "",
@@ -122,6 +123,11 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
         <CardTitle className="flex items-center gap-2">
           <Settings className="w-5 h-5" />
           Estrutura do Plano Alimentar
+          {consultationId && (
+            <span className="text-sm text-gray-500 ml-2">
+              (Consulta #{consultationId.slice(-4)})
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -204,11 +210,17 @@ export const NutritionalPlanStructureSection = ({ patientId }: NutritionalPlanSt
         
         <Button 
           onClick={handleSave} 
-          disabled={isLoading}
+          disabled={isLoading || !consultationId}
           className="w-full"
         >
           {isLoading ? "Salvando..." : "Salvar Dados"}
         </Button>
+        
+        {!consultationId && (
+          <p className="text-sm text-amber-600 text-center">
+            Selecione uma consulta para salvar os dados
+          </p>
+        )}
       </CardContent>
     </Card>
   );

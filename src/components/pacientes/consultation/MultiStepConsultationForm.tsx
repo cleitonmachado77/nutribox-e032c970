@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,9 @@ import { NutritionalPlanPersonalizationSection } from "./NutritionalPlanPersonal
 import { NutritionalPlanSection } from "./NutritionalPlanSection";
 import { GoalsSection } from "./GoalsSection";
 import { PrintsSection } from "./PrintsSection";
+import { ConsultationManager } from "../ConsultationManager";
 import { Paciente } from "@/hooks/usePacientes";
+import { useConsultations, type Consultation } from "@/hooks/useConsultations";
 
 interface MultiStepConsultationFormProps {
   selectedPatient: Paciente;
@@ -51,9 +52,26 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const [currentStep, setCurrentStep] = useState(1);
   const [currentSubStep, setCurrentSubStep] = useState<string>("2a");
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [showConsultationManager, setShowConsultationManager] = useState(true);
+  
+  const { currentConsultation, totalConsultations } = useConsultations(selectedPatient.id);
 
   const totalSteps = steps.length;
   const progress = (currentStep / totalSteps) * 100;
+
+  const handleNewConsultation = (consultation: Consultation) => {
+    setShowConsultationManager(false);
+    setCurrentStep(1);
+    setCurrentSubStep("2a");
+    setCompletedSteps([]);
+  };
+
+  const handleSelectConsultation = (consultation: Consultation) => {
+    setShowConsultationManager(false);
+    setCurrentStep(1);
+    setCurrentSubStep("2a");
+    setCompletedSteps([]);
+  };
 
   const handleNext = () => {
     if (currentStep === 2) {
@@ -160,59 +178,87 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   const renderStepContent = () => {
+    if (!currentConsultation) return null;
+
     switch (currentStep) {
       case 1:
-        return <ClinicalHistorySection patientId={selectedPatient.id} />;
+        return <ClinicalHistorySection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
       case 2:
         switch (currentSubStep) {
           case "2a":
-            return <PhysicalAssessmentSection patientId={selectedPatient.id} />;
+            return <PhysicalAssessmentSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           case "2b":
-            return <EmotionalAssessmentSection patientId={selectedPatient.id} />;
+            return <EmotionalAssessmentSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           case "2c":
-            return <BehavioralAssessmentSection patientId={selectedPatient.id} />;
+            return <BehavioralAssessmentSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           case "2d":
-            return <WellnessAssessmentSection patientId={selectedPatient.id} />;
+            return <WellnessAssessmentSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           default:
-            return <PhysicalAssessmentSection patientId={selectedPatient.id} />;
+            return <PhysicalAssessmentSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
         }
       case 3:
         switch (currentSubStep) {
           case "3a":
-            return <NutritionalPlanStructureSection patientId={selectedPatient.id} />;
+            return <NutritionalPlanStructureSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           case "3b":
-            return <NutritionalPlanPersonalizationSection patientId={selectedPatient.id} />;
+            return <NutritionalPlanPersonalizationSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           case "3c":
-            return <NutritionalPlanSection patientId={selectedPatient.id} />;
+            return <NutritionalPlanSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
           default:
-            return <NutritionalPlanStructureSection patientId={selectedPatient.id} />;
+            return <NutritionalPlanStructureSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
         }
       case 4:
-        return <GoalsSection patientId={selectedPatient.id} />;
+        return <GoalsSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
       case 5:
-        return <PrintsSection patientId={selectedPatient.id} />;
+        return <PrintsSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
       default:
         return null;
     }
   };
 
+  if (showConsultationManager) {
+    return (
+      <div className="space-y-6">
+        <ConsultationManager
+          patientId={selectedPatient.id}
+          patientName={selectedPatient.lead.nome}
+          onNewConsultation={handleNewConsultation}
+          onSelectConsultation={handleSelectConsultation}
+          currentConsultation={currentConsultation}
+        />
+      </div>
+    );
+  }
+
   const currentStepInfo = getCurrentStepInfo();
 
   return (
     <div className="space-y-6">
-      {/* Header com progresso */}
+      {/* Header com informações da consulta */}
       <Card className="border-2 border-purple-200 shadow-lg">
         <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
           <CardTitle className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold">Nova Consulta - {selectedPatient.lead.nome}</h2>
+              <h2 className="text-xl font-bold">
+                Consulta #{currentConsultation?.consultation_number} - {selectedPatient.lead.nome}
+              </h2>
               <p className="text-purple-100 text-sm mt-1">
                 Etapa {currentStep} de {totalSteps}: {currentStepInfo.title}
               </p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{Math.round(progress)}%</div>
-              <div className="text-sm text-purple-100">Concluído</div>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConsultationManager(true)}
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+              >
+                Ver Consultas ({totalConsultations})
+              </Button>
+              <div className="text-right">
+                <div className="text-2xl font-bold">{Math.round(progress)}%</div>
+                <div className="text-sm text-purple-100">Concluído</div>
+              </div>
             </div>
           </CardTitle>
         </CardHeader>

@@ -12,12 +12,12 @@ import type {
   ClinicalHistoryData
 } from './useConsultationData';
 
-export const useConsultationDataLoader = (patientId: string) => {
+export const useConsultationDataLoader = (patientId: string, consultationId?: string) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const loadPhysicalAssessment = async (): Promise<PhysicalAssessmentData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -25,6 +25,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -54,7 +55,7 @@ export const useConsultationDataLoader = (patientId: string) => {
   };
 
   const loadEmotionalAssessment = async (): Promise<EmotionalAssessmentData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -62,6 +63,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -84,7 +86,7 @@ export const useConsultationDataLoader = (patientId: string) => {
   };
 
   const loadBehavioralAssessment = async (): Promise<BehavioralAssessmentData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -92,6 +94,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -114,7 +117,7 @@ export const useConsultationDataLoader = (patientId: string) => {
   };
 
   const loadWellnessAssessment = async (): Promise<WellnessAssessmentData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -122,6 +125,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -144,7 +148,7 @@ export const useConsultationDataLoader = (patientId: string) => {
   };
 
   const loadNutritionalStructure = async (): Promise<NutritionalStructureData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -152,6 +156,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -177,7 +182,7 @@ export const useConsultationDataLoader = (patientId: string) => {
   };
 
   const loadNutritionalPersonalization = async (): Promise<NutritionalPersonalizationData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -185,6 +190,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
@@ -211,7 +217,7 @@ export const useConsultationDataLoader = (patientId: string) => {
   };
 
   const loadClinicalHistory = async (): Promise<ClinicalHistoryData | null> => {
-    if (!user) return null;
+    if (!user || !consultationId) return null;
     
     try {
       const { data, error } = await supabase
@@ -219,6 +225,7 @@ export const useConsultationDataLoader = (patientId: string) => {
         .select('*')
         .eq('patient_id', patientId)
         .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
         .maybeSingle();
 
       if (error) throw error;
