@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,7 +18,7 @@ export const EmotionalAssessmentSection = ({ patientId, consultationId }: Emotio
   const { saveEmotionalAssessment, isLoading } = useConsultationData(patientId, consultationId);
   const { loadEmotionalAssessment } = useConsultationDataLoader(patientId, consultationId);
   
-  const [formData, setFormData({
+  const [formData, setFormData] = useState({
     relationshipWithFood: "",
     eatingTriggers: "",
     emotionalState: "",
@@ -25,7 +26,7 @@ export const EmotionalAssessmentSection = ({ patientId, consultationId }: Emotio
     foodAnxiety: ""
   });
 
-  const [isLoadingData, setIsLoadingData(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
