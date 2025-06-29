@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,8 +85,8 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
       } else {
         // Finalizar o step 2 e ir para o próximo
         setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
-        setCurrentStep(currentStep + 1);
-        setCurrentSubStep("3a"); // Ir para o primeiro substep do Plano Alimentar
+        setCurrentStep(3);
+        setCurrentSubStep("3a");
       }
     } else if (currentStep === 3) {
       // Navegar pelos substeps do Plano Alimentar
@@ -97,8 +98,8 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
       } else {
         // Finalizar o step 3 e ir para o próximo
         setCompletedSteps(prev => [...prev.filter(s => s !== currentStep), currentStep]);
-        setCurrentStep(currentStep + 1);
-        setCurrentSubStep("2a"); // Reset para o primeiro substep
+        setCurrentStep(4);
+        setCurrentSubStep("2a");
       }
     } else {
       if (currentStep < totalSteps) {
@@ -118,7 +119,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
         setCurrentSubStep(subSteps[currentIndex - 1]);
       } else {
         // Voltar para o step anterior
-        setCurrentStep(currentStep - 1);
+        setCurrentStep(1);
       }
     } else if (currentStep === 3) {
       // Navegar pelos substeps do Plano Alimentar
@@ -130,7 +131,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
       } else {
         // Voltar para o step anterior (Avaliação)
         setCurrentStep(2);
-        setCurrentSubStep("2d"); // Ir para o último substep da Avaliação
+        setCurrentSubStep("2d");
       }
     } else if (currentStep === 4) {
       // Ao voltar do step 4, ir para o último substep do Plano Alimentar
@@ -139,6 +140,12 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
     } else {
       if (currentStep > 1) {
         setCurrentStep(currentStep - 1);
+        // Definir substep apropriado se necessário
+        if (currentStep - 1 === 2) {
+          setCurrentSubStep("2a");
+        } else if (currentStep - 1 === 3) {
+          setCurrentSubStep("3a");
+        }
       }
     }
   };
@@ -146,9 +153,9 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const handleStepClick = (stepId: number) => {
     setCurrentStep(stepId);
     if (stepId === 2) {
-      setCurrentSubStep("2a"); // Sempre começar no primeiro substep da Avaliação
+      setCurrentSubStep("2a");
     } else if (stepId === 3) {
-      setCurrentSubStep("3a"); // Sempre começar no primeiro substep do Plano Alimentar
+      setCurrentSubStep("3a");
     }
   };
 
@@ -372,10 +379,10 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
 
             <Button
               onClick={handleNext}
-              disabled={currentStep === totalSteps}
+              disabled={currentStep === totalSteps && currentSubStep === "3c"}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
             >
-              {currentStep === totalSteps ? "Finalizar" : "Próximo"}
+              {(currentStep === totalSteps && currentSubStep === "3c") ? "Finalizar" : "Próximo"}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
