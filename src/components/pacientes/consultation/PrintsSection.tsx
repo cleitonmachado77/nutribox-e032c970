@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -39,6 +38,146 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
       loadPlan();
     }
   }, [consultationId, getSavedNutritionalPlan]);
+
+  const generateShoppingListFromPlan = (planContent: string) => {
+    const items: string[] = [];
+    const foodItems = [
+      'frango', 'peixe', 'carne', 'ovos', 'arroz', 'quinoa', 'aveia', 'batata doce',
+      'brócolis', 'couve', 'alface', 'tomate', 'banana', 'maçã', 'iogurte', 'azeite'
+    ];
+    
+    const normalizedPlan = planContent.toLowerCase();
+    foodItems.forEach(item => {
+      if (normalizedPlan.includes(item)) {
+        items.push(item.charAt(0).toUpperCase() + item.slice(1));
+      }
+    });
+    
+    return items;
+  };
+
+  const generateShoppingListPDF = () => {
+    if (!nutritionalPlan || !selectedPatient) {
+      toast.error("Nenhum plano alimentar encontrado para gerar lista");
+      return;
+    }
+
+    const shoppingItems = generateShoppingListFromPlan(nutritionalPlan);
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Lista de Compras - ${selectedPatient.lead.nome}</title>
+        <style>
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 20px; 
+            line-height: 1.6; 
+            color: #333;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 3px solid #22C55E; 
+            padding-bottom: 20px; 
+          }
+          .patient-info { 
+            background-color: #F0FDF4; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #22C55E;
+          }
+          .shopping-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+          }
+          .item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #E5E7EB;
+            border-radius: 5px;
+            background: #FFFFFF;
+          }
+          .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #22C55E;
+            margin-right: 10px;
+            border-radius: 3px;
+          }
+          h1 { 
+            color: #22C55E; 
+            margin: 0; 
+            font-size: 28px;
+          }
+          h2 { 
+            color: #16A34A; 
+            margin-top: 25px; 
+            font-size: 20px;
+          }
+          .footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            color: #666; 
+            font-size: 12px; 
+            border-top: 2px solid #E5E7EB; 
+            padding-top: 20px; 
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>LISTA DE COMPRAS</h1>
+          <p style="font-size: 16px; color: #6B7280; margin: 10px 0;">Baseada no Plano Alimentar</p>
+        </div>
+        
+        <div class="patient-info">
+          <h2>Informações do Paciente</h2>
+          <p><strong>Nome:</strong> ${selectedPatient.lead.nome}</p>
+          <p><strong>Data de Geração:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+
+        <h2>Itens para Comprar</h2>
+        <div class="shopping-list">
+          ${shoppingItems.map(item => `
+            <div class="item">
+              <div class="checkbox"></div>
+              <span>${item}</span>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="footer">
+          <p><strong>Orientações:</strong></p>
+          <p>• Marque os itens conforme for comprando</p>
+          <p>• Prefira alimentos frescos e de qualidade</p>
+          <p>• Verifique as datas de validade</p>
+          <br>
+          <p>© ${new Date().getFullYear()} - Lista gerada em ${new Date().toLocaleString('pt-BR')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lista_compras_${selectedPatient.lead.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Lista de compras exportada com sucesso!");
+  };
 
   const generatePDF = () => {
     if (!nutritionalPlan || !selectedPatient) {
@@ -230,6 +369,8 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
   const handlePrint = (type: string) => {
     if (type === "plano-alimentar") {
       generatePDF();
+    } else if (type === "lista-compras") {
+      generateShoppingListPDF();
     } else {
       console.log(`Printing ${type} for patient:`, patientId);
       toast.info(`Funcionalidade de ${type} será implementada em breve`);
@@ -247,9 +388,9 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
     {
       id: "lista-compras",
       title: "Lista de Compras",
-      description: "Imprime a lista de compras consolidada",
+      description: "Imprime a lista de compras consolidada baseada no plano principal",
       icon: ShoppingCart,
-      hasContent: false
+      hasContent: !!nutritionalPlan
     },
     {
       id: "prescricoes",
