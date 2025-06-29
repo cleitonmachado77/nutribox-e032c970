@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ export const NutritionalPlanSection = ({ patientId, consultationId }: Nutritiona
 
   const loadSavedPlan = async () => {
     try {
-      const savedPlan = await getSavedNutritionalPlan(consultationId);
+      const savedPlan = await getSavedNutritionalPlan();
       if (savedPlan) {
         setPlanContent(savedPlan);
       }
@@ -34,7 +35,7 @@ export const NutritionalPlanSection = ({ patientId, consultationId }: Nutritiona
   const handleGeneratePlan = async () => {
     setIsGenerating(true);
     try {
-      const generatedPlan = await generateNutritionalPlan(consultationId);
+      const generatedPlan = await generateNutritionalPlan();
       setPlanContent(generatedPlan);
       toast.success("Plano alimentar gerado com sucesso!");
     } catch (error: any) {
