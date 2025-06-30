@@ -1,7 +1,8 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock, Camera, User, MapPin, Upload, X } from "lucide-react";
+import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock, Camera, User, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
@@ -10,9 +11,6 @@ import { PatientGeneralTab } from "@/components/pacientes/PatientGeneralTab";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
-import { usePatientPhotos } from "@/hooks/usePatientPhotos";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ImageUpload } from "@/components/ImageUpload";
 
 interface ConsultasPatientProfileProps {
   selectedPatient: Paciente;
@@ -28,10 +26,6 @@ export const ConsultasPatientProfile = ({
   onOpenConsultaDialog 
 }: ConsultasPatientProfileProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>('consultation');
-  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
-  const [selectedPhotoType, setSelectedPhotoType] = useState<'perfil' | 'antes' | 'depois' | 'progresso'>('perfil');
-  
-  const { photos, addPhoto, deletePhoto, isLoading: photosLoading } = usePatientPhotos(selectedPatient.id);
 
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
@@ -83,63 +77,6 @@ export const ConsultasPatientProfile = ({
 
   const handleBackToProfile = () => {
     setViewMode('consultation');
-  };
-
-  const handleAddPhoto = async (url: string) => {
-    await addPhoto(url, selectedPhotoType);
-    setPhotoDialogOpen(false);
-  };
-
-  const handleDeletePhoto = async (photoId: string) => {
-    await deletePhoto(photoId);
-  };
-
-  const getPhotosByType = (tipo: string) => {
-    return photos.filter(photo => photo.tipo === tipo);
-  };
-
-  const renderPhotoGrid = (tipo: 'perfil' | 'antes' | 'depois' | 'progresso', title: string, cols: number = 4) => {
-    const typePhotos = getPhotosByType(tipo);
-    const emptySlots = Array(cols - typePhotos.length).fill(null);
-
-    return (
-      <div>
-        <h4 className="font-medium text-white mb-3">{title}</h4>
-        <div className={`grid grid-cols-${cols} gap-3`}>
-          {typePhotos.map((photo) => (
-            <div key={photo.id} className="relative aspect-square bg-white/30 rounded-lg overflow-hidden group">
-              <img 
-                src={photo.url} 
-                alt={photo.descricao || title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDeletePhoto(photo.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          {emptySlots.map((_, index) => (
-            <div 
-              key={index}
-              className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300 cursor-pointer hover:bg-white/40 transition-colors"
-              onClick={() => {
-                setSelectedPhotoType(tipo);
-                setPhotoDialogOpen(true);
-              }}
-            >
-              <Camera className="h-8 w-8 text-purple-100" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   const renderNutritionalReport = () => {
@@ -471,19 +408,41 @@ export const ConsultasPatientProfile = ({
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {renderPhotoGrid('perfil', 'Perfil', 4)}
-                        {renderPhotoGrid('antes', 'Antes', 2)}
-                        {renderPhotoGrid('depois', 'Depois', 2)}
+                        <div>
+                          <h4 className="font-medium text-white mb-3">Perfil</h4>
+                          <div className="grid grid-cols-4 gap-3">
+                            <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                              <Camera className="h-8 w-8 text-purple-100" />
+                            </div>
+                            <div className="aspect-square bg-white/30 rounded-lg"></div>
+                            <div className="aspect-square bg-white/30 rounded-lg"></div>
+                            <div className="aspect-square bg-white/30 rounded-lg"></div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="font-medium text-white mb-3">Antes e Depois</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                                <span className="text-xs text-purple-100">Antes</span>
+                              </div>
+                            </div>
+                            <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                                <span className="text-xs text-purple-100">Depois</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
                         <div className="flex gap-2">
                           <Button 
                             variant="outline" 
                             size="sm" 
                             className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
-                            onClick={() => {
-                              setSelectedPhotoType('perfil');
-                              setPhotoDialogOpen(true);
-                            }}
                           >
                             Alterar Foto
                           </Button>
@@ -491,10 +450,6 @@ export const ConsultasPatientProfile = ({
                             variant="outline" 
                             size="sm" 
                             className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
-                            onClick={() => {
-                              setSelectedPhotoType('progresso');
-                              setPhotoDialogOpen(true);
-                            }}
                           >
                             Adicionar Foto
                           </Button>
@@ -529,25 +484,6 @@ export const ConsultasPatientProfile = ({
 
         {viewMode === 'report' && renderNutritionalReport()}
       </div>
-
-      {/* Dialog para adicionar fotos */}
-      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Adicionar Foto - {selectedPhotoType === 'perfil' ? 'Perfil' : 
-                              selectedPhotoType === 'antes' ? 'Antes' :
-                              selectedPhotoType === 'depois' ? 'Depois' : 'Progresso'}
-            </DialogTitle>
-          </DialogHeader>
-          <ImageUpload
-            value=""
-            onChange={handleAddPhoto}
-            label={`Foto de ${selectedPhotoType}`}
-            placeholder="Cole o URL da imagem ou faça upload"
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
