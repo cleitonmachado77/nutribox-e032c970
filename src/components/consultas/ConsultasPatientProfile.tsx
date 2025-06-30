@@ -6,6 +6,8 @@ import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
+import { PatientHistoryTab } from "@/components/pacientes/PatientHistoryTab";
+import { PatientGeneralTab } from "@/components/pacientes/PatientGeneralTab";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -16,12 +18,14 @@ interface ConsultasPatientProfileProps {
   onOpenConsultaDialog: () => void;
 }
 
+type ViewMode = 'consultation' | 'profile' | 'history' | 'report';
+
 export const ConsultasPatientProfile = ({ 
   selectedPatient, 
   onBack, 
   onOpenConsultaDialog 
 }: ConsultasPatientProfileProps) => {
-  const [showConsultationForm, setShowConsultationForm] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('consultation');
 
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
@@ -56,32 +60,177 @@ export const ConsultasPatientProfile = ({
   };
 
   const handleNovaConsulta = () => {
-    setShowConsultationForm(true);
+    setViewMode('consultation');
+  };
+
+  const handlePerfilPaciente = () => {
+    setViewMode('profile');
+  };
+
+  const handleHistoricoConsultas = () => {
+    setViewMode('history');
+  };
+
+  const handleRelatorioNutricional = () => {
+    setViewMode('report');
   };
 
   const handleBackToProfile = () => {
-    setShowConsultationForm(false);
+    setViewMode('consultation');
   };
 
-  // Se o formulário de consulta está ativo, mostrar apenas ele
-  if (showConsultationForm) {
+  const renderNutritionalReport = () => {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button 
-            variant="outline" 
-            onClick={handleBackToProfile}
-            className="bg-white hover:bg-gray-50 border-purple-200"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Perfil
-          </Button>
-          <h1 className="text-2xl font-bold text-gray-800">Nova Consulta</h1>
-        </div>
-        <NewConsultationTab selectedPatient={selectedPatient} />
+      <div className="space-y-6">
+        <Card className="border-2 border-purple-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-purple-500 to-violet-600 text-white">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Relatório Nutricional - {selectedPatient.lead.nome}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Dados Antropométricos */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Scale className="h-5 w-5" />
+                    Dados Antropométricos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Peso Atual:</span>
+                    <span>{selectedPatient.lead.peso || 'Não informado'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Altura:</span>
+                    <span>{selectedPatient.lead.altura || 'Não informado'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">IMC:</span>
+                    <span>{selectedPatient.lead.imc || 'Não calculado'}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Status do Tratamento */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Status do Tratamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Status:</span>
+                    <Badge className={getStatusColor(selectedPatient.status_tratamento)}>
+                      {selectedPatient.status_tratamento}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Objetivo:</span>
+                    <Badge className={getObjetivoColor(selectedPatient.lead.objetivo || '')}>
+                      {selectedPatient.lead.objetivo || 'Não definido'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Progresso:</span>
+                    <span className="font-semibold">{selectedPatient.lead.progresso || 0}%</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Histórico de Consultas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Histórico de Consultas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Primeira Consulta:</span>
+                    <span>
+                      {selectedPatient.data_primeira_consulta ? 
+                        format(new Date(selectedPatient.data_primeira_consulta), 'dd/MM/yyyy') : 
+                        'Não realizada'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Última Consulta:</span>
+                    <span>
+                      {selectedPatient.lead.ultima_consulta ? 
+                        format(new Date(selectedPatient.lead.ultima_consulta), 'dd/MM/yyyy') : 
+                        'Nenhuma'
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Total de Consultas:</span>
+                    <span>{selectedPatient.lead.consultas_realizadas || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Plano Alimentar */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Heart className="h-5 w-5" />
+                    Plano Alimentar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedPatient.lead.plano_alimentar ? (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm">{selectedPatient.lead.plano_alimentar}</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Nenhum plano alimentar definido ainda.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Observações */}
+            {selectedPatient.lead.anotacoes && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg">Observações Gerais</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-sm whitespace-pre-wrap">{selectedPatient.lead.anotacoes}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="flex gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => window.print()}
+                className="flex-1"
+              >
+                Imprimir Relatório
+              </Button>
+              <Button 
+                onClick={handleBackToProfile}
+                className="flex-1 bg-purple-500 hover:bg-purple-600"
+              >
+                Voltar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
@@ -89,207 +238,251 @@ export const ConsultasPatientProfile = ({
       <div className="flex items-center gap-4 mb-6">
         <Button 
           variant="outline" 
-          onClick={onBack}
+          onClick={viewMode === 'consultation' ? onBack : handleBackToProfile}
           className="bg-white hover:bg-gray-50 border-purple-200"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
-        <h1 className="text-2xl font-bold text-gray-800">Pacientes</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          {viewMode === 'consultation' && 'Nova Consulta'}
+          {viewMode === 'profile' && 'Perfil do Paciente'}
+          {viewMode === 'history' && 'Histórico de Consultas'}
+          {viewMode === 'report' && 'Relatório Nutricional'}
+        </h1>
       </div>
 
-      {/* Container principal inspirado na imagem */}
+      {/* Container principal */}
       <div className="max-w-6xl mx-auto">
-        {/* Header com avatar e informações básicas */}
-        <Card className="mb-6 border-2 border-purple-200 shadow-lg bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-6 mb-6">
-              <div className="relative">
-                <Avatar className="h-20 w-20 ring-4 ring-purple-200">
-                  <AvatarImage src={selectedPatient.lead.foto_perfil} />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-violet-500 text-white text-2xl">
-                    {selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
-              </div>
-              
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                  {selectedPatient.lead.nome}
-                </h2>
-                <p className="text-gray-600 mb-2">
-                  {selectedPatient.lead.idade ? `${selectedPatient.lead.idade} anos` : 'Idade não informada'}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Emagrecimento, {selectedPatient.lead.consultas_realizadas || 0} consultas
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleNovaConsulta}
-                  className="bg-purple-500 hover:bg-purple-600 text-white"
-                >
-                  Nova Consulta
-                </Button>
-                <Button variant="outline" className="border-purple-200">
-                  Perfil do Paciente
-                </Button>
-                <Button variant="outline" className="border-purple-200">
-                  Histórico de Consultas
-                </Button>
-                <Button variant="outline" className="border-purple-200">
-                  Relatório Nutricional
-                </Button>
-              </div>
-            </div>
-
-            {/* Cards de informações */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Card de Informações Básicas */}
-              <Card className="bg-gradient-to-br from-purple-400 to-violet-500 border-0 shadow-md">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Informações Básicas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-purple-100">Nome Completo:</span>
-                      <span className="text-sm text-white">{selectedPatient.lead.nome}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-purple-100">Data de Nascimento:</span>
-                      <span className="text-sm text-white">
-                        {selectedPatient.lead.data_nascimento ? 
-                          format(new Date(selectedPatient.lead.data_nascimento), 'dd/MM/yyyy') : 
-                          'Não informado'
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-purple-100">Sexo:</span>
-                      <span className="text-sm text-white">{selectedPatient.lead.sexo || 'Não informado'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-purple-100">WhatsApp:</span>
-                      <span className="text-sm text-white">{selectedPatient.lead.telefone}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-purple-100">E-mail:</span>
-                      <span className="text-sm text-white">{selectedPatient.lead.email || 'Não informado'}</span>
-                    </div>
+        {/* Renderizar conteúdo baseado no modo de visualização */}
+        {viewMode === 'consultation' && (
+          <>
+            {/* Header com avatar e informações básicas */}
+            <Card className="mb-6 border-2 border-purple-200 shadow-lg bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="relative">
+                    <Avatar className="h-20 w-20 ring-4 ring-purple-200">
+                      <AvatarImage src={selectedPatient.lead.foto_perfil} />
+                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-violet-500 text-white text-2xl">
+                        {selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-1">
+                      {selectedPatient.lead.nome}
+                    </h2>
+                    <p className="text-gray-600 mb-2">
+                      {selectedPatient.lead.idade ? `${selectedPatient.lead.idade} anos` : 'Idade não informada'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Emagrecimento, {selectedPatient.lead.consultas_realizadas || 0} consultas
+                    </p>
                   </div>
 
-                  <div className="pt-3 border-t border-purple-300/30">
-                    <h4 className="font-bold text-white mb-2">Histórico</h4>
-                    <div className="space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-purple-100">Nº de Consultas:</span>
-                        <span className="text-sm text-white">{selectedPatient.lead.consultas_realizadas || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-purple-100">Primeira Consulta:</span>
-                        <span className="text-sm text-white">
-                          {selectedPatient.data_primeira_consulta ? 
-                            format(new Date(selectedPatient.data_primeira_consulta), 'dd/MM/yyyy') : 
-                            'Não realizada'
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-purple-100">Última Consulta:</span>
-                        <span className="text-sm text-white">
-                          {selectedPatient.lead.ultima_consulta ? 
-                            format(new Date(selectedPatient.lead.ultima_consulta), 'dd/MM/yyyy') : 
-                            'Nenhuma'
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium text-purple-100">Objetivo:</span>
-                        <span className="text-sm text-white">{selectedPatient.lead.objetivo || 'Não definido'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-3">
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleNovaConsulta}
+                      className="bg-purple-500 hover:bg-purple-600 text-white"
+                      variant={viewMode === 'consultation' ? 'default' : 'outline'}
+                    >
+                      Nova Consulta
+                    </Button>
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="w-full bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                      className="border-purple-200"
+                      onClick={handlePerfilPaciente}
                     >
-                      Alterar Dados
+                      Perfil do Paciente
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-200"
+                      onClick={handleHistoricoConsultas}
+                    >
+                      Histórico de Consultas
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-200"
+                      onClick={handleRelatorioNutricional}
+                    >
+                      Relatório Nutricional
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* Card de Fotos */}
-              <Card className="bg-gradient-to-br from-purple-400 to-violet-500 border-0 shadow-md">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                    <Camera className="h-5 w-5" />
-                    Fotos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-white mb-3">Perfil</h4>
-                      <div className="grid grid-cols-4 gap-3">
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
-                          <Camera className="h-8 w-8 text-purple-100" />
+                {/* Cards de informações */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Card de Informações Básicas */}
+                  <Card className="bg-gradient-to-br from-purple-400 to-violet-500 border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Informações Básicas
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-purple-100">Nome Completo:</span>
+                          <span className="text-sm text-white">{selectedPatient.lead.nome}</span>
                         </div>
-                        <div className="aspect-square bg-white/30 rounded-lg"></div>
-                        <div className="aspect-square bg-white/30 rounded-lg"></div>
-                        <div className="aspect-square bg-white/30 rounded-lg"></div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-purple-100">Data de Nascimento:</span>
+                          <span className="text-sm text-white">
+                            {selectedPatient.lead.data_nascimento ? 
+                              format(new Date(selectedPatient.lead.data_nascimento), 'dd/MM/yyyy') : 
+                              'Não informado'
+                            }
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-purple-100">Sexo:</span>
+                          <span className="text-sm text-white">{selectedPatient.lead.sexo || 'Não informado'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-purple-100">WhatsApp:</span>
+                          <span className="text-sm text-white">{selectedPatient.lead.telefone}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium text-purple-100">E-mail:</span>
+                          <span className="text-sm text-white">{selectedPatient.lead.email || 'Não informado'}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <h4 className="font-medium text-white mb-3">Antes e Depois</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
-                          <div className="text-center">
-                            <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
-                            <span className="text-xs text-purple-100">Antes</span>
+                      <div className="pt-3 border-t border-purple-300/30">
+                        <h4 className="font-bold text-white mb-2">Histórico</h4>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-purple-100">Nº de Consultas:</span>
+                            <span className="text-sm text-white">{selectedPatient.lead.consultas_realizadas || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-purple-100">Primeira Consulta:</span>
+                            <span className="text-sm text-white">
+                              {selectedPatient.data_primeira_consulta ? 
+                                format(new Date(selectedPatient.data_primeira_consulta), 'dd/MM/yyyy') : 
+                                'Não realizada'
+                              }
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-purple-100">Última Consulta:</span>
+                            <span className="text-sm text-white">
+                              {selectedPatient.lead.ultima_consulta ? 
+                                format(new Date(selectedPatient.lead.ultima_consulta), 'dd/MM/yyyy') : 
+                                'Nenhuma'
+                              }
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium text-purple-100">Objetivo:</span>
+                            <span className="text-sm text-white">{selectedPatient.lead.objetivo || 'Não definido'}</span>
                           </div>
                         </div>
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
-                          <div className="text-center">
-                            <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
-                            <span className="text-xs text-purple-100">Depois</span>
+                      </div>
+
+                      <div className="pt-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                        >
+                          Alterar Dados
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Card de Fotos */}
+                  <Card className="bg-gradient-to-br from-purple-400 to-violet-500 border-0 shadow-md">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                        <Camera className="h-5 w-5" />
+                        Fotos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium text-white mb-3">Perfil</h4>
+                          <div className="grid grid-cols-4 gap-3">
+                            <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                              <Camera className="h-8 w-8 text-purple-100" />
+                            </div>
+                            <div className="aspect-square bg-white/30 rounded-lg"></div>
+                            <div className="aspect-square bg-white/30 rounded-lg"></div>
+                            <div className="aspect-square bg-white/30 rounded-lg"></div>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
-                      >
-                        Alterar Foto
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
-                      >
-                        Adicionar Foto
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
+                        <div>
+                          <h4 className="font-medium text-white mb-3">Antes e Depois</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                                <span className="text-xs text-purple-100">Antes</span>
+                              </div>
+                            </div>
+                            <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                                <span className="text-xs text-purple-100">Depois</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                          >
+                            Alterar Foto
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                          >
+                            Adicionar Foto
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+
+            <NewConsultationTab selectedPatient={selectedPatient} />
+          </>
+        )}
+
+        {viewMode === 'profile' && (
+          <PatientGeneralTab 
+            selectedPatient={selectedPatient}
+            onOpenConsultaDialog={onOpenConsultaDialog}
+            getObjetivoColor={getObjetivoColor}
+            getStatusColor={getStatusColor}
+            getProgressColor={getProgressColor}
+          />
+        )}
+
+        {viewMode === 'history' && (
+          <PatientHistoryTab 
+            selectedPatient={selectedPatient}
+            onOpenConsultaDialog={onOpenConsultaDialog}
+          />
+        )}
+
+        {viewMode === 'report' && renderNutritionalReport()}
       </div>
     </div>
   );
