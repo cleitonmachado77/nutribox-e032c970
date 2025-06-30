@@ -290,6 +290,26 @@ export const useConsultationData = (patientId: string, consultationId?: string) 
     }
   };
 
+  const getSavedClinicalHistory = async () => {
+    if (!user || !consultationId) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('consultation_clinical_history')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('user_id', user.id)
+        .eq('consultation_id', consultationId)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (err: any) {
+      console.error('Error getting saved clinical history:', err);
+      return null;
+    }
+  };
+
   const generateNutritionalPlan = async () => {
     if (!user) throw new Error('User not authenticated');
     if (!consultationId) throw new Error('Consultation ID is required');
@@ -381,6 +401,7 @@ export const useConsultationData = (patientId: string, consultationId?: string) 
     saveClinicalHistory,
     generateNutritionalPlan,
     getSavedNutritionalPlan,
+    getSavedClinicalHistory,
     isLoading,
     error
   };
