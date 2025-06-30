@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,8 @@ import { PrintsSection } from "./PrintsSection";
 import { ConsultationManager } from "@/components/consultas/ConsultationManager";
 import { Paciente } from "@/hooks/usePacientes";
 import { useConsultations, type Consultation } from "@/hooks/useConsultations";
+import { PatientSummarySection } from "./PatientSummarySection";
+import { PatientComparisonSection } from "./PatientComparisonSection";
 
 interface MultiStepConsultationFormProps {
   selectedPatient: Paciente;
@@ -46,7 +47,9 @@ const steps = [
     ]
   },
   { id: 4, title: "Metas e Objetivos", description: "Definição de metas e acompanhamento" },
-  { id: 5, title: "Documentos", description: "Impressos e materiais de apoio" }
+  { id: 5, title: "Documentos", description: "Impressos e materiais de apoio" },
+  { id: 6, title: "Resumo", description: "Resumo completo do estado atual do paciente" },
+  { id: 7, title: "Comparativo", description: "Comparação entre consultas anteriores" }
 ];
 
 export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsultationFormProps) => {
@@ -218,6 +221,10 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
         return <GoalsSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
       case 5:
         return <PrintsSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
+      case 6:
+        return <PatientSummarySection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
+      case 7:
+        return <PatientComparisonSection patientId={selectedPatient.id} consultationId={currentConsultation.id} />;
       default:
         return null;
     }
