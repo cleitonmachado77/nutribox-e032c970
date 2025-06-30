@@ -5,6 +5,8 @@ import { Printer, FileText, ShoppingCart, Pill, Target, Eye, Download } from "lu
 import { useConsultationData } from "@/hooks/useConsultationData";
 import { usePatientCurrentData } from "@/hooks/usePatientCurrentData";
 import { usePacientes } from "@/hooks/usePacientes";
+import { usePrescriptions } from "@/hooks/usePrescriptions";
+import { useGoalsChecklist } from "@/hooks/useGoalsChecklist";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -17,6 +19,8 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
   const { getSavedNutritionalPlan } = useConsultationData(patientId, consultationId);
   const { currentData } = usePatientCurrentData(patientId);
   const { data: pacientes = [] } = usePacientes();
+  const { prescriptions, generatePrescriptions, isLoading: prescriptionsLoading } = usePrescriptions(patientId, consultationId);
+  const { goalsChecklist, generateGoalsChecklist, isLoading: goalsLoading } = useGoalsChecklist(patientId, consultationId);
   const [nutritionalPlan, setNutritionalPlan] = useState<string>("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -36,6 +40,8 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
 
     if (consultationId) {
       loadPlan();
+      generatePrescriptions();
+      generateGoalsChecklist();
     }
   }, [consultationId, getSavedNutritionalPlan]);
 
@@ -366,11 +372,297 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
     toast.success("Plano alimentar exportado com sucesso!");
   };
 
+  const generatePrescriptionsPDF = () => {
+    if (!prescriptions || !selectedPatient) {
+      toast.error("Nenhuma prescrição encontrada para gerar documento");
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Prescrições - ${selectedPatient.lead.nome}</title>
+        <style>
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 20px; 
+            line-height: 1.6; 
+            color: #333;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 3px solid #EF4444; 
+            padding-bottom: 20px; 
+          }
+          .patient-info { 
+            background-color: #FEF2F2; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #EF4444;
+          }
+          .prescription-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+          }
+          .prescription-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #F9FAFB;
+            border-radius: 5px;
+          }
+          h1 { 
+            color: #EF4444; 
+            margin: 0; 
+            font-size: 28px;
+          }
+          h2 { 
+            color: #DC2626; 
+            margin-top: 25px; 
+            font-size: 20px;
+          }
+          .footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            color: #666; 
+            font-size: 12px; 
+            border-top: 2px solid #E5E7EB; 
+            padding-top: 20px; 
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>PRESCRIÇÕES MÉDICAS</h1>
+          <p style="font-size: 16px; color: #6B7280; margin: 10px 0;">Orientações Nutricionais</p>
+        </div>
+        
+        <div class="patient-info">
+          <h2>Informações do Paciente</h2>
+          <p><strong>Nome:</strong> ${selectedPatient.lead.nome}</p>
+          <p><strong>Data de Geração:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+
+        ${prescriptions.prescriptions.map(prescription => `
+          <div class="prescription-item">
+            <h3>${prescription.name}</h3>
+            <p><strong>Tipo:</strong> ${prescription.type === 'medicamento' ? 'Medicamento' : 
+                                         prescription.type === 'suplemento' ? 'Suplemento' : 'Orientação'}</p>
+            ${prescription.dosage ? `<p><strong>Dosagem:</strong> ${prescription.dosage}</p>` : ''}
+            ${prescription.frequency ? `<p><strong>Frequência:</strong> ${prescription.frequency}</p>` : ''}
+            ${prescription.duration ? `<p><strong>Duração:</strong> ${prescription.duration}</p>` : ''}
+            ${prescription.instructions ? `<p><strong>Instruções:</strong> ${prescription.instructions}</p>` : ''}
+          </div>
+        `).join('')}
+        
+        <div class="footer">
+          <p><strong>Orientações:</strong></p>
+          <p>• Seguir rigorosamente as orientações prescritas</p>
+          <p>• Em caso de dúvidas, entrar em contato com o profissional</p>
+          <p>• Não interromper o tratamento sem orientação médica</p>
+          <br>
+          <p>© ${new Date().getFullYear()} - Documento gerado em ${new Date().toLocaleString('pt-BR')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `prescricoes_${selectedPatient.lead.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Prescrições exportadas com sucesso!");
+  };
+
+  const generateGoalsChecklistPDF = () => {
+    if (!goalsChecklist || !selectedPatient) {
+      toast.error("Nenhuma meta ou checklist encontrada para gerar documento");
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Metas e Checklist - ${selectedPatient.lead.nome}</title>
+        <style>
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 20px; 
+            line-height: 1.6; 
+            color: #333;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 3px solid #10B981; 
+            padding-bottom: 20px; 
+          }
+          .patient-info { 
+            background-color: #ECFDF5; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #10B981;
+          }
+          .goals-section, .checklist-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            background: #FFFFFF;
+          }
+          .goal-item, .checklist-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: #F9FAFB;
+            border-radius: 5px;
+            border-left: 3px solid #10B981;
+          }
+          .checklist-category {
+            background: #10B981;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin: 15px 0 10px 0;
+            font-weight: bold;
+          }
+          h1 { 
+            color: #10B981; 
+            margin: 0; 
+            font-size: 28px;
+          }
+          h2 { 
+            color: #059669; 
+            margin-top: 25px; 
+            font-size: 20px;
+          }
+          .footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            color: #666; 
+            font-size: 12px; 
+            border-top: 2px solid #E5E7EB; 
+            padding-top: 20px; 
+          }
+          .checkbox {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid #10B981;
+            margin-right: 10px;
+            vertical-align: middle;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>METAS E CHECKLIST</h1>
+          <p style="font-size: 16px; color: #6B7280; margin: 10px 0;">Acompanhamento Nutricional</p>
+        </div>
+        
+        <div class="patient-info">
+          <h2>Informações do Paciente</h2>
+          <p><strong>Nome:</strong> ${selectedPatient.lead.nome}</p>
+          <p><strong>Data de Geração:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+
+        <div class="goals-section">
+          <h2>Metas Estabelecidas</h2>
+          ${goalsChecklist.goals.map((goal, index) => `
+            <div class="goal-item">
+              <h3>${index + 1}. ${goal.title}</h3>
+              <p><strong>Descrição:</strong> ${goal.description}</p>
+              <p><strong>Meta:</strong> ${goal.targetValue}</p>
+              <p><strong>Situação Atual:</strong> ${goal.currentValue}</p>
+              <p><strong>Status:</strong> ${goal.completed ? 'Concluída' : 'Em andamento'}</p>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="checklist-section">
+          <h2>Checklist de Acompanhamento</h2>
+          
+          <div class="checklist-category">TAREFAS DIÁRIAS</div>
+          ${goalsChecklist.checklist.filter(item => item.category === 'daily').map(item => `
+            <div class="checklist-item">
+              <div class="checkbox"></div>
+              <strong>${item.title}</strong>
+              <p>${item.description}</p>
+              <p><em>Frequência: ${item.frequency}</em></p>
+            </div>
+          `).join('')}
+
+          <div class="checklist-category">TAREFAS SEMANAIS</div>
+          ${goalsChecklist.checklist.filter(item => item.category === 'weekly').map(item => `
+            <div class="checklist-item">
+              <div class="checkbox"></div>
+              <strong>${item.title}</strong>
+              <p>${item.description}</p>
+              <p><em>Frequência: ${item.frequency}</em></p>
+            </div>
+          `).join('')}
+
+          <div class="checklist-category">TAREFAS MENSAIS</div>
+          ${goalsChecklist.checklist.filter(item => item.category === 'monthly').map(item => `
+            <div class="checklist-item">
+              <div class="checkbox"></div>
+              <strong>${item.title}</strong>
+              <p>${item.description}</p>
+              <p><em>Frequência: ${item.frequency}</em></p>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="footer">
+          <p><strong>Orientações:</strong></p>
+          <p>• Marque as tarefas conforme for completando</p>
+          <p>• Mantenha consistência nas atividades diárias</p>
+          <p>• Em caso de dificuldades, procure orientação profissional</p>
+          <br>
+          <p>© ${new Date().getFullYear()} - Documento gerado em ${new Date().toLocaleString('pt-BR')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `metas_checklist_${selectedPatient.lead.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("Metas e checklist exportados com sucesso!");
+  };
+
   const handlePrint = (type: string) => {
     if (type === "plano-alimentar") {
       generatePDF();
     } else if (type === "lista-compras") {
       generateShoppingListPDF();
+    } else if (type === "prescricoes") {
+      generatePrescriptionsPDF();
+    } else if (type === "metas-checklist") {
+      generateGoalsChecklistPDF();
     } else {
       console.log(`Printing ${type} for patient:`, patientId);
       toast.info(`Funcionalidade de ${type} será implementada em breve`);
@@ -395,16 +687,16 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
     {
       id: "prescricoes",
       title: "Prescrições",
-      description: "Imprime prescrições e orientações",
+      description: "Imprime prescrições e orientações médicas",
       icon: Pill,
-      hasContent: false
+      hasContent: !!prescriptions && prescriptions.prescriptions.length > 0
     },
     {
       id: "metas-checklist",
       title: "Metas e Checklist",
       description: "Imprime as metas e checklist do paciente",
       icon: Target,
-      hasContent: false
+      hasContent: !!goalsChecklist && (goalsChecklist.goals.length > 0 || goalsChecklist.checklist.length > 0)
     }
   ];
 
@@ -485,7 +777,10 @@ export const PrintsSection = ({ patientId, consultationId }: PrintsSectionProps)
                           : 'opacity-50 cursor-not-allowed'
                       }`}
                       variant={option.hasContent ? "default" : "outline"}
-                      disabled={!option.hasContent && option.id !== "plano-alimentar"}
+                      disabled={!option.hasContent || 
+                        (option.id === "prescricoes" && prescriptionsLoading) ||
+                        (option.id === "metas-checklist" && goalsLoading)
+                      }
                     >
                       <Download className="w-4 h-4 mr-2" />
                       {option.hasContent ? 'Baixar PDF' : 'Indisponível'}
