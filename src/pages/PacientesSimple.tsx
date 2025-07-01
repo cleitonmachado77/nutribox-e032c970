@@ -4,12 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Upload, Users, UserPlus, Calendar, Eye, Tag, Trash, Edit, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Search, Users, UserPlus, Eye, Edit, Trash } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Header } from "@/components/Header";
 import { usePacientes, Paciente } from "@/hooks/usePacientes";
-import { format } from "date-fns";
 
 const PacientesSimple = () => {
   console.log('PacientesSimple component rendering...');
@@ -205,7 +204,7 @@ const PacientesSimple = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(lead.created_at), 'dd/MM/yyyy')}
+                        {lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : '-'}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
