@@ -49,9 +49,9 @@ export const PatientTabs = ({
           <User className="w-4 h-4" />
           Geral
         </TabsTrigger>
-        <TabsTrigger value="nova-consulta" className="flex items-center gap-2 text-xs">
-          <Plus className="w-4 h-4" />
-          Nova Consulta
+        <TabsTrigger value="consultas" className="flex items-center gap-2 text-xs">
+          <Calendar className="w-4 h-4" />
+          Consultas
         </TabsTrigger>
         <TabsTrigger value="painel" className="flex items-center gap-2 text-xs">
           <BarChart3 className="w-4 h-4" />
@@ -85,8 +85,11 @@ export const PatientTabs = ({
         />
       </TabsContent>
 
-      <TabsContent value="nova-consulta" className="space-y-6 mt-6">
-        <NewConsultationTab selectedPatient={selectedPatient} />
+      <TabsContent value="consultas" className="space-y-6 mt-6">
+        <PatientHistoryTab 
+          selectedPatient={selectedPatient}
+          onOpenConsultaDialog={onOpenConsultaDialog}
+        />
       </TabsContent>
 
       <TabsContent value="painel" className="space-y-6 mt-6">

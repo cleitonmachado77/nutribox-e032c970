@@ -1,17 +1,27 @@
-import { useState, useEffect } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Users, Phone, Mail, MapPin, Calendar, Heart, CheckCircle, History, 
-  StickyNote, Camera, FileText, ShoppingCart, Stethoscope, Target,
-  TrendingUp, Clock, User
-} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
-import { useToast } from "@/hooks/use-toast";
-import { usePatientPhotos } from "@/hooks/usePatientPhotos";
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  Target, 
+  Activity,
+  MapPin,
+  Cake,
+  Scale,
+  Ruler,
+  Clock,
+  CheckCircle,
+  Edit
+} from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface PatientGeneralTabProps {
   selectedPatient: Paciente;
@@ -22,382 +32,204 @@ interface PatientGeneralTabProps {
 }
 
 export const PatientGeneralTab = ({ 
-  selectedPatient,
+  selectedPatient, 
   onOpenConsultaDialog,
   getObjetivoColor,
   getStatusColor,
   getProgressColor
 }: PatientGeneralTabProps) => {
-  const [anotacoes, setAnotacoes] = useState(selectedPatient.lead.anotacoes || "");
-  const { photos } = usePatientPhotos(selectedPatient.id);
-  const [clinicalHistory, setClinicalHistory] = useState<any>({});
-  const [consultasRealizadas, setConsultasRealizadas] = useState<any[]>([]);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Carregar dados salvos do localStorage
-    const savedClinicalHistory = localStorage.getItem(`patient_clinical_${selectedPatient.id}`);
-    if (savedClinicalHistory) {
-      setClinicalHistory(JSON.parse(savedClinicalHistory));
+  const handleConsultasClick = () => {
+    // Alternar para a aba de consultas
+    const consultasTab = document.querySelector('[value="consultas"]') as HTMLElement;
+    if (consultasTab) {
+      consultasTab.click();
     }
-
-    const savedConsultas = localStorage.getItem(`patient_consultas_${selectedPatient.id}`);
-    if (savedConsultas) {
-      setConsultasRealizadas(JSON.parse(savedConsultas));
-    }
-  }, [selectedPatient.id]);
-
-  const handleSaveAnotacoes = () => {
-    // Simular salvamento das anotações
-    localStorage.setItem(`patient_anotacoes_${selectedPatient.id}`, anotacoes);
-    toast({
-      title: "Sucesso!",
-      description: "Anotações salvas com sucesso"
-    });
-  };
-
-  const getLastConsulta = () => {
-    if (consultasRealizadas.length === 0) return null;
-    return consultasRealizadas.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
-  };
-
-  const hasPlanoAlimentar = () => {
-    const savedPlan = localStorage.getItem(`patient_plan_${selectedPatient.id}`);
-    return savedPlan && savedPlan.trim().length > 0;
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header do Paciente - Redesenhado */}
-      <div className="bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 p-8 rounded-2xl text-white shadow-2xl">
-        <div className="flex items-center gap-8">
-          <div className="relative">
-            <Avatar className="h-28 w-28 ring-4 ring-white/30 shadow-2xl">
-              <AvatarImage src={selectedPatient.lead.foto_perfil} className="object-cover" />
-              <AvatarFallback className="text-3xl bg-white/20 text-white backdrop-blur-sm">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Card de Informações Pessoais */}
+      <Card className="shadow-lg border-purple-200">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+          <CardTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Informações Pessoais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center gap-4 mb-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={selectedPatient.lead.foto_perfil} />
+              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-lg">
                 {selectedPatient.lead.nome.split(' ').map(n => n[0]).join('')}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
-              <User className="w-4 h-4 text-white" />
+            <div>
+              <h3 className="font-semibold text-lg text-gray-800">{selectedPatient.lead.nome}</h3>
+              <p className="text-gray-600">
+                {selectedPatient.lead.idade ? `${selectedPatient.lead.idade} anos` : 'Idade não informada'}
+              </p>
             </div>
           </div>
-          
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">{selectedPatient.lead.nome}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-purple-100">
-              <span className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                {selectedPatient.lead.cidade}, {selectedPatient.lead.estado}
-              </span>
-              <span className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Paciente desde {new Date(selectedPatient.lead.data_conversao || '').toLocaleDateString('pt-BR')}
-              </span>
-              <span className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                {consultasRealizadas.length} consultas realizadas
-              </span>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-gray-700">
+              <Mail className="w-4 h-4 text-gray-500" />
+              <span className="text-sm">{selectedPatient.lead.email || 'Email não informado'}</span>
             </div>
             
-            <div className="flex items-center gap-4 mt-4">
-              <Badge className={`${getObjetivoColor(selectedPatient.lead.objetivo)} text-sm px-3 py-1`}>
-                <Target className="w-4 h-4 mr-1" />
-                {selectedPatient.lead.objetivo}
-              </Badge>
-              <Badge className={`${getStatusColor(selectedPatient.status_tratamento)} text-sm px-3 py-1`}>
-                {selectedPatient.status_tratamento === 'ativo' ? 'Em Tratamento' : 'Inativo'}
-              </Badge>
+            <div className="flex items-center gap-2 text-gray-700">
+              <Phone className="w-4 h-4 text-gray-500" />
+              <span className="text-sm">{selectedPatient.lead.telefone}</span>
             </div>
+
+            {selectedPatient.lead.data_nascimento && (
+              <div className="flex items-center gap-2 text-gray-700">
+                <Cake className="w-4 h-4 text-gray-500" />
+                <span className="text-sm">
+                  {format(new Date(selectedPatient.lead.data_nascimento), 'dd/MM/yyyy')}
+                </span>
+              </div>
+            )}
+
+            {selectedPatient.lead.endereco && (
+              <div className="flex items-center gap-2 text-gray-700">
+                <MapPin className="w-4 h-4 text-gray-500" />
+                <span className="text-sm">{selectedPatient.lead.endereco}</span>
+              </div>
+            )}
           </div>
-          
-          <div className="text-right">
-            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6">
-              <div className="text-4xl font-bold mb-1">{selectedPatient.lead.progresso}%</div>
-              <div className="text-purple-200 text-sm">Progresso Geral</div>
-              <div className="mt-3 bg-white/20 rounded-full h-2 w-24">
-                <div 
-                  className="h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500" 
-                  style={{ width: `${selectedPatient.lead.progresso}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Resumo Rápido - Cards de Informações */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-2 border-purple-200 hover:border-purple-300 transition-colors">
-          <CardContent className="p-4 text-center">
-            <Camera className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-purple-800">{photos.length}</div>
-            <div className="text-sm text-purple-600">Fotos do Progresso</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-purple-200 hover:border-purple-300 transition-colors">
-          <CardContent className="p-4 text-center">
-            <Stethoscope className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-purple-800">{consultasRealizadas.length}</div>
-            <div className="text-sm text-purple-600">Consultas Realizadas</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-purple-200 hover:border-purple-300 transition-colors">
-          <CardContent className="p-4 text-center">
-            <FileText className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-purple-800">{hasPlanoAlimentar() ? '1' : '0'}</div>
-            <div className="text-sm text-purple-600">Plano Alimentar</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-purple-200 hover:border-purple-300 transition-colors">
-          <CardContent className="p-4 text-center">
-            <TrendingUp className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-purple-800">
-              {selectedPatient.lead.imc || 'N/A'}
-            </div>
-            <div className="text-sm text-purple-600">IMC Atual</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Informações Principais */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Dados Básicos */}
-        <Card className="border-2 border-purple-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Informações Pessoais
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-purple-600" />
-              <span className="font-medium">Telefone:</span> 
-              <span className="text-purple-800">{selectedPatient.lead.telefone}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-purple-600" />
-              <span className="font-medium">Email:</span> 
-              <span className="text-purple-800">{selectedPatient.lead.email || 'Não informado'}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-purple-600" />
-              <span className="font-medium">Localização:</span> 
-              <span className="text-purple-800">{selectedPatient.lead.cidade}, {selectedPatient.lead.estado}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Dados Corporais */}
-        <Card className="border-2 border-purple-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Heart className="w-5 h-5" />
-              Dados Corporais
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div><span className="font-medium">Peso:</span> <span className="text-purple-800">{selectedPatient.lead.peso || 'Não informado'}</span></div>
-            <div><span className="font-medium">Altura:</span> <span className="text-purple-800">{selectedPatient.lead.altura || 'Não informado'}</span></div>
-            <div><span className="font-medium">IMC:</span> <span className="text-purple-800">{selectedPatient.lead.imc || 'Não calculado'}</span></div>
-            <div><span className="font-medium">Progresso:</span> 
-              <div className="flex items-center gap-2 mt-1">
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getProgressColor(selectedPatient.lead.progresso)} transition-all duration-500`}
-                    style={{ width: `${selectedPatient.lead.progresso}%` }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-purple-800">{selectedPatient.lead.progresso}%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Resumo das Seções */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Histórico Clínico Resumo */}
-        <Card className="border-2 border-purple-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Stethoscope className="w-5 h-5" />
-              Resumo Clínico
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {Object.keys(clinicalHistory).length > 0 ? (
-              <div className="space-y-3">
-                {clinicalHistory.alergias && (
-                  <div>
-                    <span className="font-medium text-purple-800">Alergias:</span>
-                    <p className="text-sm text-gray-600 mt-1">{clinicalHistory.alergias}</p>
-                  </div>
-                )}
-                {clinicalHistory.medicamentos && (
-                  <div>
-                    <span className="font-medium text-purple-800">Medicamentos:</span>
-                    <p className="text-sm text-gray-600 mt-1">{clinicalHistory.medicamentos}</p>
-                  </div>
-                )}
-                {clinicalHistory.restricoes && (
-                  <div>
-                    <span className="font-medium text-purple-800">Restrições:</span>
-                    <p className="text-sm text-gray-600 mt-1">{clinicalHistory.restricoes}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">Nenhum histórico clínico registrado</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Últimas Fotos */}
-        <Card className="border-2 border-purple-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="w-5 h-5" />
-              Galeria de Fotos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            {photos.length > 0 ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {photos.slice(0, 6).map((photo) => (
-                    <div key={photo.id} className="aspect-square rounded-lg overflow-hidden border-2 border-purple-200">
-                      <img src={photo.url} alt={photo.descricao} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-                <div className="text-center">
-                  <span className="text-sm text-purple-600">
-                    {photos.length > 6 ? `+${photos.length - 6} fotos` : `${photos.length} fotos`}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">Nenhuma foto adicionada</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Última Consulta */}
-      {getLastConsulta() && (
-        <Card className="border-2 border-purple-200 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Última Consulta
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <span className="font-medium text-purple-800">Data:</span>
-                <p className="text-gray-600">{new Date(getLastConsulta().data).toLocaleDateString('pt-BR')}</p>
-              </div>
-              <div>
-                <span className="font-medium text-purple-800">Peso:</span>
-                <p className="text-gray-600">{getLastConsulta().peso || 'Não informado'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-purple-800">IMC:</span>
-                <p className="text-gray-600">{getLastConsulta().imc || 'Não calculado'}</p>
-              </div>
-            </div>
-            {getLastConsulta().observacoes && (
-              <div className="mt-4">
-                <span className="font-medium text-purple-800">Observações:</span>
-                <p className="text-gray-600 mt-1">{getLastConsulta().observacoes}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Ações Rápidas */}
-      <Card className="border-2 border-purple-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5" />
-            Ações Rápidas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-3">
+          <div className="pt-4 border-t">
             <Button 
-              onClick={onOpenConsultaDialog}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+              onClick={handleConsultasClick}
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Registrar Consulta
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                const tab = document.querySelector('[value="fotos"]') as HTMLElement;
-                tab?.click();
-              }}
-              className="border-purple-500 text-purple-600 hover:bg-purple-50"
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              Adicionar Fotos
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                const tab = document.querySelector('[value="plano"]') as HTMLElement;
-                tab?.click();
-              }}
-              className="border-purple-500 text-purple-600 hover:bg-purple-50"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Editar Plano
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                const tab = document.querySelector('[value="historico"]') as HTMLElement;
-                tab?.click();
-              }}
-              className="border-purple-500 text-purple-600 hover:bg-purple-50"
-            >
-              <History className="w-4 h-4 mr-2" />
-              Ver Histórico
+              <Calendar className="w-4 h-4 mr-2" />
+              Consultas
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Anotações do Profissional */}
-      <Card className="border-2 border-purple-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-t-lg">
+      {/* Card de Status e Objetivos */}
+      <Card className="shadow-lg border-purple-200">
+        <CardHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-t-lg">
           <CardTitle className="flex items-center gap-2">
-            <StickyNote className="w-5 h-5" />
-            Anotações do Profissional
+            <Target className="w-5 h-5" />
+            Status e Objetivos
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <Textarea 
-            placeholder="Adicione suas anotações sobre o paciente..." 
-            value={anotacoes} 
-            onChange={(e) => setAnotacoes(e.target.value)}
-            className="min-h-32 border-2 border-purple-200 focus:border-purple-500 focus-visible:ring-purple-500" 
-          />
-          <Button 
-            onClick={handleSaveAnotacoes}
-            className="mt-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-          >
-            <StickyNote className="w-4 h-4 mr-2" />
-            Salvar Anotações
-          </Button>
+        <CardContent className="p-6 space-y-4">
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium text-gray-600">Objetivo Principal:</label>
+              <Badge className={`ml-2 ${getObjetivoColor(selectedPatient.lead.objetivo || 'Não definido')}`}>
+                {selectedPatient.lead.objetivo || 'Não definido'}
+              </Badge>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-600">Status:</label>
+              <Badge className={`ml-2 ${getStatusColor(selectedPatient.lead.status || 'Indefinido')}`}>
+                {selectedPatient.lead.status || 'Indefinido'}
+              </Badge>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-600 block mb-2">Progresso:</label>
+              <div className="flex items-center gap-2">
+                <Progress 
+                  value={selectedPatient.lead.progresso || 0} 
+                  className="flex-1"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {selectedPatient.lead.progresso || 0}%
+                </span>
+              </div>
+              <div className={`mt-1 h-1 rounded-full ${getProgressColor(selectedPatient.lead.progresso || 0)}`}></div>
+            </div>
+
+            {selectedPatient.lead.peso_inicial && (
+              <div className="flex items-center gap-2 text-gray-700">
+                <Scale className="w-4 h-4 text-gray-500" />
+                <span className="text-sm">Peso inicial: {selectedPatient.lead.peso_inicial} kg</span>
+              </div>
+            )}
+
+            {selectedPatient.lead.altura && (
+              <div className="flex items-center gap-2 text-gray-700">
+                <Ruler className="w-4 h-4 text-gray-500" />
+                <span className="text-sm">Altura: {selectedPatient.lead.altura} cm</span>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4 border-t">
+            <Button variant="outline" className="w-full border-purple-300 text-purple-600 hover:bg-purple-50">
+              <Edit className="w-4 h-4 mr-2" />
+              Editar Informações
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Card de Atividade Recente */}
+      <Card className="shadow-lg border-purple-200">
+        <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Atividade Recente
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Calendar className="w-4 h-4" />
+              <span className="text-sm">Cadastrado em:</span>
+              <span className="text-sm font-medium">
+                {format(new Date(selectedPatient.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+            </div>
+
+            {selectedPatient.lead.ultima_consulta && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span className="text-sm">Última consulta:</span>
+                <span className="text-sm font-medium">
+                  {format(new Date(selectedPatient.lead.ultima_consulta), 'dd/MM/yyyy', { locale: ptBR })}
+                </span>
+              </div>
+            )}
+
+            {selectedPatient.lead.proxima_consulta && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Clock className="w-4 h-4 text-blue-500" />
+                <span className="text-sm">Próxima consulta:</span>
+                <span className="text-sm font-medium">
+                  {format(new Date(selectedPatient.lead.proxima_consulta), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 text-gray-600">
+              <CheckCircle className="w-4 h-4 text-purple-500" />
+              <span className="text-sm">Consultas realizadas:</span>
+              <span className="text-sm font-medium">
+                {selectedPatient.lead.consultas_realizadas || 0}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-700 text-center">
+                <strong>Tempo de acompanhamento:</strong>
+                <br />
+                {Math.ceil((new Date().getTime() - new Date(selectedPatient.created_at).getTime()) / (1000 * 60 * 60 * 24))} dias
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
