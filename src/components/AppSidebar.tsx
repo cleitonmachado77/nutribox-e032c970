@@ -24,8 +24,8 @@ const items = [
     icon: Home,
   },
   {
-    title: "Leads",
-    url: "/dashboard/leads",
+    title: "Pacientes",
+    url: "/dashboard/pacientes",
     icon: UserCheck,
   },
   {
