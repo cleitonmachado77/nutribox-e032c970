@@ -132,6 +132,31 @@ export const useConsultations = (patientId: string) => {
     }
   };
 
+  const deleteConsultation = async (consultationId: string) => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      const { error } = await supabase
+        .from('consultations')
+        .delete()
+        .eq('id', consultationId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      // Se a consulta deletada era a atual, limpar currentConsultation
+      if (currentConsultation?.id === consultationId) {
+        setCurrentConsultation(null);
+      }
+      
+      await loadConsultations();
+    } catch (err: any) {
+      console.error('Error deleting consultation:', err);
+      setError(err.message);
+      throw err;
+    }
+  };
+
   const setActiveConsultation = (consultation: Consultation) => {
     setCurrentConsultation(consultation);
   };
@@ -149,6 +174,7 @@ export const useConsultations = (patientId: string) => {
     error,
     createNewConsultation,
     completeConsultation,
+    deleteConsultation,
     setActiveConsultation,
     loadConsultations,
     totalConsultations: consultations.length

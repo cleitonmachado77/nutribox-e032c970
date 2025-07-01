@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Plus, Eye, CheckCircle, Clock, FileText } from "lucide-react";
+import { Calendar, Plus, Eye, CheckCircle, Clock, FileText, Trash2 } from "lucide-react";
 import { useConsultations, type Consultation } from "@/hooks/useConsultations";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -31,6 +31,7 @@ export const ConsultationManager = ({
     totalConsultations, 
     createNewConsultation, 
     completeConsultation,
+    deleteConsultation,
     isLoading 
   } = useConsultations(patientId);
   
@@ -53,6 +54,15 @@ export const ConsultationManager = ({
       toast.success("Consulta concluída com sucesso!");
     } catch (error) {
       toast.error("Erro ao concluir consulta");
+    }
+  };
+
+  const handleDeleteConsultation = async (consultationId: string) => {
+    try {
+      await deleteConsultation(consultationId);
+      toast.success("Consulta excluída com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao excluir consulta");
     }
   };
 
@@ -192,6 +202,18 @@ export const ConsultationManager = ({
                           <CheckCircle className="w-3 h-3" />
                         </Button>
                       )}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteConsultation(consultation.id);
+                        }}
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                   
