@@ -81,7 +81,7 @@ const Dashboard = () => {
       value: count,
       color: cores[index % cores.length]
     }));
-  }, [pacientes?.length, pacientes?.map(p => p.lead?.objetivo).join(',')]);
+  }, [pacientes.length]);
 
   return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
