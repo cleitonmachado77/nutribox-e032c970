@@ -1,18 +1,19 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Lead } from '@/types/lead';
 
 export const useUpdateLead = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, leadData }: { id: string; leadData: Partial<Lead> }) => {
+    mutationFn: async ({ id, leadData }: { id: string; leadData: any }) => {
+      console.log('Updating lead:', id, 'with data:', leadData);
+      
       const { data, error } = await supabase
         .from('leads')
         .update({
           ...leadData,
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -23,11 +24,16 @@ export const useUpdateLead = () => {
         throw error;
       }
 
+      console.log('Lead updated successfully:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['pacientes'] });
       queryClient.invalidateQueries({ queryKey: ['leads-stats'] });
     },
+    onError: (error) => {
+      console.error('Error in update lead mutation:', error);
+    }
   });
 };

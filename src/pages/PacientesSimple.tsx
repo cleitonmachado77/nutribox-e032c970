@@ -9,11 +9,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Header } from "@/components/Header";
 import { usePacientes, Paciente } from "@/hooks/usePacientes";
+import { NewPacienteDialog } from "@/components/NewPacienteDialog";
+import { EditPacienteDialog } from "@/components/EditPacienteDialog";
+import { DeletePacienteDialog } from "@/components/DeletePacienteDialog";
 
 const PacientesSimple = () => {
   console.log('PacientesSimple component rendering...');
   
   const [searchTerm, setSearchTerm] = useState("");
+  const [newPacienteDialogOpen, setNewPacienteDialogOpen] = useState(false);
+  const [editPacienteDialogOpen, setEditPacienteDialogOpen] = useState(false);
+  const [deletePacienteDialogOpen, setDeletePacienteDialogOpen] = useState(false);
+  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
+  
   const { data: pacientesData, isLoading, error } = usePacientes();
 
   console.log('Query state:', { isLoading, error: error?.message, pacientesData });
@@ -64,6 +72,28 @@ const PacientesSimple = () => {
       (lead.telefone && lead.telefone.includes(searchTerm)) || 
       (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
   });
+
+  const handleViewPaciente = (paciente: Paciente) => {
+    console.log('Visualizar paciente:', paciente.lead.nome);
+    // Pode implementar navegação para tela de detalhes ou modal
+  };
+
+  const handleEditPaciente = (paciente: Paciente) => {
+    console.log('Editar paciente:', paciente.lead.nome);
+    setSelectedPaciente(paciente);
+    setEditPacienteDialogOpen(true);
+  };
+
+  const handleDeletePaciente = (paciente: Paciente) => {
+    console.log('Excluir paciente:', paciente.lead.nome);
+    setSelectedPaciente(paciente);
+    setDeletePacienteDialogOpen(true);
+  };
+
+  const handleDeleteSuccess = () => {
+    setSelectedPaciente(null);
+    setDeletePacienteDialogOpen(false);
+  };
 
   console.log('About to render, isLoading:', isLoading, 'error:', error);
 
@@ -129,7 +159,10 @@ const PacientesSimple = () => {
       {/* Busca */}
       <div className="flex gap-4 justify-between">
         <div className="flex gap-2">
-          <Button className="bg-purple-600 hover:bg-purple-700">
+          <Button 
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => setNewPacienteDialogOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Novo Paciente
           </Button>
@@ -208,13 +241,30 @@ const PacientesSimple = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewPaciente(paciente)}
+                            title="Visualizar"
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => handleEditPaciente(paciente)}
+                            title="Editar"
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeletePaciente(paciente)}
+                            title="Excluir"
+                          >
                             <Trash className="w-4 h-4" />
                           </Button>
                         </div>
@@ -227,6 +277,25 @@ const PacientesSimple = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <NewPacienteDialog 
+        open={newPacienteDialogOpen} 
+        onOpenChange={setNewPacienteDialogOpen} 
+      />
+      
+      <EditPacienteDialog 
+        open={editPacienteDialogOpen} 
+        onOpenChange={setEditPacienteDialogOpen}
+        paciente={selectedPaciente}
+      />
+      
+      <DeletePacienteDialog 
+        open={deletePacienteDialogOpen} 
+        onOpenChange={setDeletePacienteDialogOpen}
+        paciente={selectedPaciente}
+        onDeleteSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 };
