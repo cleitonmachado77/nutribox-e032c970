@@ -19,9 +19,8 @@ import { DeletePacienteDialog } from "@/components/DeletePacienteDialog";
 import { EditPacienteDialog } from "@/components/EditPacienteDialog";
 import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from "@/hooks/useLeadProgress";
 import { useArchiveLead } from "@/hooks/useArchiveLead";
-import { useUpdateLead } from "@/hooks/useUpdateLead";
+import { useUpdateLead } from "@/hooks/useLeads";
 import { useToast } from "@/hooks/use-toast";
-import { Lead } from "@/types/lead";
 
 const Pacientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +37,9 @@ const Pacientes = () => {
 
   // Work with pacientes data directly
   const pacientes = pacientesData || [];
+
+  console.log('Pacientes data:', pacientesData);
+  console.log('Total pacientes:', pacientes.length);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -82,17 +84,24 @@ const Pacientes = () => {
   const applyFilters = (pacientes: Paciente[], filters: FilterCriteria, searchTerm: string) => {
     return pacientes.filter(paciente => {
       const lead = paciente.lead;
+      
+      // Verificar se o lead existe antes de tentar acessar suas propriedades
+      if (!lead) {
+        console.warn('Paciente sem lead associado:', paciente);
+        return false;
+      }
+
       const matchesSearch = searchTerm === "" || 
-        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        lead.telefone.includes(searchTerm) || 
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+        (lead.nome && lead.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
+        (lead.telefone && lead.telefone.includes(searchTerm)) || 
+        (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase())) || 
+        (lead.cidade && lead.cidade.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesStatus = !filters.status || lead.status === filters.status;
-      const matchesEstado = !filters.estado || lead.estado?.toLowerCase().includes(filters.estado.toLowerCase());
+      const matchesEstado = !filters.estado || (lead.estado && lead.estado.toLowerCase().includes(filters.estado.toLowerCase()));
       const matchesTag = !filters.objetivo_tag_id || lead.objetivo_tag_id === filters.objetivo_tag_id;
-      const matchesProgressoMin = filters.progresso_min === undefined || lead.progresso >= filters.progresso_min;
-      const matchesProgressoMax = filters.progresso_max === undefined || lead.progresso <= filters.progresso_max;
+      const matchesProgressoMin = filters.progresso_min === undefined || (lead.progresso !== undefined && lead.progresso >= filters.progresso_min);
+      const matchesProgressoMax = filters.progresso_max === undefined || (lead.progresso !== undefined && lead.progresso <= filters.progresso_max);
       
       let matchesDataRange = true;
       if (filters.data_inicio || filters.data_fim) {
@@ -122,12 +131,14 @@ const Pacientes = () => {
   // Calcular estatísticas baseadas nos dados reais
   const totalPacientes = pacientes?.length || 0;
   const pacientesHoje = pacientes?.filter(paciente => {
+    if (!paciente.lead) return false;
     const hoje = new Date();
     const dataCadastro = new Date(paciente.lead.created_at);
     return dataCadastro.toDateString() === hoje.toDateString();
   }).length || 0;
   
   const pacientesOntem = pacientes?.filter(paciente => {
+    if (!paciente.lead) return false;
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
     const dataCadastro = new Date(paciente.lead.created_at);
@@ -135,6 +146,7 @@ const Pacientes = () => {
   }).length || 0;
   
   const pacientesUltimos7Dias = pacientes?.filter(paciente => {
+    if (!paciente.lead) return false;
     const seteDiasAtras = new Date();
     seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
     const dataCadastro = new Date(paciente.lead.created_at);
@@ -142,7 +154,13 @@ const Pacientes = () => {
   }).length || 0;
 
   const handleArchivePaciente = async (paciente: Paciente) => {
+    if (!paciente.lead) {
+      console.error('Paciente sem lead associado');
+      return;
+    }
+
     const isArchived = paciente.lead.status === 'arquivado';
+    
     try {
       await archivePaciente.mutateAsync({
         leadId: paciente.lead.id,
@@ -256,7 +274,7 @@ const Pacientes = () => {
               Importar
             </Button>
           </ImportPacientesDialog>
-          <ExportPacientesButton pacientes={filteredPacientes.map(p => p.lead)} />
+          <ExportPacientesButton pacientes={filteredPacientes} />
         </div>
 
         <div className="flex gap-2">
@@ -315,6 +333,13 @@ const Pacientes = () => {
               <TableBody>
                 {filteredPacientes.map((paciente) => {
                   const lead = paciente.lead;
+                  
+                  // Verificar se o lead existe
+                  if (!lead) {
+                    console.warn('Paciente sem lead:', paciente);
+                    return null;
+                  }
+
                   const progressoAtual = getLeadProgressByStatus(lead.status);
                   const progressColor = getProgressColor(progressoAtual);
                   const isArchived = lead.status === 'arquivado';
@@ -325,15 +350,15 @@ const Pacientes = () => {
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
                             {lead.foto_perfil && (
-                              <AvatarImage src={lead.foto_perfil} alt={lead.nome} className="object-cover" />
+                              <AvatarImage src={lead.foto_perfil} alt={lead.nome || 'Paciente'} className="object-cover" />
                             )}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
-                              {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                              {lead.nome ? lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'P'}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{lead.nome}</div>
-                            <div className="text-sm text-gray-500">{lead.telefone}</div>
+                            <div className="font-medium">{lead.nome || 'Nome não informado'}</div>
+                            <div className="text-sm text-gray-500">{lead.telefone || 'Telefone não informado'}</div>
                           </div>
                         </div>
                       </TableCell>
@@ -360,8 +385,8 @@ const Pacientes = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(lead.status)}>
-                          {formatStatusDisplay(lead.status)}
+                        <Badge className={getStatusColor(lead.status || 'inativo')}>
+                          {formatStatusDisplay(lead.status || 'inativo')}
                         </Badge>
                       </TableCell>
                       <TableCell>
