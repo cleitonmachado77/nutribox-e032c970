@@ -217,7 +217,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
 
   // Função para determinar se estamos no último passo
   const isLastStep = () => {
-    return currentStep === totalSteps || (currentStep === 3 && currentSubStep === "3c");
+    return currentStep === totalSteps;
   };
 
   const renderStepContent = () => {
@@ -450,7 +450,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
               disabled={isLastStep()}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
             >
-              {isLastStep() ? "Finalizar" : "Próximo"}
+              {isLastStep() ? "Concluído" : "Próximo"}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
