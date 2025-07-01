@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
+import Pacientes from "./pages/Pacientes";
 import Kanban from "./pages/Kanban";
 import Consultas from "./pages/Consultas";
 import Conversas from "./pages/Conversas";
@@ -38,6 +40,7 @@ const App = () => <QueryClientProvider client={queryClient}>
                         <Routes>
                           <Route index element={<Dashboard />} />
                           <Route path="leads" element={<Leads />} />
+                          <Route path="pacientes" element={<Pacientes />} />
                           <Route path="kanban" element={<Kanban />} />
                           <Route path="kanban-operacional" element={<KanbanOperacional />} />
                           <Route path="consultas" element={<Consultas />} />
