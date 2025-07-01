@@ -6,12 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useObjetivoTags } from "@/hooks/useObjetivoTags";
 import { useUpdateLead } from "@/hooks/useLeads";
 import { useToast } from "@/hooks/use-toast";
-import { Lead } from "@/hooks/useLeads";
+import { Paciente } from "@/hooks/usePacientes";
 
 interface EditPacienteTagDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  paciente: Lead | null;
+  paciente: Paciente | null;
 }
 
 export const EditPacienteTagDialog = ({ open, onOpenChange, paciente }: EditPacienteTagDialogProps) => {
@@ -25,7 +25,7 @@ export const EditPacienteTagDialog = ({ open, onOpenChange, paciente }: EditPaci
 
     try {
       await updatePaciente.mutateAsync({
-        id: paciente.id,
+        id: paciente.lead.id,
         leadData: { objetivo_tag_id: selectedTagId || null }
       });
 
@@ -55,8 +55,8 @@ export const EditPacienteTagDialog = ({ open, onOpenChange, paciente }: EditPaci
         <div className="space-y-4">
           {paciente && (
             <div className="text-center">
-              <p className="font-medium">{paciente.nome}</p>
-              <p className="text-sm text-gray-600">{paciente.telefone}</p>
+              <p className="font-medium">{paciente.lead.nome}</p>
+              <p className="text-sm text-gray-600">{paciente.lead.telefone}</p>
             </div>
           )}
 
