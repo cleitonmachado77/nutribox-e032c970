@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +5,7 @@ import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
+import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -22,6 +22,7 @@ export const ConsultasPatientProfile = ({
   onOpenConsultaDialog 
 }: ConsultasPatientProfileProps) => {
   const [showConsultationForm, setShowConsultationForm] = useState(false);
+  const [showConsultationHistory, setShowConsultationHistory] = useState(false);
 
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
@@ -56,12 +57,17 @@ export const ConsultasPatientProfile = ({
   };
 
   const handleConsultasClick = () => {
-    // Navegar de volta para a página de consultas
-    onBack();
+    setShowConsultationHistory(true);
   };
 
   const handleBackToProfile = () => {
     setShowConsultationForm(false);
+    setShowConsultationHistory(false);
+  };
+
+  const handleNovaConsulta = () => {
+    setShowConsultationForm(true);
+    setShowConsultationHistory(false);
   };
 
   // If the consultation form is active, show only it
@@ -80,6 +86,40 @@ export const ConsultasPatientProfile = ({
           <h1 className="text-2xl font-bold text-gray-800">Nova Consulta</h1>
         </div>
         <NewConsultationTab selectedPatient={selectedPatient} />
+      </div>
+    );
+  }
+
+  // If the consultation history is active, show only it
+  if (showConsultationHistory) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToProfile}
+            className="bg-white hover:bg-gray-50 border-purple-200"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Perfil
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-800">Histórico de Consultas - {selectedPatient.lead.nome}</h1>
+        </div>
+        
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-gray-600">
+            <p>Total de consultas realizadas: {selectedPatient.lead.consultas_realizadas || 0}</p>
+          </div>
+          <Button 
+            onClick={handleNovaConsulta}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Nova Consulta
+          </Button>
+        </div>
+        
+        <HistoricoConsultas pacienteId={selectedPatient.id} />
       </div>
     );
   }
