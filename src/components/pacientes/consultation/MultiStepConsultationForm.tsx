@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNewConsultation = (consultation: Consultation) => {
+    console.log('Nova consulta criada:', consultation);
     setShowConsultationManager(false);
     setCurrentStep(1);
     setCurrentSubStep("2a");
@@ -71,6 +73,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   const handleSelectConsultation = (consultation: Consultation) => {
+    console.log('Consulta selecionada:', consultation);
     setShowConsultationManager(false);
     setCurrentStep(1);
     setCurrentSubStep("2a");
@@ -188,7 +191,19 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   const renderStepContent = () => {
-    if (!currentConsultation) return null;
+    // Se não há consulta ativa, mostrar mensagem de carregamento
+    if (!currentConsultation) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando consulta...</p>
+          </div>
+        </div>
+      );
+    }
+
+    console.log('Renderizando step:', currentStep, 'subStep:', currentSubStep, 'consultationId:', currentConsultation.id);
 
     switch (currentStep) {
       case 1:
@@ -254,7 +269,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
           <CardTitle className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">
-                Consulta #{currentConsultation?.consultation_number} - {selectedPatient.lead.nome}
+                Consulta #{currentConsultation?.consultation_number || 'N/A'} - {selectedPatient.lead.nome}
               </h2>
               <p className="text-purple-100 text-sm mt-1">
                 Etapa {currentStep} de {totalSteps}: {currentStepInfo.title}
@@ -367,7 +382,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep === 1 && currentSubStep === "2a"}
+              disabled={currentStep === 1 && (currentStep !== 2 || currentSubStep === "2a")}
               className="flex items-center gap-2"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -386,10 +401,10 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
 
             <Button
               onClick={handleNext}
-              disabled={currentStep === totalSteps && currentSubStep === "3c"}
+              disabled={currentStep === totalSteps && (currentStep !== 3 || currentSubStep === "3c")}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
             >
-              {(currentStep === totalSteps && currentSubStep === "3c") ? "Finalizar" : "Próximo"}
+              {(currentStep === totalSteps) ? "Finalizar" : "Próximo"}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
