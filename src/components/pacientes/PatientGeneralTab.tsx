@@ -92,10 +92,12 @@ export const PatientGeneralTab = ({
               </div>
             )}
 
-            {selectedPatient.lead.endereco && (
+            {(selectedPatient.lead.cidade || selectedPatient.lead.estado) && (
               <div className="flex items-center gap-2 text-gray-700">
                 <MapPin className="w-4 h-4 text-gray-500" />
-                <span className="text-sm">{selectedPatient.lead.endereco}</span>
+                <span className="text-sm">
+                  {[selectedPatient.lead.cidade, selectedPatient.lead.estado].filter(Boolean).join(', ')}
+                </span>
               </div>
             )}
           </div>
@@ -150,10 +152,10 @@ export const PatientGeneralTab = ({
               <div className={`mt-1 h-1 rounded-full ${getProgressColor(selectedPatient.lead.progresso || 0)}`}></div>
             </div>
 
-            {selectedPatient.lead.peso_inicial && (
+            {selectedPatient.lead.peso && (
               <div className="flex items-center gap-2 text-gray-700">
                 <Scale className="w-4 h-4 text-gray-500" />
-                <span className="text-sm">Peso inicial: {selectedPatient.lead.peso_inicial} kg</span>
+                <span className="text-sm">Peso: {selectedPatient.lead.peso} kg</span>
               </div>
             )}
 
