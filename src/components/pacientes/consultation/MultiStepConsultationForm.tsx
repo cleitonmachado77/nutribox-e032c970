@@ -1,4 +1,5 @@
 
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -382,7 +383,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             <Button
               variant="outline"
               onClick={handlePrevious}
-              disabled={currentStep === 1 && (currentStep !== 2 || currentSubStep === "2a")}
+              disabled={currentStep === 1 && currentSubStep === "2a"}
               className="flex items-center gap-2"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -401,10 +402,10 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
 
             <Button
               onClick={handleNext}
-              disabled={currentStep === totalSteps && (currentStep !== 3 || currentSubStep === "3c")}
+              disabled={currentStep === totalSteps && currentSubStep === "3c"}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
             >
-              {(currentStep === totalSteps) ? "Finalizar" : "Próximo"}
+              {(currentStep === totalSteps && currentSubStep === "3c") ? "Finalizar" : "Próximo"}
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -413,3 +414,4 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
     </div>
   );
 };
+
