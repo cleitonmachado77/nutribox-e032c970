@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck, CheckCircle, Stethoscope } from "lucide-react";
 import { Header } from "@/components/Header";
-import { useLeadsStats } from "@/hooks/useLeads";
+import { useLeadsStats } from "@/hooks/useLeadsStats";
 import { usePacientes } from "@/hooks/usePacientes";
 
 const Dashboard = () => {
@@ -63,7 +63,7 @@ const Dashboard = () => {
 
   // Gerar dados dos objetivos dos pacientes baseado nos dados reais
   const objetivosPacientesData = React.useMemo(() => {
-    if (pacientes.length === 0) {
+    if (!pacientes || pacientes.length === 0) {
       return [];
     }
     
@@ -81,7 +81,7 @@ const Dashboard = () => {
       value: count,
       color: cores[index % cores.length]
     }));
-  }, [pacientes]);
+  }, [pacientes?.length, pacientes?.map(p => p.lead?.objetivo).join(',')]);
 
   return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
