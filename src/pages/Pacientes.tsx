@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewPacienteDialog } from "@/components/NewPacienteDialog";
 import { Header } from "@/components/Header";
-import { usePacientes } from "@/hooks/usePacientes";
+import { usePacientes, Paciente } from "@/hooks/usePacientes";
 import { format } from "date-fns";
 import { PacientesFilter, FilterCriteria } from "@/components/PacientesFilter";
 import { ImportPacientesDialog } from "@/components/ImportPacientesDialog";
@@ -26,9 +26,9 @@ import { Lead } from "@/types/lead";
 const Pacientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewPacienteDialog, setShowNewPacienteDialog] = useState(false);
-  const [selectedPacienteForTagEdit, setSelectedPacienteForTagEdit] = useState<Lead | null>(null);
-  const [selectedPacienteForDelete, setSelectedPacienteForDelete] = useState<Lead | null>(null);
-  const [selectedPacienteForEdit, setSelectedPacienteForEdit] = useState<Lead | null>(null);
+  const [selectedPacienteForTagEdit, setSelectedPacienteForTagEdit] = useState<Paciente | null>(null);
+  const [selectedPacienteForDelete, setSelectedPacienteForDelete] = useState<Paciente | null>(null);
+  const [selectedPacienteForEdit, setSelectedPacienteForEdit] = useState<Paciente | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   
   const { data: pacientesData, isLoading, error } = usePacientes();
@@ -36,8 +36,8 @@ const Pacientes = () => {
   const updatePaciente = useUpdateLead();
   const { toast } = useToast();
 
-  // Convert pacientes data to leads format for compatibility
-  const pacientes = pacientesData?.map(paciente => paciente.lead) || [];
+  // Work with pacientes data directly
+  const pacientes = pacientesData || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -79,23 +79,24 @@ const Pacientes = () => {
   };
 
   // Filtrar pacientes baseado no termo de busca
-  const applyFilters = (pacientes: Lead[], filters: FilterCriteria, searchTerm: string) => {
+  const applyFilters = (pacientes: Paciente[], filters: FilterCriteria, searchTerm: string) => {
     return pacientes.filter(paciente => {
+      const lead = paciente.lead;
       const matchesSearch = searchTerm === "" || 
-        paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        paciente.telefone.includes(searchTerm) || 
-        paciente.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        paciente.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
+        lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        lead.telefone.includes(searchTerm) || 
+        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        lead.cidade?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus = !filters.status || paciente.status === filters.status;
-      const matchesEstado = !filters.estado || paciente.estado?.toLowerCase().includes(filters.estado.toLowerCase());
-      const matchesTag = !filters.objetivo_tag_id || paciente.objetivo_tag_id === filters.objetivo_tag_id;
-      const matchesProgressoMin = filters.progresso_min === undefined || paciente.progresso >= filters.progresso_min;
-      const matchesProgressoMax = filters.progresso_max === undefined || paciente.progresso <= filters.progresso_max;
+      const matchesStatus = !filters.status || lead.status === filters.status;
+      const matchesEstado = !filters.estado || lead.estado?.toLowerCase().includes(filters.estado.toLowerCase());
+      const matchesTag = !filters.objetivo_tag_id || lead.objetivo_tag_id === filters.objetivo_tag_id;
+      const matchesProgressoMin = filters.progresso_min === undefined || lead.progresso >= filters.progresso_min;
+      const matchesProgressoMax = filters.progresso_max === undefined || lead.progresso <= filters.progresso_max;
       
       let matchesDataRange = true;
       if (filters.data_inicio || filters.data_fim) {
-        const pacienteDate = new Date(paciente.created_at);
+        const pacienteDate = new Date(lead.created_at);
         if (filters.data_inicio) {
           matchesDataRange = matchesDataRange && pacienteDate >= new Date(filters.data_inicio);
         }
@@ -122,29 +123,29 @@ const Pacientes = () => {
   const totalPacientes = pacientes?.length || 0;
   const pacientesHoje = pacientes?.filter(paciente => {
     const hoje = new Date();
-    const dataCadastro = new Date(paciente.created_at);
+    const dataCadastro = new Date(paciente.lead.created_at);
     return dataCadastro.toDateString() === hoje.toDateString();
   }).length || 0;
   
   const pacientesOntem = pacientes?.filter(paciente => {
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
-    const dataCadastro = new Date(paciente.created_at);
+    const dataCadastro = new Date(paciente.lead.created_at);
     return dataCadastro.toDateString() === ontem.toDateString();
   }).length || 0;
   
   const pacientesUltimos7Dias = pacientes?.filter(paciente => {
     const seteDiasAtras = new Date();
     seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
-    const dataCadastro = new Date(paciente.created_at);
+    const dataCadastro = new Date(paciente.lead.created_at);
     return dataCadastro >= seteDiasAtras;
   }).length || 0;
 
-  const handleArchivePaciente = async (paciente: Lead) => {
-    const isArchived = paciente.status === 'arquivado';
+  const handleArchivePaciente = async (paciente: Paciente) => {
+    const isArchived = paciente.lead.status === 'arquivado';
     try {
       await archivePaciente.mutateAsync({
-        leadId: paciente.id,
+        leadId: paciente.lead.id,
         archived: !isArchived
       });
       toast({
@@ -255,7 +256,7 @@ const Pacientes = () => {
               Importar
             </Button>
           </ImportPacientesDialog>
-          <ExportPacientesButton pacientes={filteredPacientes} />
+          <ExportPacientesButton pacientes={filteredPacientes.map(p => p.lead)} />
         </div>
 
         <div className="flex gap-2">
@@ -313,38 +314,39 @@ const Pacientes = () => {
               </TableHeader>
               <TableBody>
                 {filteredPacientes.map((paciente) => {
-                  const progressoAtual = getLeadProgressByStatus(paciente.status);
+                  const lead = paciente.lead;
+                  const progressoAtual = getLeadProgressByStatus(lead.status);
                   const progressColor = getProgressColor(progressoAtual);
-                  const isArchived = paciente.status === 'arquivado';
+                  const isArchived = lead.status === 'arquivado';
 
                   return (
                     <TableRow key={paciente.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            {paciente.foto_perfil && (
-                              <AvatarImage src={paciente.foto_perfil} alt={paciente.nome} className="object-cover" />
+                            {lead.foto_perfil && (
+                              <AvatarImage src={lead.foto_perfil} alt={lead.nome} className="object-cover" />
                             )}
                             <AvatarFallback className="bg-purple-100 text-purple-600">
-                              {paciente.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                              {lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{paciente.nome}</div>
-                            <div className="text-sm text-gray-500">{paciente.telefone}</div>
+                            <div className="font-medium">{lead.nome}</div>
+                            <div className="text-sm text-gray-500">{lead.telefone}</div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{paciente.estado || '-'}</TableCell>
+                      <TableCell>{lead.estado || '-'}</TableCell>
                       <TableCell>
-                        {paciente.objetivo_tag ? (
+                        {lead.objetivo_tag ? (
                           <Badge 
                             variant="secondary" 
                             className="text-white cursor-pointer"
-                            style={{ backgroundColor: paciente.objetivo_tag.cor }}
+                            style={{ backgroundColor: lead.objetivo_tag.cor }}
                             onClick={() => setSelectedPacienteForTagEdit(paciente)}
                           >
-                            {paciente.objetivo_tag.nome}
+                            {lead.objetivo_tag.nome}
                           </Badge>
                         ) : (
                           <Button 
@@ -358,8 +360,8 @@ const Pacientes = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(paciente.status)}>
-                          {formatStatusDisplay(paciente.status)}
+                        <Badge className={getStatusColor(lead.status)}>
+                          {formatStatusDisplay(lead.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -374,12 +376,12 @@ const Pacientes = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {format(new Date(paciente.created_at), 'dd/MM/yyyy')}
+                        {format(new Date(lead.created_at), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell>
-                        {paciente.proxima_consulta ? (
+                        {lead.proxima_consulta ? (
                           <span className="text-sm font-medium text-blue-600">
-                            {format(new Date(paciente.proxima_consulta), 'dd/MM/yyyy HH:mm')}
+                            {format(new Date(lead.proxima_consulta), 'dd/MM/yyyy HH:mm')}
                           </span>
                         ) : '-'}
                       </TableCell>
