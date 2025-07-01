@@ -20,25 +20,6 @@ const Dashboard = () => {
     error: pacientesError
   } = usePacientes();
 
-  // Mock data para motivos de abandono (pode ser implementado depois)
-  const motivosAbandonoData = [{
-    name: 'Preço',
-    value: 35,
-    color: '#FF9F43'
-  }, {
-    name: 'Falta de Tempo',
-    value: 25,
-    color: '#6C5CE7'
-  }, {
-    name: 'Sem Interesse',
-    value: 20,
-    color: '#A29BFE'
-  }, {
-    name: 'Problemas Pessoais',
-    value: 20,
-    color: '#FD79A8'
-  }];
-
   const isLoading = statsLoading || pacientesLoading;
   const error = statsError || pacientesError;
 
@@ -61,7 +42,6 @@ const Dashboard = () => {
 
   const {
     totalLeads = 0,
-    leadsQualificados = 0,
     consultasAgendadas = 0,
     consultasRealizadas = 0,
     estadosData = [],
@@ -69,16 +49,38 @@ const Dashboard = () => {
     monthlyData = []
   } = stats || {};
 
-  // Calcular estatísticas dos pacientes
+  // Calcular estatísticas dos pacientes com dados reais
   const totalPacientes = pacientes.length;
   const pacientesAtivos = pacientes.filter(p => p.status_tratamento === "ativo").length;
   const pacientesInativos = pacientes.filter(p => p.status_tratamento === "inativo").length;
 
-  // Calcular taxas de conversão atualizadas
+  // Calcular taxas de conversão com dados reais
   const taxaConversaoLeadPaciente = totalLeads > 0 ? ((totalPacientes / totalLeads) * 100).toFixed(1) : '0.0';
   const taxaAgendamento = totalPacientes > 0 ? ((consultasAgendadas / totalPacientes) * 100).toFixed(1) : '0.0';
   const taxaRealizacao = consultasAgendadas > 0 ? ((consultasRealizadas / consultasAgendadas) * 100).toFixed(1) : '0.0';
   const taxaConversaoTotal = totalLeads > 0 ? ((consultasRealizadas / totalLeads) * 100).toFixed(1) : '0.0';
+
+  // Gerar dados dos objetivos dos pacientes baseado nos dados reais
+  const objetivosPacientesData = React.useMemo(() => {
+    if (pacientes.length === 0) {
+      return [];
+    }
+    
+    const objetivosCount: { [key: string]: number } = {};
+    
+    pacientes.forEach(paciente => {
+      const objetivo = paciente.lead?.objetivo || 'Não informado';
+      objetivosCount[objetivo] = (objetivosCount[objetivo] || 0) + 1;
+    });
+
+    const cores = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'];
+    
+    return Object.entries(objetivosCount).map(([objetivo, count], index) => ({
+      name: objetivo,
+      value: count,
+      color: cores[index % cores.length]
+    }));
+  }, [pacientes]);
 
   return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
@@ -92,7 +94,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{totalLeads}</div>
-            <p className="text-xs text-cyan-200">Leads cadastrados</p>
+            <p className="text-xs text-cyan-200">
+              {totalLeads === 0 ? "Nenhum lead cadastrado" : "Leads cadastrados"}
+            </p>
           </CardContent>
         </Card>
 
@@ -103,7 +107,12 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{totalPacientes}</div>
-            <p className="text-xs text-teal-200">{pacientesAtivos} ativos, {pacientesInativos} inativos</p>
+            <p className="text-xs text-teal-200">
+              {totalPacientes === 0 
+                ? "Nenhum paciente cadastrado" 
+                : `${pacientesAtivos} ativos, ${pacientesInativos} inativos`
+              }
+            </p>
           </CardContent>
         </Card>
 
@@ -114,7 +123,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{consultasAgendadas}</div>
-            <p className="text-xs text-amber-200">Próximas consultas</p>
+            <p className="text-xs text-amber-200">
+              {consultasAgendadas === 0 ? "Nenhuma consulta agendada" : "Próximas consultas"}
+            </p>
           </CardContent>
         </Card>
 
@@ -125,12 +136,14 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{consultasRealizadas}</div>
-            <p className="text-xs text-rose-200">Últimas consultas</p>
+            <p className="text-xs text-rose-200">
+              {consultasRealizadas === 0 ? "Nenhuma consulta realizada" : "Consultas concluídas"}
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Taxas de Conversão Atualizadas */}
+      {/* Taxas de Conversão */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-lime-500 to-lime-600 border-none text-white">
           <CardHeader>
@@ -196,23 +209,32 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Gráfico de Pizza - Objetivos dos Pacientes */}
+        {/* Gráfico de Pizza - Objetivos dos Pacientes baseado em dados reais */}
         <Card>
           <CardHeader>
             <CardTitle>Objetivos dos Pacientes</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              {objetivosData.length > 0 ? <PieChart>
-                  <Pie data={objetivosData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({
-                name,
-                percent
-              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
-                    {objetivosData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+              {objetivosPacientesData.length > 0 ? <PieChart>
+                  <Pie 
+                    data={objetivosPacientesData} 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius={100} 
+                    dataKey="value" 
+                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {objetivosPacientesData.map((entry, index) => 
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    )}
                   </Pie>
                   <Tooltip />
                 </PieChart> : <div className="flex items-center justify-center h-full text-gray-500">
-                  Nenhum dado disponível
+                  {totalPacientes === 0 
+                    ? "Cadastre pacientes para visualizar seus objetivos" 
+                    : "Nenhum objetivo informado pelos pacientes"
+                  }
                 </div>}
             </ResponsiveContainer>
           </CardContent>
@@ -245,22 +267,32 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Gráfico de Pizza - Motivos de Abandono */}
+        {/* Gráfico de Pizza - Distribuição de Status dos Pacientes */}
         <Card>
           <CardHeader>
-            <CardTitle>Principais Motivos de Abandono</CardTitle>
+            <CardTitle>Status dos Pacientes</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={motivosAbandonoData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({
-                name,
-                percent
-              }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
-                  {motivosAbandonoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+              {totalPacientes > 0 ? <PieChart>
+                  <Pie 
+                    data={[
+                      { name: 'Ativos', value: pacientesAtivos, color: '#10B981' },
+                      { name: 'Inativos', value: pacientesInativos, color: '#EF4444' }
+                    ]} 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius={100} 
+                    dataKey="value" 
+                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    <Cell fill="#10B981" />
+                    <Cell fill="#EF4444" />
+                  </Pie>
+                  <Tooltip />
+                </PieChart> : <div className="flex items-center justify-center h-full text-gray-500">
+                  Cadastre pacientes para visualizar o status
+                </div>}
             </ResponsiveContainer>
           </CardContent>
         </Card>
