@@ -5,7 +5,7 @@ import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
-import { PatientHistoryTab } from "@/components/pacientes/PatientHistoryTab";
+import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -57,7 +57,7 @@ export const ConsultasPatientProfile = ({
   };
 
   const handleConsultasClick = () => {
-    // Usar o componente PatientHistoryTab que é o mesmo usado pelo botão "Ver Consultas"
+    // Navegar diretamente para a página de histórico de consultas
     setShowConsultationHistory(true);
   };
 
@@ -91,26 +91,62 @@ export const ConsultasPatientProfile = ({
     );
   }
 
-  // If the consultation history is active, show the PatientHistoryTab
+  // If the consultation history is active, show the consultation history page
   if (showConsultationHistory) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button 
-            variant="outline" 
-            onClick={handleBackToProfile}
-            className="bg-white hover:bg-gray-50 border-purple-200"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Perfil
-          </Button>
-          <h1 className="text-2xl font-bold text-gray-800">Histórico de Consultas - {selectedPatient.lead.nome}</h1>
+        {/* Header similar to the image */}
+        <div className="bg-gradient-to-r from-purple-500 to-violet-600 text-white p-6 rounded-lg mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={handleBackToProfile}
+                className="bg-white/20 hover:bg-white/30 border-white/30 text-white"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <Calendar className="h-6 w-6" />
+                  Consultas - {selectedPatient.lead.nome}
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="bg-white/20 px-2 py-1 rounded text-sm">
+                    {selectedPatient.lead.consultas_realizadas || 0} consultas
+                  </span>
+                </div>
+              </div>
+            </div>
+            <Button 
+              onClick={handleNovaConsulta}
+              className="bg-white/20 hover:bg-white/30 border border-white/30"
+            >
+              <span className="mr-2">+</span>
+              Nova Consulta
+            </Button>
+          </div>
         </div>
-        
-        <PatientHistoryTab 
-          selectedPatient={selectedPatient}
-          onOpenConsultaDialog={handleNovaConsulta}
-        />
+
+        {/* Content */}
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="p-6 border-b">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-gray-800">Histórico de Consultas</h3>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Consulta Ativa:</span>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  #{selectedPatient.lead.consultas_realizadas || 0}
+                </Badge>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <HistoricoConsultas pacienteId={selectedPatient.id} />
+          </div>
+        </div>
       </div>
     );
   }
