@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Upload, Download, Users, UserPlus, Calendar, Eye, Tag, Trash, Edit, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Search, Upload, Users, UserPlus, Calendar, Eye, Tag, Trash, Edit, Archive, ArchiveRestore } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewPacienteDialog } from "@/components/NewPacienteDialog";
@@ -23,6 +22,8 @@ import { useUpdateLead } from "@/hooks/useLeads";
 import { useToast } from "@/hooks/use-toast";
 
 const Pacientes = () => {
+  console.log('Pacientes component rendering...');
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [showNewPacienteDialog, setShowNewPacienteDialog] = useState(false);
   const [selectedPacienteForTagEdit, setSelectedPacienteForTagEdit] = useState<Paciente | null>(null);
@@ -34,6 +35,8 @@ const Pacientes = () => {
   const archivePaciente = useArchiveLead();
   const updatePaciente = useUpdateLead();
   const { toast } = useToast();
+
+  console.log('Query state:', { isLoading, error: error?.message, pacientesData });
 
   // Work with pacientes data directly
   const pacientes = pacientesData || [];
@@ -80,7 +83,6 @@ const Pacientes = () => {
     }
   };
 
-  // Filtrar pacientes baseado no termo de busca
   const applyFilters = (pacientes: Paciente[], filters: FilterCriteria, searchTerm: string) => {
     return pacientes.filter(paciente => {
       const lead = paciente.lead;
@@ -128,7 +130,6 @@ const Pacientes = () => {
     setActiveFilters({});
   };
 
-  // Calcular estatísticas baseadas nos dados reais
   const totalPacientes = pacientes?.length || 0;
   const pacientesHoje = pacientes?.filter(paciente => {
     if (!paciente.lead) return false;
@@ -180,7 +181,10 @@ const Pacientes = () => {
     }
   };
 
+  console.log('About to render, isLoading:', isLoading, 'error:', error);
+
   if (isLoading) {
+    console.log('Rendering loading state...');
     return (
       <div className="p-6 space-y-6">
         <Header title="Pacientes" description="Gerencie seus pacientes" />
@@ -192,6 +196,7 @@ const Pacientes = () => {
   }
 
   if (error) {
+    console.log('Rendering error state:', error);
     return (
       <div className="p-6 space-y-6">
         <Header title="Pacientes" description="Gerencie seus pacientes" />
@@ -202,8 +207,10 @@ const Pacientes = () => {
     );
   }
 
+  console.log('Rendering main content...');
+
   return (
-    <div className="p-6 space-y-6 bg-indigo-950">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <Header title="Pacientes" description="Gerencie seus pacientes" />
 
       {/* Estatísticas */}
@@ -340,7 +347,7 @@ const Pacientes = () => {
                     return null;
                   }
 
-                  const progressoAtual = getLeadProgressByStatus(lead.status);
+                  const progressoAtual = getLeadProgressByStatus(lead.status || 'novo');
                   const progressColor = getProgressColor(progressoAtual);
                   const isArchived = lead.status === 'arquivado';
 
