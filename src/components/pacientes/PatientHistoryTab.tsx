@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 import { Paciente } from "@/hooks/usePacientes";
 
@@ -18,8 +18,8 @@ export const PatientHistoryTab = ({ selectedPatient, onOpenConsultaDialog }: Pat
           onClick={onOpenConsultaDialog}
           className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
         >
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Nova Consulta
+          <Calendar className="w-4 h-4 mr-2" />
+          Consultas
         </Button>
       </div>
       <HistoricoConsultas pacienteId={selectedPatient.id} />
