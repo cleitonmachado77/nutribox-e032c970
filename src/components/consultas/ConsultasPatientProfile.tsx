@@ -63,7 +63,7 @@ export const ConsultasPatientProfile = ({
     setShowConsultationForm(false);
   };
 
-  // Se o formulário de consulta está ativo, mostrar apenas ele
+  // If the consultation form is active, show only it
   if (showConsultationForm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
@@ -131,7 +131,7 @@ export const ConsultasPatientProfile = ({
                   onClick={handleNovaConsulta}
                   className="bg-purple-500 hover:bg-purple-600 text-white"
                 >
-                  Nova Consulta
+                  Consultas
                 </Button>
                 <Button variant="outline" className="border-purple-200">
                   Perfil do Paciente
