@@ -55,8 +55,9 @@ export const ConsultasPatientProfile = ({
     return "bg-gradient-to-r from-rose-400 to-red-500";
   };
 
-  const handleNovaConsulta = () => {
-    setShowConsultationForm(true);
+  const handleConsultasClick = () => {
+    // Navegar de volta para a página de consultas
+    onBack();
   };
 
   const handleBackToProfile = () => {
@@ -128,7 +129,7 @@ export const ConsultasPatientProfile = ({
 
               <div className="flex gap-2">
                 <Button 
-                  onClick={handleNovaConsulta}
+                  onClick={handleConsultasClick}
                   className="bg-purple-500 hover:bg-purple-600 text-white"
                 >
                   Consultas
