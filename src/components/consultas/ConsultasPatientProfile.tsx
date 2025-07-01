@@ -5,7 +5,7 @@ import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
-import { HistoricoConsultas } from "@/components/HistoricoConsultas";
+import { PatientHistoryTab } from "@/components/pacientes/PatientHistoryTab";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -57,6 +57,7 @@ export const ConsultasPatientProfile = ({
   };
 
   const handleConsultasClick = () => {
+    // Usar o componente PatientHistoryTab que é o mesmo usado pelo botão "Ver Consultas"
     setShowConsultationHistory(true);
   };
 
@@ -90,7 +91,7 @@ export const ConsultasPatientProfile = ({
     );
   }
 
-  // If the consultation history is active, show only it
+  // If the consultation history is active, show the PatientHistoryTab
   if (showConsultationHistory) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
@@ -106,20 +107,10 @@ export const ConsultasPatientProfile = ({
           <h1 className="text-2xl font-bold text-gray-800">Histórico de Consultas - {selectedPatient.lead.nome}</h1>
         </div>
         
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-gray-600">
-            <p>Total de consultas realizadas: {selectedPatient.lead.consultas_realizadas || 0}</p>
-          </div>
-          <Button 
-            onClick={handleNovaConsulta}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Nova Consulta
-          </Button>
-        </div>
-        
-        <HistoricoConsultas pacienteId={selectedPatient.id} />
+        <PatientHistoryTab 
+          selectedPatient={selectedPatient}
+          onOpenConsultaDialog={handleNovaConsulta}
+        />
       </div>
     );
   }
