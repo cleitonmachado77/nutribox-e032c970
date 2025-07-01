@@ -9,8 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NewPacienteDialog } from "@/components/NewPacienteDialog";
 import { Header } from "@/components/Header";
-import { useLeads } from "@/hooks/useLeads";
-import { Lead } from "@/types/lead";
+import { usePacientes } from "@/hooks/usePacientes";
 import { format } from "date-fns";
 import { PacientesFilter, FilterCriteria } from "@/components/PacientesFilter";
 import { ImportPacientesDialog } from "@/components/ImportPacientesDialog";
@@ -22,6 +21,7 @@ import { getLeadProgressByStatus, getStatusDisplayName, getProgressColor } from 
 import { useArchiveLead } from "@/hooks/useArchiveLead";
 import { useUpdateLead } from "@/hooks/useUpdateLead";
 import { useToast } from "@/hooks/use-toast";
+import { Lead } from "@/types/lead";
 
 const Pacientes = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,10 +31,13 @@ const Pacientes = () => {
   const [selectedPacienteForEdit, setSelectedPacienteForEdit] = useState<Lead | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterCriteria>({});
   
-  const { data: pacientes, isLoading, error } = useLeads();
+  const { data: pacientesData, isLoading, error } = usePacientes();
   const archivePaciente = useArchiveLead();
   const updatePaciente = useUpdateLead();
   const { toast } = useToast();
+
+  // Convert pacientes data to leads format for compatibility
+  const pacientes = pacientesData?.map(paciente => paciente.lead) || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
