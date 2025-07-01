@@ -61,8 +61,8 @@ const Dashboard = () => {
   const taxaRealizacao = consultasAgendadas > 0 ? ((consultasRealizadas / consultasAgendadas) * 100).toFixed(1) : '0.0';
   const taxaConversaoTotal = totalLeads > 0 ? ((consultasRealizadas / totalLeads) * 100).toFixed(1) : '0.0';
 
-  // Gerar dados dos objetivos dos pacientes baseado nos dados reais
-  const objetivosPacientesData = React.useMemo(() => {
+  // Gerar dados dos objetivos dos pacientes baseado nos dados reais (sem useMemo)
+  const objetivosPacientesData = (() => {
     if (!pacientes || pacientes.length === 0) {
       return [];
     }
@@ -81,7 +81,7 @@ const Dashboard = () => {
       value: count,
       color: cores[index % cores.length]
     }));
-  }, [pacientes.length]);
+  })();
 
   return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
