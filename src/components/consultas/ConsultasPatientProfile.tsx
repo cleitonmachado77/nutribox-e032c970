@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,8 +58,8 @@ export const ConsultasPatientProfile = ({
   };
 
   const handleConsultasClick = () => {
-    // Navegar diretamente para a página de histórico de consultas
-    setShowConsultationHistory(true);
+    // Navegar diretamente para o formulário de nova consulta
+    setShowConsultationForm(true);
   };
 
   const handleBackToProfile = () => {
