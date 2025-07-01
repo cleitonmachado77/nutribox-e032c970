@@ -1,15 +1,24 @@
+
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck, CheckCircle } from "lucide-react";
+import { Users, UserPlus, Calendar, TrendingUp, MessageCircle, UserCheck, CheckCircle, Stethoscope } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useLeadsStats } from "@/hooks/useLeads";
+import { usePacientes } from "@/hooks/usePacientes";
+
 const Dashboard = () => {
   const {
     data: stats,
-    isLoading,
-    error
+    isLoading: statsLoading,
+    error: statsError
   } = useLeadsStats();
+
+  const {
+    data: pacientes = [],
+    isLoading: pacientesLoading,
+    error: pacientesError
+  } = usePacientes();
 
   // Mock data para motivos de abandono (pode ser implementado depois)
   const motivosAbandonoData = [{
@@ -29,6 +38,10 @@ const Dashboard = () => {
     value: 20,
     color: '#FD79A8'
   }];
+
+  const isLoading = statsLoading || pacientesLoading;
+  const error = statsError || pacientesError;
+
   if (isLoading) {
     return <div className="p-6 space-y-6">
         <Header title="Dashboard" description="Visão geral do seu negócio" />
@@ -45,6 +58,7 @@ const Dashboard = () => {
         </div>
       </div>;
   }
+
   const {
     totalLeads = 0,
     leadsQualificados = 0,
@@ -55,15 +69,21 @@ const Dashboard = () => {
     monthlyData = []
   } = stats || {};
 
-  // Calcular taxas de conversão
-  const taxaQualificacao = totalLeads > 0 ? (leadsQualificados / totalLeads * 100).toFixed(1) : '0.0';
-  const taxaAgendamento = leadsQualificados > 0 ? (consultasAgendadas / leadsQualificados * 100).toFixed(1) : '0.0';
-  const taxaRealizacao = consultasAgendadas > 0 ? (consultasRealizadas / consultasAgendadas * 100).toFixed(1) : '0.0';
-  const taxaConversaoTotal = totalLeads > 0 ? (consultasRealizadas / totalLeads * 100).toFixed(1) : '0.0';
+  // Calcular estatísticas dos pacientes
+  const totalPacientes = pacientes.length;
+  const pacientesAtivos = pacientes.filter(p => p.status_tratamento === "ativo").length;
+  const pacientesInativos = pacientes.filter(p => p.status_tratamento === "inativo").length;
+
+  // Calcular taxas de conversão atualizadas
+  const taxaConversaoLeadPaciente = totalLeads > 0 ? ((totalPacientes / totalLeads) * 100).toFixed(1) : '0.0';
+  const taxaAgendamento = totalPacientes > 0 ? ((consultasAgendadas / totalPacientes) * 100).toFixed(1) : '0.0';
+  const taxaRealizacao = consultasAgendadas > 0 ? ((consultasRealizadas / consultasAgendadas) * 100).toFixed(1) : '0.0';
+  const taxaConversaoTotal = totalLeads > 0 ? ((consultasRealizadas / totalLeads) * 100).toFixed(1) : '0.0';
+
   return <div className="p-6 space-y-6 bg-indigo-950">
       <Header title="Dashboard" description="Visão geral do seu negócio" />
       
-      {/* Métricas de Leads */}
+      {/* Métricas Principais */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -72,18 +92,18 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">{totalLeads}</div>
-            <p className="text-xs text-cyan-200">Total de leads cadastrados</p>
+            <p className="text-xs text-cyan-200">Leads cadastrados</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-teal-500 to-teal-600 border-none text-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-teal-100">Leads Qualificados</CardTitle>
-            <UserCheck className="h-4 w-4 text-teal-200" />
+            <CardTitle className="text-sm font-medium text-teal-100">Pacientes</CardTitle>
+            <Stethoscope className="h-4 w-4 text-teal-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{leadsQualificados}</div>
-            <p className="text-xs text-teal-200">Leads em acompanhamento</p>
+            <div className="text-2xl font-bold text-white">{totalPacientes}</div>
+            <p className="text-xs text-teal-200">{pacientesAtivos} ativos, {pacientesInativos} inativos</p>
           </CardContent>
         </Card>
 
@@ -110,21 +130,21 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Conversões */}
+      {/* Taxas de Conversão Atualizadas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-lime-500 to-lime-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg text-lime-100">Leads → Qualificados</CardTitle>
+            <CardTitle className="text-lg text-lime-100">Leads → Pacientes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{taxaQualificacao}%</div>
-            <p className="text-sm text-lime-200">Taxa de qualificação</p>
+            <div className="text-3xl font-bold text-white">{taxaConversaoLeadPaciente}%</div>
+            <p className="text-sm text-lime-200">Taxa de conversão</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-pink-500 to-pink-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg text-pink-100">Qualificados → Agendados</CardTitle>
+            <CardTitle className="text-lg text-pink-100">Pacientes → Agendados</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-white">{taxaAgendamento}%</div>
@@ -144,21 +164,21 @@ const Dashboard = () => {
 
         <Card className="bg-gradient-to-br from-violet-500 to-violet-600 border-none text-white">
           <CardHeader>
-            <CardTitle className="text-lg text-violet-100">Leads → Realizados</CardTitle>
+            <CardTitle className="text-lg text-violet-100">Conversão Total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-white">{taxaConversaoTotal}%</div>
-            <p className="text-sm text-violet-200">Taxa de conversão total</p>
+            <p className="text-sm text-violet-200">Leads → Consultas realizadas</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Barras - Leads vs Consultas */}
+        {/* Gráfico de Barras - Evolução Mensal */}
         <Card>
           <CardHeader>
-            <CardTitle>Leads x Consultas (Últimos 6 meses)</CardTitle>
+            <CardTitle>Evolução Mensal (Últimos 6 meses)</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -176,7 +196,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Gráfico de Pizza - Objetivos */}
+        {/* Gráfico de Pizza - Objetivos dos Pacientes */}
         <Card>
           <CardHeader>
             <CardTitle>Objetivos dos Pacientes</CardTitle>
@@ -198,7 +218,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Gráfico de Barras Horizontal - Estados */}
+        {/* Gráfico de Barras - Pacientes por Estado */}
         <Card>
           <CardHeader>
             <CardTitle>Pacientes por Estado</CardTitle>
@@ -228,7 +248,7 @@ const Dashboard = () => {
         {/* Gráfico de Pizza - Motivos de Abandono */}
         <Card>
           <CardHeader>
-            <CardTitle>Motivos de Perda de Leads</CardTitle>
+            <CardTitle>Principais Motivos de Abandono</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -247,4 +267,5 @@ const Dashboard = () => {
       </div>
     </div>;
 };
+
 export default Dashboard;
