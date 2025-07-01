@@ -57,32 +57,11 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const [currentSubStep, setCurrentSubStep] = useState<string>("2a");
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [showConsultationManager, setShowConsultationManager] = useState(true);
-  const [isCreatingConsultation, setIsCreatingConsultation] = useState(false);
   
   const { currentConsultation, totalConsultations, createNewConsultation, isLoading } = useConsultations(selectedPatient.id);
 
   const totalSteps = steps.length;
   const progress = (currentStep / totalSteps) * 100;
-
-  // Criar consulta automaticamente se não existir nenhuma
-  useEffect(() => {
-    const initializeConsultation = async () => {
-      if (!isLoading && !currentConsultation && totalConsultations === 0 && !isCreatingConsultation) {
-        console.log('Criando consulta automaticamente para paciente novo');
-        setIsCreatingConsultation(true);
-        try {
-          await createNewConsultation();
-          setShowConsultationManager(false);
-        } catch (error) {
-          console.error('Erro ao criar consulta automaticamente:', error);
-        } finally {
-          setIsCreatingConsultation(false);
-        }
-      }
-    };
-
-    initializeConsultation();
-  }, [isLoading, currentConsultation, totalConsultations, createNewConsultation, isCreatingConsultation]);
 
   const handleNewConsultation = (consultation: Consultation) => {
     console.log('Nova consulta criada:', consultation);
@@ -221,15 +200,13 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   const renderStepContent = () => {
-    // Se está carregando ou criando consulta, mostrar loading
-    if (isLoading || isCreatingConsultation) {
+    // Se está carregando, mostrar loading
+    if (isLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">
-              {isCreatingConsultation ? 'Criando nova consulta...' : 'Carregando consulta...'}
-            </p>
+            <p className="text-gray-600">Carregando consulta...</p>
           </div>
         </div>
       );
