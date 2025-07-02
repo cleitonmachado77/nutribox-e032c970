@@ -49,6 +49,11 @@ const items = [
     icon: Brain,
   },
   {
+    title: "Painel Paciente",
+    url: "/dashboard/painel-paciente",
+    icon: Users,
+  },
+  {
     title: "Configurações",
     url: "/dashboard/settings",
     icon: Settings,
