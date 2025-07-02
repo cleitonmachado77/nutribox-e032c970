@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
-import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
+import { useTwilioAPI } from "@/hooks/useTwilioAPI";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { usePacientes } from "@/hooks/usePacientes";
-import { WhatsAppQRModal } from "@/components/WhatsAppQRModal";
+import { TwilioNumberSetup } from "@/components/TwilioNumberSetup";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,23 +67,18 @@ export default function Conversas() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
+    userNumber,
     conversations,
     loading,
     loadMessages,
     sendMessage,
-    markAsRead,
-    checkConnection,
-    disconnect
-  } = useWhatsAppAPI();
+    markAsRead
+  } = useTwilioAPI();
 
-  // Check connection status on mount
+  // Set connection status based on userNumber
   useEffect(() => {
-    const checkStatus = async () => {
-      const connected = await checkConnection();
-      setIsConnected(connected);
-    };
-    checkStatus();
-  }, []);
+    setIsConnected(!!userNumber?.is_active);
+  }, [userNumber]);
 
   // Scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -232,7 +227,7 @@ export default function Conversas() {
   };
 
   // Check if WhatsApp is configured
-  if (!userSettings?.whatsapp_business_number) {
+  if (!userNumber) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <Header 
@@ -244,13 +239,11 @@ export default function Conversas() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between w-full">
             <span>
-              Configure seu número do WhatsApp Business nas configurações para começar a usar as conversas.
+              Configure seu WhatsApp Business para começar a usar as conversas. Um número será provisionado automaticamente.
             </span>
-            <Button asChild size="sm">
-              <Link to="/dashboard/settings">
-                <Settings className="w-4 h-4 mr-2" />
-                Configurar
-              </Link>
+            <Button size="sm" onClick={() => setShowQRModal(true)}>
+              <Phone className="w-4 h-4 mr-2" />
+              Configurar WhatsApp
             </Button>
           </AlertDescription>
         </Alert>
@@ -276,7 +269,10 @@ export default function Conversas() {
                   WhatsApp Business {isConnected ? 'Conectado' : 'Desconectado'}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Número: {userSettings.whatsapp_business_number}
+                  Número: {userNumber?.twilio_phone_number}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {userNumber?.consultorio_nome}
                 </p>
               </div>
             </div>
@@ -571,8 +567,8 @@ export default function Conversas() {
         </Card>
       </div>
 
-      {/* WhatsApp QR Modal */}
-      <WhatsAppQRModal 
+      {/* Twilio Number Setup Modal */}
+      <TwilioNumberSetup 
         open={showQRModal} 
         onOpenChange={setShowQRModal} 
       />

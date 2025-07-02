@@ -1178,6 +1178,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_twilio_numbers: {
+        Row: {
+          cidade: string | null
+          consultorio_nome: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          twilio_phone_number: string
+          twilio_phone_sid: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cidade?: string | null
+          consultorio_nome: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          twilio_phone_number: string
+          twilio_phone_sid: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cidade?: string | null
+          consultorio_nome?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          twilio_phone_number?: string
+          twilio_phone_sid?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       Webhook: {
         Row: {
           createdAt: string | null
