@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { usePacientes } from "@/hooks/usePacientes";
+import { WhatsAppQRModal } from "@/components/WhatsAppQRModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,10 @@ import {
   CheckCircle2,
   Clock,
   Users,
-  UserPlus
+  UserPlus,
+  QrCode,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
@@ -58,6 +62,8 @@ export default function Conversas() {
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchPacientes, setSearchPacientes] = useState("");
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -65,8 +71,19 @@ export default function Conversas() {
     loading,
     loadMessages,
     sendMessage,
-    markAsRead
+    markAsRead,
+    checkConnection,
+    disconnect
   } = useWhatsAppAPI();
+
+  // Check connection status on mount
+  useEffect(() => {
+    const checkStatus = async () => {
+      const connected = await checkConnection();
+      setIsConnected(connected);
+    };
+    checkStatus();
+  }, []);
 
   // Scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -253,18 +270,39 @@ export default function Conversas() {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
               <div>
-                <p className="font-medium">WhatsApp Business Conectado</p>
+                <p className="font-medium">
+                  WhatsApp Business {isConnected ? 'Conectado' : 'Desconectado'}
+                </p>
                 <p className="text-sm text-gray-600">
                   Número: {userSettings.whatsapp_business_number}
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="text-green-600 border-green-200">
-              <CheckCircle2 className="w-3 h-3 mr-1" />
-              Online
-            </Badge>
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <Badge variant="outline" className="text-green-600 border-green-200">
+                  <Wifi className="w-3 h-3 mr-1" />
+                  Online
+                </Badge>
+              ) : (
+                <>
+                  <Badge variant="outline" className="text-red-600 border-red-200">
+                    <WifiOff className="w-3 h-3 mr-1" />
+                    Offline
+                  </Badge>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowQRModal(true)}
+                    className="bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Conectar
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -532,6 +570,12 @@ export default function Conversas() {
           )}
         </Card>
       </div>
+
+      {/* WhatsApp QR Modal */}
+      <WhatsAppQRModal 
+        open={showQRModal} 
+        onOpenChange={setShowQRModal} 
+      />
     </div>
   );
 }
