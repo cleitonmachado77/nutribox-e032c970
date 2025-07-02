@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Settings as SettingsIcon, Calendar, Tag, Plus, Trash2 } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Tag, Plus, Trash2, MessageSquare } from "lucide-react";
 import { Header } from "@/components/Header";
 import { useUserSettings, useUpdateUserSettings } from "@/hooks/useUserSettings";
 import { useObjetivoTags, useCreateObjetivoTag } from "@/hooks/useObjetivoTags";
@@ -21,6 +21,7 @@ const Settings = () => {
   const { toast } = useToast();
 
   const [calendarLink, setCalendarLink] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#3B82F6");
   const [showNewTagDialog, setShowNewTagDialog] = useState(false);
@@ -30,6 +31,9 @@ const Settings = () => {
   useEffect(() => {
     if (userSettings?.google_calendar_link) {
       setCalendarLink(userSettings.google_calendar_link);
+    }
+    if (userSettings?.whatsapp_business_number) {
+      setWhatsappNumber(userSettings.whatsapp_business_number);
     }
   }, [userSettings]);
 
@@ -51,6 +55,43 @@ const Settings = () => {
       });
     } catch (error) {
       console.error("Error saving calendar link:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar configurações. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveWhatsAppNumber = async () => {
+    if (!whatsappNumber.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um número válido do WhatsApp.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar formato do número (deve conter apenas números, +, espaços e parênteses)
+    const phoneRegex = /^[\+]?[1-9][\d\s\(\)\-]{8,15}$/;
+    if (!phoneRegex.test(whatsappNumber.replace(/\s/g, ''))) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um número de telefone válido (ex: +55 11 99999-9999).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateSettings.mutateAsync({ whatsapp_business_number: whatsappNumber.trim() });
+      toast({
+        title: "Sucesso!",
+        description: "Número do WhatsApp Business salvo com sucesso.",
+      });
+    } catch (error) {
+      console.error("Error saving WhatsApp number:", error);
       toast({
         title: "Erro",
         description: "Erro ao salvar configurações. Tente novamente.",
@@ -114,6 +155,42 @@ const Settings = () => {
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <Header title="Configurações" description="Gerencie suas configurações de perfil e sistema" />
+
+      {/* Configurações do WhatsApp Business */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            WhatsApp Business
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="whatsapp-number">Número do WhatsApp Business</Label>
+            <p className="text-sm text-gray-600 mb-2">
+              Insira o número do seu WhatsApp Business de onde partirão as mensagens para os pacientes.
+            </p>
+            <Input
+              id="whatsapp-number"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="+55 11 99999-9999"
+              className="mb-3"
+            />
+            <Button 
+              onClick={handleSaveWhatsAppNumber}
+              disabled={updateSettings.isPending}
+            >
+              {updateSettings.isPending ? "Salvando..." : "Salvar Número"}
+            </Button>
+            {userSettings?.whatsapp_business_number && (
+              <p className="text-sm text-green-600 mt-2">
+                ✓ Número do WhatsApp Business configurado: {userSettings.whatsapp_business_number}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Configurações do Google Calendar */}
       <Card>

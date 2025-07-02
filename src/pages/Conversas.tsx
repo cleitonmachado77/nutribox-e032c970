@@ -1,13 +1,26 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
-import { ConversationsList } from "@/components/ConversationsList";
-import { ChatWindow } from "@/components/ChatWindow";
-import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
-import { useWhatsApp } from "@/contexts/WhatsAppContext";
+import { useUserSettings } from "@/hooks/useUserSettings";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Zap, Database } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Send, 
+  MessageSquare, 
+  Search, 
+  Phone,
+  Settings,
+  AlertCircle,
+  CheckCircle2,
+  Clock
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
 
 interface Contact {
   id: string;
@@ -32,74 +45,48 @@ interface Message {
 }
 
 export default function Conversas() {
-  const { resetUnreadCount } = useWhatsApp();
+  const { data: userSettings } = useUserSettings();
+  const { toast } = useToast();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [showMobileChat, setShowMobileChat] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
     conversations,
     loading,
     loadMessages,
     sendMessage,
-    generateQRCode,
-    checkConnection,
-    disconnect,
     markAsRead
   } = useWhatsAppAPI();
 
-  // Reset unread count when entering conversations page
-  useEffect(() => {
-    resetUnreadCount();
-  }, [resetUnreadCount]);
+  // Scroll to bottom when messages change
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-  // Check connection status on mount
   useEffect(() => {
-    const checkStatus = async () => {
-      const connected = await checkConnection();
-      setConnectionStatus(connected ? 'connected' : 'disconnected');
-    };
-    checkStatus();
-  }, [checkConnection]);
+    scrollToBottom();
+  }, [messages]);
 
   // Convert conversations to contacts format
-  const contacts: Contact[] = conversations.map(conv => ({
-    id: conv.id,
-    name: conv.contact_name || conv.contact_phone,
-    phone: conv.contact_phone,
-    lastMessage: conv.last_message || undefined,
-    lastMessageTime: conv.last_message_time ? new Date(conv.last_message_time) : undefined,
-    unreadCount: conv.unread_count
-  }));
-
-  const handleConnect = async () => {
-    setConnectionStatus('connecting');
-    try {
-      const result = await generateQRCode();
-      if (result.qr_code) {
-        setQrCode(result.qr_code);
-        // Simulate connection after QR scan
-        setTimeout(() => {
-          setConnectionStatus('connected');
-          setQrCode(null);
-        }, 15000);
-      }
-    } catch (error) {
-      console.error('Erro ao gerar QR:', error);
-      setConnectionStatus('disconnected');
-    }
-  };
-
-  const handleRefresh = async () => {
-    const connected = await checkConnection();
-    setConnectionStatus(connected ? 'connected' : 'disconnected');
-  };
+  const contacts: Contact[] = conversations
+    .map(conv => ({
+      id: conv.id,
+      name: conv.contact_name || conv.contact_phone.replace(/\D/g, '').slice(-8),
+      phone: conv.contact_phone,
+      lastMessage: conv.last_message || undefined,
+      lastMessageTime: conv.last_message_time ? new Date(conv.last_message_time) : undefined,
+      unreadCount: conv.unread_count
+    }))
+    .filter(contact => 
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.phone.includes(searchTerm)
+    );
 
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
-    setShowMobileChat(true);
     
     // Mark as read
     await markAsRead(contact.id);
@@ -120,11 +107,30 @@ export default function Conversas() {
     setMessages(formattedMessages);
   };
 
-  const handleSendMessage = async (message: string) => {
-    if (selectedContact) {
-      try {
-        await sendMessage(selectedContact.id, selectedContact.phone, message);
-        // Reload messages after sending
+  const handleSendMessage = async () => {
+    if (!selectedContact || !newMessage.trim()) return;
+
+    try {
+      await sendMessage(selectedContact.id, selectedContact.phone, newMessage);
+      
+      // Add message to local state immediately for better UX
+      const newMsg: Message = {
+        id: Date.now().toString(),
+        conversationId: selectedContact.id,
+        from: 'me',
+        to: selectedContact.phone,
+        body: newMessage,
+        timestamp: new Date(),
+        fromMe: true,
+        messageType: 'text',
+        isRead: true
+      };
+      
+      setMessages(prev => [...prev, newMsg]);
+      setNewMessage("");
+      
+      // Reload messages after a short delay to get the actual message from server
+      setTimeout(async () => {
         const contactMessages = await loadMessages(selectedContact.id);
         const formattedMessages: Message[] = contactMessages.map(msg => ({
           id: msg.id,
@@ -138,133 +144,258 @@ export default function Conversas() {
           isRead: msg.is_read || false
         }));
         setMessages(formattedMessages);
-      } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
-      }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao enviar mensagem. Tente novamente.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleBackToList = () => {
-    setShowMobileChat(false);
-    setSelectedContact(null);
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
-  // Show connection screen if not connected
-  if (connectionStatus !== 'connected') {
+  // Check if WhatsApp is configured
+  if (!userSettings?.whatsapp_business_number) {
     return (
-      <div className="p-6 space-y-6 bg-gray-900 min-h-screen">
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <Header 
           title="Conversas WhatsApp" 
-          description="Conecte sua conta do WhatsApp para gerenciar conversas" 
+          description="Central de conversas com seus pacientes" 
         />
         
-        <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Zap className="w-8 h-8 text-white" />
-              <div>
-                <h3 className="text-white font-semibold">WhatsApp via Supabase</h3>
-                <p className="text-green-100 text-sm">
-                  Sistema integrado com banco de dados online
-                </p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-2">
-              <Database className="h-5 w-5 text-white" />
-              <span className="text-white text-sm">Supabase Connected</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <WhatsAppConnection
-            instance={{
-              instanceName: 'supabase-instance',
-              status: connectionStatus,
-              qrCode
-            }}
-            onConnect={handleConnect}
-            onRefresh={handleRefresh}
-            loading={loading}
-          />
-        </div>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between w-full">
+            <span>
+              Configure seu número do WhatsApp Business nas configurações para começar a usar as conversas.
+            </span>
+            <Button asChild size="sm">
+              <Link to="/dashboard/settings">
+                <Settings className="w-4 h-4 mr-2" />
+                Configurar
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-900 min-h-screen">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <Header 
         title="Conversas WhatsApp" 
-        description="Gerencie todas as suas conversas do WhatsApp" 
+        description="Central de conversas com seus pacientes" 
       />
       
-      <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+      {/* Status do WhatsApp */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <div>
+                <p className="font-medium">WhatsApp Business Conectado</p>
+                <p className="text-sm text-gray-600">
+                  Número: {userSettings.whatsapp_business_number}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-white font-semibold">WhatsApp + Supabase Conectado</h3>
-              <p className="text-green-100 text-sm">
-                {contacts.length} conversas sincronizadas via Supabase
-              </p>
+            <Badge variant="outline" className="text-green-600 border-green-200">
+              <CheckCircle2 className="w-3 h-3 mr-1" />
+              Online
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Interface de Chat */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+        {/* Lista de Conversas */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Conversas ({contacts.length})</span>
+              <MessageSquare className="w-5 h-5" />
+            </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Buscar contatos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </div>
-          <div className="hidden md:flex items-center gap-2">
-            <Database className="h-4 w-4 text-white" />
-            <Button 
-              variant="secondary" 
-              size="sm"
-              onClick={handleRefresh}
-              disabled={loading}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
-          </div>
-        </div>
-      </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[500px]">
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                </div>
+              ) : contacts.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  {searchTerm ? "Nenhum contato encontrado" : "Nenhuma conversa ainda"}
+                </div>
+              ) : (
+                contacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    onClick={() => handleSelectContact(contact)}
+                    className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedContact?.id === contact.id ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={contact.profilePicture} />
+                        <AvatarFallback>
+                          {contact.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium truncate">{contact.name}</p>
+                          {contact.lastMessageTime && (
+                            <span className="text-xs text-gray-500">
+                              {formatTime(contact.lastMessageTime)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-gray-600 truncate">
+                            {contact.lastMessage || "Nenhuma mensagem"}
+                          </p>
+                          {contact.unreadCount && contact.unreadCount > 0 && (
+                            <Badge className="bg-green-500 text-white text-xs h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                              {contact.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden h-[calc(100vh-280px)]">
-        <div className="flex h-full">
-          {/* Mobile Layout */}
-          <div className="md:hidden w-full">
-            {!showMobileChat ? (
-              <ConversationsList
-                contacts={contacts}
-                selectedContact={selectedContact}
-                onSelectContact={handleSelectContact}
-                loading={loading}
-              />
-            ) : (
-              <ChatWindow
-                contact={selectedContact}
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                onBack={handleBackToList}
-                loading={loading}
-              />
-            )}
-          </div>
+        {/* Área de Chat */}
+        <Card className="lg:col-span-2">
+          {selectedContact ? (
+            <>
+              {/* Header do Chat */}
+              <CardHeader className="border-b">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={selectedContact.profilePicture} />
+                    <AvatarFallback>
+                      {selectedContact.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold">{selectedContact.name}</h3>
+                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      {selectedContact.phone}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
 
-          {/* Desktop Layout */}
-          <div className="hidden md:flex w-full">
-            <ConversationsList
-              contacts={contacts}
-              selectedContact={selectedContact}
-              onSelectContact={handleSelectContact}
-              loading={loading}
-            />
-            <ChatWindow
-              contact={selectedContact}
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              loading={loading}
-            />
-          </div>
-        </div>
+              {/* Mensagens */}
+              <CardContent className="p-0">
+                <ScrollArea className="h-[350px] p-4">
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <div className="text-center">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p>Nenhuma mensagem ainda</p>
+                        <p className="text-sm">Envie a primeira mensagem!</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[70%] rounded-lg p-3 ${
+                              message.fromMe
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-100 text-gray-900'
+                            }`}
+                          >
+                            <p className="text-sm">{message.body}</p>
+                            <div className={`flex items-center gap-1 mt-1 ${
+                              message.fromMe ? 'justify-end' : 'justify-start'
+                            }`}>
+                              <span className={`text-xs ${
+                                message.fromMe ? 'text-blue-100' : 'text-gray-500'
+                              }`}>
+                                {formatTime(message.timestamp)}
+                              </span>
+                              {message.fromMe && (
+                                <Clock className="w-3 h-3 text-blue-100" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                </ScrollArea>
+
+                {/* Input de Mensagem */}
+                <div className="border-t p-4">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Digite sua mensagem..."
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim()}
+                      size="icon"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="flex items-center justify-center h-full">
+              <div className="text-center text-gray-500">
+                <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">Selecione uma conversa</h3>
+                <p>Escolha um contato da lista para começar a conversar</p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
       </div>
     </div>
   );
