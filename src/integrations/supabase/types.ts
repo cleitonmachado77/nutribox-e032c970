@@ -36,6 +36,148 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_questionnaires: {
+        Row: {
+          category: string
+          created_at: string
+          frequency: string
+          id: string
+          is_active: boolean | null
+          options: Json | null
+          question_text: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          options?: Json | null
+          question_text: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          options?: Json | null
+          question_text?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coach_responses: {
+        Row: {
+          created_at: string
+          id: string
+          patient_name: string
+          patient_phone: string
+          question_category: string
+          question_text: string
+          question_type: string
+          questionnaire_id: string | null
+          response_date: string
+          response_score: number | null
+          response_text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_name: string
+          patient_phone: string
+          question_category: string
+          question_text: string
+          question_type: string
+          questionnaire_id?: string | null
+          response_date?: string
+          response_score?: number | null
+          response_text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_name?: string
+          patient_phone?: string
+          question_category?: string
+          question_text?: string
+          question_type?: string
+          questionnaire_id?: string | null
+          response_date?: string
+          response_score?: number | null
+          response_text?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_responses_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "coach_questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_schedules: {
+        Row: {
+          created_at: string
+          frequency: string
+          id: string
+          is_active: boolean | null
+          next_send_date: string
+          patient_name: string
+          patient_phone: string
+          questionnaire_id: string | null
+          schedule_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          next_send_date: string
+          patient_name: string
+          patient_phone: string
+          questionnaire_id?: string | null
+          schedule_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          next_send_date?: string
+          patient_name?: string
+          patient_phone?: string
+          questionnaire_id?: string | null
+          schedule_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_schedules_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "coach_questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consulta_arquivos: {
         Row: {
           consulta_realizada_id: string

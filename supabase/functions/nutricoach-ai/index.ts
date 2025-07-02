@@ -125,18 +125,18 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'Você é um NutriCoach especialista em nutrição com IA avançada que aprende com cada paciente. Sempre responda em português brasileiro de forma profissional, empática e personalizada baseada no histórico e perfil de cada paciente.'
+            content: 'Você é um NutriCoach especialista em nutrição com IA avançada. Processe questionários comportamentais e de bem-estar, analise padrões e forneça insights personalizados. Use emojis e mantenha tom profissional e empático. Responda sempre em português brasileiro.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 500,
+        max_tokens: 800,
         temperature: 0.7,
       }),
     })

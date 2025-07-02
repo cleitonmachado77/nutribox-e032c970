@@ -21,6 +21,7 @@ import { SchedulingSystem } from "@/components/coach/SchedulingSystem";
 import { GoalsTracking } from "@/components/coach/GoalsTracking";
 import { AdvancedReports } from "@/components/coach/AdvancedReports";
 import { NotificationSystem } from "@/components/coach/NotificationSystem";
+import { QuestionnaireManager } from "@/components/coach/QuestionnaireManager";
 
 export default function NutriCoach() {
   return (
@@ -94,7 +95,7 @@ export default function NutriCoach() {
         </TabsContent>
 
         <TabsContent value="questionarios" className="space-y-6">
-          <BehavioralQuestions />
+          <QuestionnaireManager />
         </TabsContent>
 
         <TabsContent value="interacoes" className="space-y-6">
