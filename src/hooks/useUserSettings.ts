@@ -6,6 +6,7 @@ export interface UserSettings {
   id: string;
   user_id: string;
   google_calendar_link?: string;
+  whatsapp_business_number?: string;
   created_at: string;
   updated_at: string;
 }
