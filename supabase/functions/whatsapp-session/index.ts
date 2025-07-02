@@ -82,12 +82,15 @@ async function generateQRCode(supabase: any, userId: string) {
   try {
     console.log('Generating QR code for user:', userId)
     
-    // Generate a simple QR code data
+    // Generate a WhatsApp-like QR code data
     const timestamp = Date.now()
     const sessionId = `session_${userId}_${timestamp}`
-    const qrCodeData = `whatsapp://connect/${sessionId}`
     
-    console.log('Generated QR data:', qrCodeData)
+    // Simulate WhatsApp Web QR code format
+    // Real WhatsApp QR codes contain encrypted session data
+    const qrCodeData = `1@${Math.random().toString(36).substring(2, 15)},${Math.random().toString(36).substring(2, 15)},${sessionId},${timestamp}`
+    
+    console.log('Generated WhatsApp-like QR data')
 
     // Save to database
     const { error: upsertError } = await supabase
