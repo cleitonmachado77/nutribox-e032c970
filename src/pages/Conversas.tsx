@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { useWhatsAppAPI } from "@/hooks/useWhatsAppAPI";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { usePacientes } from "@/hooks/usePacientes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Send, 
@@ -17,7 +19,9 @@ import {
   Settings,
   AlertCircle,
   CheckCircle2,
-  Clock
+  Clock,
+  Users,
+  UserPlus
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
@@ -46,11 +50,14 @@ interface Message {
 
 export default function Conversas() {
   const { data: userSettings } = useUserSettings();
+  const { data: pacientes = [] } = usePacientes();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("conversas");
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchPacientes, setSearchPacientes] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -85,8 +92,15 @@ export default function Conversas() {
       contact.phone.includes(searchTerm)
     );
 
+  // Filter pacientes for search
+  const filteredPacientes = pacientes.filter(paciente => 
+    paciente.lead?.nome?.toLowerCase().includes(searchPacientes.toLowerCase()) ||
+    paciente.lead?.telefone?.includes(searchPacientes)
+  );
+
   const handleSelectContact = async (contact: Contact) => {
     setSelectedContact(contact);
+    setActiveTab("conversas"); // Switch to conversations tab when selecting a contact
     
     // Mark as read
     await markAsRead(contact.id);
@@ -105,6 +119,43 @@ export default function Conversas() {
       isRead: msg.is_read || false
     }));
     setMessages(formattedMessages);
+  };
+
+  const handleSelectPaciente = async (paciente: any) => {
+    if (!paciente.lead?.telefone) {
+      toast({
+        title: "Erro",
+        description: "Este paciente não possui telefone cadastrado",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Try to find existing conversation or create a new contact
+    const existingContact = contacts.find(c => c.phone === paciente.lead.telefone);
+    
+    if (existingContact) {
+      await handleSelectContact(existingContact);
+    } else {
+      // Create new conversation
+      const newContact: Contact = {
+        id: `new-${Date.now()}`,
+        name: paciente.lead.nome,
+        phone: paciente.lead.telefone,
+        lastMessage: undefined,
+        lastMessageTime: undefined,
+        unreadCount: 0
+      };
+      
+      setSelectedContact(newContact);
+      setMessages([]);
+      setActiveTab("conversas");
+      
+      toast({
+        title: "Nova conversa",
+        description: `Conversa iniciada com ${paciente.lead.nome}`,
+      });
+    }
   };
 
   const handleSendMessage = async () => {
@@ -220,74 +271,158 @@ export default function Conversas() {
 
       {/* Interface de Chat */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
-        {/* Lista de Conversas */}
+        {/* Painel Lateral */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Conversas ({contacts.length})</span>
-              <MessageSquare className="w-5 h-5" />
-            </CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Buscar contatos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="conversas" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Conversas ({contacts.length})
+                </TabsTrigger>
+                <TabsTrigger value="pacientes" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Pacientes ({pacientes.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </CardHeader>
+          
           <CardContent className="p-0">
-            <ScrollArea className="h-[500px]">
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsContent value="conversas" className="mt-0">
+                <div className="p-4 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Buscar conversas..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-              ) : contacts.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  {searchTerm ? "Nenhum contato encontrado" : "Nenhuma conversa ainda"}
-                </div>
-              ) : (
-                contacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    onClick={() => handleSelectContact(contact)}
-                    className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedContact?.id === contact.id ? 'bg-blue-50 border-blue-200' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={contact.profilePicture} />
-                        <AvatarFallback>
-                          {contact.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium truncate">{contact.name}</p>
-                          {contact.lastMessageTime && (
-                            <span className="text-xs text-gray-500">
-                              {formatTime(contact.lastMessageTime)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-sm text-gray-600 truncate">
-                            {contact.lastMessage || "Nenhuma mensagem"}
-                          </p>
-                          {contact.unreadCount && contact.unreadCount > 0 && (
-                            <Badge className="bg-green-500 text-white text-xs h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                              {contact.unreadCount}
-                            </Badge>
-                          )}
+                
+                <ScrollArea className="h-[400px]">
+                  {loading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    </div>
+                  ) : contacts.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      {searchTerm ? "Nenhuma conversa encontrada" : "Nenhuma conversa ainda"}
+                    </div>
+                  ) : (
+                    contacts.map((contact) => (
+                      <div
+                        key={contact.id}
+                        onClick={() => handleSelectContact(contact)}
+                        className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                          selectedContact?.id === contact.id ? 'bg-blue-50 border-blue-200' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={contact.profilePicture} />
+                            <AvatarFallback>
+                              {contact.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium truncate">{contact.name}</p>
+                              {contact.lastMessageTime && (
+                                <span className="text-xs text-gray-500">
+                                  {formatTime(contact.lastMessageTime)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-sm text-gray-600 truncate">
+                                {contact.lastMessage || "Nenhuma mensagem"}
+                              </p>
+                              {contact.unreadCount && contact.unreadCount > 0 && (
+                                <Badge className="bg-green-500 text-white text-xs h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                                  {contact.unreadCount}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ))
+                  )}
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="pacientes" className="mt-0">
+                <div className="p-4 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Buscar pacientes..."
+                      value={searchPacientes}
+                      onChange={(e) => setSearchPacientes(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                ))
-              )}
-            </ScrollArea>
+                </div>
+                
+                <ScrollArea className="h-[400px]">
+                  {filteredPacientes.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      {searchPacientes ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
+                      {!searchPacientes && (
+                        <div className="mt-2">
+                          <Button asChild size="sm" variant="outline">
+                            <Link to="/dashboard/pacientes">
+                              <UserPlus className="w-4 h-4 mr-2" />
+                              Cadastrar Paciente
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    filteredPacientes.map((paciente) => (
+                      <div
+                        key={paciente.id}
+                        onClick={() => handleSelectPaciente(paciente)}
+                        className="p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={paciente.lead?.foto_perfil} />
+                            <AvatarFallback>
+                              {paciente.lead?.nome?.slice(0, 2).toUpperCase() || 'P'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium truncate">{paciente.lead?.nome || 'Nome não informado'}</p>
+                              <Badge variant={paciente.status_tratamento === 'ativo' ? 'default' : 'secondary'}>
+                                {paciente.status_tratamento}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Phone className="w-3 h-3 text-gray-400" />
+                              <p className="text-sm text-gray-600">
+                                {paciente.lead?.telefone || 'Telefone não informado'}
+                              </p>
+                            </div>
+                            {paciente.lead?.objetivo && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Objetivo: {paciente.lead.objetivo}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
