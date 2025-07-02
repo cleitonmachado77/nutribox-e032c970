@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { QrCode, RefreshCw, CheckCircle, Smartphone } from 'lucide-react';
-import { useWhatsAppAPI } from '@/hooks/useWhatsAppAPI';
+import { useMaytapiAPI } from '@/hooks/useMaytapiAPI';
 import { useToast } from '@/hooks/use-toast';
 
 interface WhatsAppQRModalProps {
@@ -13,50 +13,57 @@ interface WhatsAppQRModalProps {
 
 export const WhatsAppQRModal = ({ open, onOpenChange }: WhatsAppQRModalProps) => {
   const [qrCode, setQrCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
-  const { generateQRCode, checkConnection } = useWhatsAppAPI();
+  const { session, loading, getQRCode, checkConnection } = useMaytapiAPI();
   const { toast } = useToast();
 
   const handleGenerateQR = async () => {
-    setLoading(true);
     try {
-      const response = await generateQRCode();
+      const response = await getQRCode();
       setQrCode(response.qr_code);
+      setConnected(response.is_connected);
       
-      // Iniciar verificação periódica de conexão
-      const interval = setInterval(async () => {
-        const isConnected = await checkConnection();
-        if (isConnected) {
-          setConnected(true);
-          clearInterval(interval);
-          toast({
-            title: "WhatsApp Conectado!",
-            description: "Sua conta foi conectada com sucesso.",
-          });
-          setTimeout(() => {
-            onOpenChange(false);
-          }, 2000);
-        }
-      }, 3000);
+      if (!response.is_connected && response.qr_code) {
+        // Iniciar verificação periódica de conexão
+        const interval = setInterval(async () => {
+          const isConnected = await checkConnection();
+          if (isConnected) {
+            setConnected(true);
+            clearInterval(interval);
+            toast({
+              title: "WhatsApp Conectado!",
+              description: "Sua conta foi conectada com sucesso.",
+            });
+            setTimeout(() => {
+              onOpenChange(false);
+            }, 2000);
+          }
+        }, 5000);
 
-      // Limpar interval após 2 minutos
-      setTimeout(() => clearInterval(interval), 120000);
+        // Limpar interval após 3 minutos
+        setTimeout(() => clearInterval(interval), 180000);
+      } else if (response.is_connected) {
+        setConnected(true);
+        setTimeout(() => {
+          onOpenChange(false);
+        }, 2000);
+      }
     } catch (error: any) {
       console.error('Erro ao gerar QR:', error);
-      toast({
-        title: "Erro",
-        description: error.message || "Falha ao gerar QR code",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Sincronizar com sessão existente
+  useEffect(() => {
+    if (session) {
+      setConnected(session.isConnected);
+      setQrCode(session.qrCode || null);
+    }
+  }, [session]);
+
   // Gerar QR automaticamente quando o modal abrir
   useEffect(() => {
-    if (open && !qrCode && !connected) {
+    if (open && !session?.isConnected && !qrCode) {
       handleGenerateQR();
     }
   }, [open]);
@@ -111,19 +118,21 @@ export const WhatsAppQRModal = ({ open, onOpenChange }: WhatsAppQRModalProps) =>
                     </div>
                     
                     <div className="space-y-3 text-sm">
-                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="font-medium text-yellow-800 mb-1">⚠️ Modo de Demonstração</p>
-                        <p className="text-yellow-700 text-xs">
-                          Este é um QR code simulado para demonstração. Em produção, seria necessário integração com WhatsApp Business API oficial.
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="font-medium text-blue-800 mb-1">📱 Maytapi WhatsApp</p>
+                        <p className="text-blue-700 text-xs">
+                          QR code real gerado pela API Maytapi. Escaneie com seu WhatsApp para conectar.
                         </p>
                       </div>
                       
                       <div className="text-gray-600">
-                        <p className="font-medium">Como conectar (simulação):</p>
+                        <p className="font-medium">Como conectar:</p>
                         <ol className="list-decimal list-inside space-y-1 text-left mt-1">
-                          <li>Este QR code se conectará automaticamente após 10 segundos</li>
-                          <li>Para integração real, use WhatsApp Business API</li>
-                          <li>A conexão será simulada para demonstração</li>
+                          <li>Abra o WhatsApp no seu celular</li>
+                          <li>Toque no menu (⋮) ou vá em Configurações</li>
+                          <li>Toque em "Aparelhos conectados"</li>
+                          <li>Toque em "Conectar um aparelho"</li>
+                          <li>Escaneie este código QR</li>
                         </ol>
                       </div>
                     </div>
