@@ -48,13 +48,46 @@ export default function PainelPaciente() {
   }, [user]);
 
   const loadPatients = async () => {
+    // Buscar pacientes com seus dados dos leads
     const { data } = await supabase
-      .from('leads')
-      .select('*')
+      .from('pacientes')
+      .select(`
+        id,
+        data_primeira_consulta,
+        status_tratamento,
+        lead:leads!inner(
+          id,
+          nome,
+          telefone,
+          objetivo,
+          peso,
+          altura,
+          imc,
+          status,
+          foto_perfil
+        )
+      `)
       .eq('user_id', user?.id)
       .order('created_at', { ascending: false });
     
-    if (data) setPatients(data);
+    if (data) {
+      const formattedPatients = data.map((p: any) => ({
+        id: p.id,
+        nome: p.lead.nome,
+        telefone: p.lead.telefone,
+        objetivo: p.lead.objetivo,
+        peso: p.lead.peso,
+        altura: p.lead.altura,
+        imc: p.lead.imc,
+        status: p.status_tratamento || p.lead.status,
+        foto_perfil: p.lead.foto_perfil,
+        data_primeira_consulta: p.data_primeira_consulta,
+        progresso: 0,
+        ultima_consulta: '',
+        proxima_consulta: ''
+      }));
+      setPatients(formattedPatients);
+    }
     setLoading(false);
   };
 
