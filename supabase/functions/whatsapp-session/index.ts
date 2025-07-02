@@ -7,25 +7,33 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables')
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
 
-    const authHeader = req.headers.get('Authorization')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Get and validate auth token
+    const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response('Missing Authorization header', { status: 401, headers: corsHeaders })
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     const token = authHeader.replace('Bearer ', '')
@@ -33,11 +41,17 @@ serve(async (req) => {
     
     if (authError || !user) {
       console.error('Auth error:', authError)
-      return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
-    const { action } = await req.json()
-    console.log('Action received:', action, 'for user:', user.id)
+    // Parse request body
+    const body = await req.json()
+    const { action } = body
+
+    console.log('Processing action:', action, 'for user:', user.id)
 
     switch (action) {
       case 'generate_qr':
@@ -47,11 +61,17 @@ serve(async (req) => {
       case 'disconnect':
         return await disconnect(supabase, user.id)
       default:
-        return new Response('Invalid action', { status: 400, headers: corsHeaders })
+        return new Response(JSON.stringify({ error: 'Invalid action' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
     }
   } catch (error) {
-    console.error('Session error:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error: ' + error.message }), {
+    console.error('Function error:', error)
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      details: error.message 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
@@ -62,20 +82,14 @@ async function generateQRCode(supabase: any, userId: string) {
   try {
     console.log('Generating QR code for user:', userId)
     
-    // Gerar um QR code no formato correto do WhatsApp Web
+    // Generate a simple QR code data
     const timestamp = Date.now()
-    const sessionId = `${userId}_${timestamp}`
+    const sessionId = `session_${userId}_${timestamp}`
+    const qrCodeData = `whatsapp://connect/${sessionId}`
     
-    // Formato real do QR code do WhatsApp Web (estrutura simplificada)
-    const serverToken = generateRandomString(32)
-    const clientToken = generateRandomString(43)
-    const publicKey = generateRandomString(32)
-    
-    const qrCodeData = `1@${serverToken},${clientToken},${publicKey}`
-    
-    console.log('QR Code generated successfully')
-    
-    // Salvar na base de dados
+    console.log('Generated QR data:', qrCodeData)
+
+    // Save to database
     const { error: upsertError } = await supabase
       .from('whatsapp_sessions')
       .upsert({
@@ -84,45 +98,41 @@ async function generateQRCode(supabase: any, userId: string) {
         is_connected: false,
         session_data: { 
           sessionId, 
-          generated_at: new Date().toISOString(),
-          serverToken,
-          clientToken
+          generated_at: new Date().toISOString()
         },
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
       })
 
     if (upsertError) {
-      console.error('Error saving QR code:', upsertError)
-      throw new Error('Failed to save QR code to database')
+      console.error('Database error:', upsertError)
+      throw new Error('Failed to save QR code')
     }
 
-    // Simular processo de conexão após 15 segundos para demonstração
+    console.log('QR code saved successfully')
+
+    // Simulate connection after 10 seconds
     setTimeout(async () => {
       try {
-        console.log('Simulating WhatsApp connection...')
-        const { error: updateError } = await supabase
+        await supabase
           .from('whatsapp_sessions')
           .update({
             is_connected: true,
             phone_number: '+55 11 99999-9999',
             session_data: {
               sessionId,
-              connected_at: new Date().toISOString(),
-              status: 'connected'
+              connected_at: new Date().toISOString()
             },
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userId)
-
-        if (updateError) {
-          console.error('Error updating connection status:', updateError)
-        } else {
-          console.log('WhatsApp connection simulated successfully for user:', userId)
-        }
+        
+        console.log('Simulated connection for user:', userId)
       } catch (err) {
-        console.error('Error in connection simulation:', err)
+        console.error('Error in simulation:', err)
       }
-    }, 15000)
+    }, 10000)
 
     return new Response(JSON.stringify({ 
       success: true,
@@ -133,7 +143,7 @@ async function generateQRCode(supabase: any, userId: string) {
     })
 
   } catch (error) {
-    console.error('Error in generateQRCode:', error)
+    console.error('Generate QR error:', error)
     return new Response(JSON.stringify({ 
       error: 'Failed to generate QR code',
       details: error.message 
@@ -152,10 +162,10 @@ async function checkConnection(supabase: any, userId: string) {
       .from('whatsapp_sessions')
       .select('is_connected, phone_number, session_data')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error checking connection:', error)
+    if (error) {
+      console.error('Database error:', error)
       return new Response(JSON.stringify({ 
         connected: false,
         error: error.message 
@@ -177,10 +187,9 @@ async function checkConnection(supabase: any, userId: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error('Error checking connection:', error)
+    console.error('Check connection error:', error)
     return new Response(JSON.stringify({ 
       connected: false,
-      phone_number: null,
       error: error.message
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -204,7 +213,7 @@ async function disconnect(supabase: any, userId: string) {
       .eq('user_id', userId)
 
     if (error) {
-      console.error('Error disconnecting:', error)
+      console.error('Disconnect error:', error)
       throw error
     }
 
@@ -214,19 +223,10 @@ async function disconnect(supabase: any, userId: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error('Error disconnecting:', error)
+    console.error('Disconnect error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
-}
-
-function generateRandomString(length: number): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
 }
