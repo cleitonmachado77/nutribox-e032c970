@@ -1327,6 +1327,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean | null
+          subaccount_sid: string | null
           twilio_phone_number: string
           twilio_phone_sid: string
           updated_at: string
@@ -1338,6 +1339,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          subaccount_sid?: string | null
           twilio_phone_number: string
           twilio_phone_sid: string
           updated_at?: string
@@ -1349,8 +1351,48 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          subaccount_sid?: string | null
           twilio_phone_number?: string
           twilio_phone_sid?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_twilio_subaccounts: {
+        Row: {
+          cidade: string | null
+          consultorio_nome: string
+          created_at: string
+          friendly_name: string
+          id: string
+          is_active: boolean | null
+          subaccount_sid: string
+          subaccount_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cidade?: string | null
+          consultorio_nome: string
+          created_at?: string
+          friendly_name: string
+          id?: string
+          is_active?: boolean | null
+          subaccount_sid: string
+          subaccount_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cidade?: string | null
+          consultorio_nome?: string
+          created_at?: string
+          friendly_name?: string
+          id?: string
+          is_active?: boolean | null
+          subaccount_sid?: string
+          subaccount_token?: string
           updated_at?: string
           user_id?: string
         }

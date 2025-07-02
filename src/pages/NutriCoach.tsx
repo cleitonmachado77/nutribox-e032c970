@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { Header } from '@/components/Header';
 import { QuestionnaireManager } from '@/components/coach/QuestionnaireManager';
 import { 
@@ -15,29 +16,63 @@ import {
   TrendingUp,
   ChartBar,
   Settings2,
-  UserCheck
+  UserCheck,
+  Phone,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNutriCoachQuestionnaire } from '@/hooks/useNutriCoachQuestionnaire';
 import { useNutriCoachStats } from '@/hooks/useNutriCoachStats';
 import { usePacientesList } from '@/hooks/usePacientesList';
+import { useTwilioAPI } from '@/hooks/useTwilioAPI';
 
 export default function NutriCoach() {
   const { user } = useAuth();
   const { loading, sendDailyQuestionnaire, getPatientInsights } = useNutriCoachQuestionnaire();
   const { stats, loading: statsLoading } = useNutriCoachStats();
   const { pacientes, loading: pacientesLoading } = usePacientesList();
+  const { 
+    userSubaccount, 
+    loading: twilioLoading, 
+    createSubaccount, 
+    provisionWhatsAppNumber,
+    sendNutriCoachMessage
+  } = useTwilioAPI();
+  
   const [selectedPatient, setSelectedPatient] = useState<string>('');
   const [insights, setInsights] = useState<any>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
+  const [consultorioNome, setConsultorioNome] = useState('');
+  const [cidade, setCidade] = useState('');
 
   const handleSendQuestionnaire = async () => {
-    if (!selectedPatient || !user) return;
+    if (!selectedPatient || !user || !userSubaccount) return;
     
     const paciente = pacientes.find(p => p.id === selectedPatient);
     if (!paciente) return;
     
-    await sendDailyQuestionnaire(paciente.nome, paciente.telefone, user.id);
+    // Send via Twilio WhatsApp with ChatGPT integration
+    await sendNutriCoachMessage(
+      paciente.telefone, 
+      paciente.nome, 
+      'questionnaire',
+      { objetivo: paciente.objetivo, status: paciente.status }
+    );
+  };
+
+  const handleSendMotivationalMessage = async () => {
+    if (!selectedPatient || !user || !userSubaccount) return;
+    
+    const paciente = pacientes.find(p => p.id === selectedPatient);
+    if (!paciente) return;
+    
+    await sendNutriCoachMessage(
+      paciente.telefone, 
+      paciente.nome, 
+      'motivational',
+      { objetivo: paciente.objetivo, peso: paciente.peso, altura: paciente.altura }
+    );
   };
 
   const handleGetInsights = async () => {
@@ -57,12 +92,120 @@ export default function NutriCoach() {
     }
   };
 
+  const handleCreateSubaccount = async () => {
+    if (!consultorioNome.trim()) return;
+    await createSubaccount(consultorioNome, cidade);
+  };
+
+  const handleProvisionWhatsApp = async () => {
+    await provisionWhatsAppNumber();
+  };
+
   return (
     <div className="p-6 space-y-6 bg-background min-h-screen">
       <Header 
         title="NutriCoach IA" 
         description="Sistema inteligente de coaching nutricional via WhatsApp"
       />
+
+      {/* Twilio WhatsApp Setup */}
+      {!userSubaccount && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-primary" />
+              Configuração WhatsApp Business
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure uma subconta Twilio para enviar mensagens do NutriCoach via WhatsApp Business.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nome do Consultório *</label>
+                <Input
+                  value={consultorioNome}
+                  onChange={(e) => setConsultorioNome(e.target.value)}
+                  placeholder="Ex: Clínica NutriSaúde"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Cidade</label>
+                <Input
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  placeholder="Ex: São Paulo"
+                />
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleCreateSubaccount}
+              disabled={twilioLoading || !consultorioNome.trim()}
+              className="w-full"
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              {twilioLoading ? 'Criando subconta...' : 'Criar Subconta WhatsApp'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* WhatsApp Number Setup */}
+      {userSubaccount && !userSubaccount.user_twilio_numbers?.[0] && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Subconta Criada - Provisionar Número WhatsApp
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Badge variant="outline">{userSubaccount.friendly_name}</Badge>
+              <span>Subconta ID: {userSubaccount.subaccount_sid}</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Agora você precisa provisionar um número WhatsApp Business para enviar mensagens.
+            </p>
+
+            <Button 
+              onClick={handleProvisionWhatsApp}
+              disabled={twilioLoading}
+              className="w-full"
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              {twilioLoading ? 'Provisionando número...' : 'Provisionar Número WhatsApp'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* WhatsApp Ready Status */}
+      {userSubaccount?.user_twilio_numbers?.[0] && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              WhatsApp Business Configurado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{userSubaccount.friendly_name}</p>
+                <p className="text-sm text-muted-foreground">
+                  Número: {userSubaccount.user_twilio_numbers[0].twilio_phone_number}
+                </p>
+              </div>
+              <Badge variant="default">Ativo</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -153,14 +296,34 @@ export default function NutriCoach() {
                 </SelectContent>
               </Select>
 
-              <Button 
-                onClick={handleSendQuestionnaire}
-                disabled={loading || !selectedPatient || pacientesLoading}
-                className="w-full"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {loading ? 'Enviando...' : 'Enviar Questionário do Dia'}
-              </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button 
+                  onClick={handleSendQuestionnaire}
+                  disabled={loading || !selectedPatient || pacientesLoading || !userSubaccount?.user_twilio_numbers?.[0]}
+                  className="w-full"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {loading ? 'Enviando...' : 'Enviar Questionário do Dia'}
+                </Button>
+
+                <Button 
+                  onClick={handleSendMotivationalMessage}
+                  disabled={loading || !selectedPatient || pacientesLoading || !userSubaccount?.user_twilio_numbers?.[0]}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  {loading ? 'Enviando...' : 'Enviar Mensagem Motivacional'}
+                </Button>
+              </div>
+
+              {!userSubaccount?.user_twilio_numbers?.[0] && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    Configure uma subconta WhatsApp Business acima para enviar mensagens via NutriCoach IA.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

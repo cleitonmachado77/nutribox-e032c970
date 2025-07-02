@@ -3,8 +3,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+export interface TwilioSubaccount {
+  id: string;
+  subaccount_sid: string;
+  subaccount_token: string;
+  friendly_name: string;
+  consultorio_nome: string;
+  cidade?: string;
+  is_active: boolean;
+  user_twilio_numbers?: TwilioNumber[];
+}
+
 export interface TwilioNumber {
   id: string;
+  subaccount_sid?: string;
   twilio_phone_number: string;
   twilio_phone_sid: string;
   consultorio_nome: string;
@@ -37,28 +49,28 @@ export interface TwilioMessage {
 export const useTwilioAPI = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userNumber, setUserNumber] = useState<TwilioNumber | null>(null);
+  const [userSubaccount, setUserSubaccount] = useState<TwilioSubaccount | null>(null);
   const [conversations, setConversations] = useState<TwilioConversation[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load user's Twilio number
-  const loadUserNumber = async () => {
+  // Load user's Twilio subaccount
+  const loadUserSubaccount = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('twilio-phone-management', {
-        body: { action: 'get_user_number' }
+      const { data, error } = await supabase.functions.invoke('twilio-subaccount-management', {
+        body: { action: 'get_user_subaccount' }
       });
 
       if (error) throw error;
 
-      if (data.has_number) {
-        setUserNumber(data.number_data);
+      if (data.has_subaccount) {
+        setUserSubaccount(data.subaccount_data);
       } else {
-        setUserNumber(null);
+        setUserSubaccount(null);
       }
     } catch (error) {
-      console.error('Error loading user number:', error);
+      console.error('Error loading user subaccount:', error);
     }
   };
 
@@ -101,13 +113,13 @@ export const useTwilioAPI = () => {
     }
   };
 
-  // Provision a new number
-  const provisionNumber = async (consultorioNome: string, cidade?: string) => {
+  // Create subaccount
+  const createSubaccount = async (consultorioNome: string, cidade?: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('twilio-phone-management', {
+      const { data, error } = await supabase.functions.invoke('twilio-subaccount-management', {
         body: { 
-          action: 'provision_number',
+          action: 'create_subaccount',
           consultorio_nome: consultorioNome,
           cidade: cidade 
         }
@@ -116,19 +128,19 @@ export const useTwilioAPI = () => {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      await loadUserNumber(); // Reload user number
+      await loadUserSubaccount(); // Reload user subaccount
       
       toast({
-        title: "Número provisionado!",
-        description: `Seu número WhatsApp ${data.phone_number} foi configurado com sucesso.`,
+        title: "Subconta criada!",
+        description: `Sua subconta "${consultorioNome}" foi criada com sucesso.`,
       });
 
       return data;
     } catch (error: any) {
-      console.error('Error provisioning number:', error);
+      console.error('Error creating subaccount:', error);
       toast({
         title: "Erro",
-        description: error.message || "Falha ao provisionar número",
+        description: error.message || "Falha ao criar subconta",
         variant: "destructive"
       });
       throw error;
@@ -137,7 +149,39 @@ export const useTwilioAPI = () => {
     }
   };
 
-  // Send message
+  // Provision WhatsApp number
+  const provisionWhatsAppNumber = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('twilio-subaccount-management', {
+        body: { action: 'provision_whatsapp_number' }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      await loadUserSubaccount(); // Reload user subaccount
+      
+      toast({
+        title: "Número WhatsApp provisionado!",
+        description: `Seu número WhatsApp ${data.phone_number} foi configurado com sucesso.`,
+      });
+
+      return data;
+    } catch (error: any) {
+      console.error('Error provisioning WhatsApp number:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao provisionar número WhatsApp",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Send message using subaccount
   const sendMessage = async (conversationId: string, to: string, message: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('twilio-whatsapp-send', {
@@ -160,6 +204,39 @@ export const useTwilioAPI = () => {
       toast({
         title: "Erro",
         description: error.message || "Falha ao enviar mensagem",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Send automated message via NutriCoach AI
+  const sendNutriCoachMessage = async (patientPhone: string, patientName: string, messageType: 'questionnaire' | 'motivational' | 'reminder', patientData?: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('nutricoach-ai', {
+        body: {
+          action: messageType === 'questionnaire' ? 'generate_questionnaire' : 
+                  messageType === 'motivational' ? 'generate_motivational' : 'generate_reminder',
+          patientName,
+          patientPhone,
+          messageType,
+          patientData
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Mensagem NutriCoach enviada",
+        description: `Mensagem ${messageType} enviada para ${patientName} via WhatsApp`,
+      });
+
+      return data;
+    } catch (error: any) {
+      console.error('Error sending NutriCoach message:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao enviar mensagem do NutriCoach",
         variant: "destructive"
       });
       throw error;
@@ -194,29 +271,29 @@ export const useTwilioAPI = () => {
     }
   };
 
-  // Release number
-  const releaseNumber = async () => {
+  // Release subaccount
+  const releaseSubaccount = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('twilio-phone-management', {
-        body: { action: 'release_number' }
+      const { data, error } = await supabase.functions.invoke('twilio-subaccount-management', {
+        body: { action: 'release_subaccount' }
       });
 
       if (error) throw error;
 
-      setUserNumber(null);
+      setUserSubaccount(null);
       setConversations([]);
       
       toast({
-        title: "Número liberado",
-        description: "Seu número WhatsApp foi liberado com sucesso"
+        title: "Subconta liberada",
+        description: "Sua subconta Twilio foi liberada com sucesso"
       });
 
       return data;
     } catch (error: any) {
-      console.error('Error releasing number:', error);
+      console.error('Error releasing subaccount:', error);
       toast({
         title: "Erro",
-        description: error.message || "Falha ao liberar número",
+        description: error.message || "Falha ao liberar subconta",
         variant: "destructive"
       });
       throw error;
@@ -226,7 +303,7 @@ export const useTwilioAPI = () => {
   // Load data on mount
   useEffect(() => {
     if (user) {
-      loadUserNumber();
+      loadUserSubaccount();
       loadConversations();
     }
   }, [user]);
@@ -267,15 +344,21 @@ export const useTwilioAPI = () => {
   }, [user]);
 
   return {
-    userNumber,
+    userSubaccount,
+    userNumber: userSubaccount?.user_twilio_numbers?.[0] || null, // Backward compatibility
     conversations,
     loading,
-    provisionNumber,
+    createSubaccount,
+    provisionNumber: createSubaccount, // Backward compatibility
+    provisionWhatsAppNumber,
     sendMessage,
+    sendNutriCoachMessage,
     loadMessages,
     markAsRead,
-    releaseNumber,
+    releaseSubaccount,
+    releaseNumber: releaseSubaccount, // Backward compatibility
     loadConversations,
-    loadUserNumber
+    loadUserSubaccount,
+    loadUserNumber: loadUserSubaccount // Backward compatibility
   };
 };
