@@ -17,6 +17,7 @@ import Kanban from "./pages/Kanban";
 import Consultas from "./pages/Consultas";
 import Conversas from "./pages/Conversas";
 import NutriCoach from "./pages/NutriCoach";
+import PainelPaciente from "./pages/PainelPaciente";
 import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
@@ -46,6 +47,7 @@ const App = () => <QueryClientProvider client={queryClient}>
                           <Route path="consultas" element={<Consultas />} />
                           <Route path="conversas" element={<Conversas />} />
                           <Route path="nutricoach" element={<NutriCoach />} />
+                          <Route path="painel-paciente" element={<PainelPaciente />} />
                           <Route path="plans" element={<Plans />} />
                           <Route path="settings" element={<Settings />} />
                         </Routes>
