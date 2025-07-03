@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,10 @@ interface DeleteLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   lead: Lead | null;
+  onDeleteSuccess?: () => void;
 }
 
-export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogProps) => {
+export const DeleteLeadDialog = ({ open, onOpenChange, lead, onDeleteSuccess }: DeleteLeadDialogProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const deleteLead = useDeleteLead();
@@ -36,6 +38,7 @@ export const DeleteLeadDialog = ({ open, onOpenChange, lead }: DeleteLeadDialogP
         description: `Lead ${lead.nome} foi excluído com sucesso.`,
       });
       onOpenChange(false);
+      onDeleteSuccess?.();
     } catch (error) {
       console.error('Error deleting lead:', error);
       toast({
