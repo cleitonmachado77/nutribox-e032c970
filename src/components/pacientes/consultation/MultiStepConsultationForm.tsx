@@ -200,8 +200,11 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   const renderStepContent = () => {
+    console.log('renderStepContent called - isLoading:', isLoading, 'currentConsultation:', currentConsultation, 'currentStep:', currentStep);
+    
     // Se está carregando, mostrar loading
     if (isLoading) {
+      console.log('Showing loading state');
       return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -214,6 +217,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
 
     // Se não há consulta ativa, mostrar mensagem
     if (!currentConsultation) {
+      console.log('No current consultation found');
       return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
