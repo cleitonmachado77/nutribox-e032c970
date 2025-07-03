@@ -1,329 +1,309 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Header } from '@/components/Header';
+import { Search, Phone, Calendar, TrendingUp, MessageCircle, Star, Award, Target } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-import { useState } from "react";
-import { Header } from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Search, 
-  User, 
-  Calendar, 
-  FileText, 
-  Target, 
-  Activity, 
-  Heart,
-  Scale,
-  TrendingUp,
-  Camera,
-  MessageSquare,
-  Bell,
-  Settings
-} from "lucide-react";
-import { usePacientes } from "@/hooks/usePacientes";
+interface PatientData {
+  id: string;
+  nome: string;
+  telefone: string;
+  objetivo: string;
+  peso: string;
+  altura: string;
+  imc: string;
+  status: string;
+  progresso: number;
+  ultima_consulta: string;
+  proxima_consulta: string;
+}
 
-const PainelPaciente = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
-  const { data: pacientes = [], isLoading, error } = usePacientes();
+interface PatientResponse {
+  id: string;
+  patient_name: string;
+  patient_phone: string;
+  question_category: string;
+  response_score: number;
+  response_date: string;
+}
 
-  const filteredPacientes = pacientes.filter(paciente =>
-    paciente.lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    paciente.lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    paciente.lead.telefone.includes(searchTerm)
+export default function PainelPaciente() {
+  const { user } = useAuth();
+  const [patients, setPatients] = useState<PatientData[]>([]);
+  const [responses, setResponses] = useState<PatientResponse[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState<PatientData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadPatients();
+      loadResponses();
+    }
+  }, [user]);
+
+  const loadPatients = async () => {
+    // Buscar pacientes com seus dados dos leads
+    const { data } = await supabase
+      .from('pacientes')
+      .select(`
+        id,
+        data_primeira_consulta,
+        status_tratamento,
+        lead:leads!inner(
+          id,
+          nome,
+          telefone,
+          objetivo,
+          peso,
+          altura,
+          imc,
+          status,
+          foto_perfil
+        )
+      `)
+      .eq('user_id', user?.id)
+      .order('created_at', { ascending: false });
+    
+    if (data) {
+      const formattedPatients = data.map((p: any) => ({
+        id: p.id,
+        nome: p.lead.nome,
+        telefone: p.lead.telefone,
+        objetivo: p.lead.objetivo,
+        peso: p.lead.peso,
+        altura: p.lead.altura,
+        imc: p.lead.imc,
+        status: p.status_tratamento || p.lead.status,
+        foto_perfil: p.lead.foto_perfil,
+        data_primeira_consulta: p.data_primeira_consulta,
+        progresso: 0,
+        ultima_consulta: '',
+        proxima_consulta: ''
+      }));
+      setPatients(formattedPatients);
+    }
+    setLoading(false);
+  };
+
+  const loadResponses = async () => {
+    const { data } = await supabase
+      .from('coach_responses')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    if (data) setResponses(data);
+  };
+
+  const filteredPatients = patients.filter(patient =>
+    patient.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.telefone?.includes(searchTerm)
   );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
-          <Header title="Painel do Paciente" description="Acompanhe o progresso dos seus pacientes" />
-          <div className="flex items-center justify-center h-64">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-transparent"></div>
-              <p className="text-gray-500 text-sm">Carregando painel...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getPatientResponses = (patientPhone: string) => {
+    return responses.filter(r => r.patient_phone === patientPhone);
+  };
 
-  if (error) {
+  const getPatientAvgScore = (patientPhone: string) => {
+    const patientResponses = getPatientResponses(patientPhone);
+    if (patientResponses.length === 0) return 0;
+    
+    const sum = patientResponses.reduce((acc, r) => acc + (r.response_score || 0), 0);
+    return Math.round((sum / patientResponses.length) * 50); // Convert to percentage
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ativo': return 'bg-green-100 text-green-800';
+      case 'novo': return 'bg-blue-100 text-blue-800';
+      case 'inativo': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getProgressColor = (score: number) => {
+    if (score >= 80) return 'bg-green-500';
+    if (score >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
-          <Header title="Painel do Paciente" description="Acompanhe o progresso dos seus pacientes" />
-          <div className="text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <p className="text-red-600">Erro ao carregar dados: {error.message}</p>
-            </div>
-          </div>
-        </div>
+      <div className="p-6 space-y-6 bg-background min-h-screen">
+        <Header title="Painel do Paciente" description="Acompanhe o progresso dos seus pacientes" />
+        <div className="text-center">Carregando...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
-        <Header title="Painel do Paciente" description="Acompanhe o progresso dos seus pacientes" />
-        
-        {!selectedPatient ? (
-          <div className="space-y-6">
-            {/* Barra de pesquisa */}
-            <Card className="bg-white border-gray-200 shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  Selecionar Paciente
-                </CardTitle>
+    <div className="p-6 space-y-6 bg-background min-h-screen">
+      <Header 
+        title="Painel do Paciente" 
+        description="Acompanhe o progresso e engajamento dos seus pacientes"
+      />
+
+      {/* Search and Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            Buscar Pacientes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Input
+            placeholder="Buscar por nome ou telefone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Patient Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredPatients.map((patient) => {
+          const avgScore = getPatientAvgScore(patient.telefone);
+          const patientResponses = getPatientResponses(patient.telefone);
+          
+          return (
+            <Card key={patient.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{patient.nome}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="w-3 h-3" />
+                      {patient.telefone}
+                    </div>
+                  </div>
+                  <Badge className={getStatusColor(patient.status || 'novo')}>
+                    {patient.status || 'novo'}
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Buscar paciente por nome, email ou telefone..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 input-modern"
+              
+              <CardContent className="space-y-4">
+                {/* Objective */}
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm">{patient.objetivo || 'Não definido'}</span>
+                </div>
+
+                {/* Physical Data */}
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="text-center">
+                    <div className="font-medium">{patient.peso || '-'}</div>
+                    <div className="text-muted-foreground">Peso</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium">{patient.altura || '-'}</div>
+                    <div className="text-muted-foreground">Altura</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-medium">{patient.imc || '-'}</div>
+                    <div className="text-muted-foreground">IMC</div>
+                  </div>
+                </div>
+
+                {/* Engagement Score */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3 h-3" />
+                      Engajamento
+                    </span>
+                    <span className="font-medium">{avgScore}%</span>
+                  </div>
+                  <Progress 
+                    value={avgScore} 
+                    className="h-2"
                   />
+                </div>
+
+                {/* Response Count */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-1">
+                    <MessageCircle className="w-3 h-3" />
+                    Respostas
+                  </span>
+                  <span className="font-medium">{patientResponses.length}</span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setSelectedPatient(patient)}
+                  >
+                    Ver Detalhes
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-
-            {/* Lista de pacientes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPacientes.map((paciente) => (
-                <Card 
-                  key={paciente.id} 
-                  className="bg-white border-gray-200 shadow-soft hover:shadow-medium transition-shadow duration-200 cursor-pointer"
-                  onClick={() => setSelectedPatient(paciente)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{paciente.lead.nome}</h3>
-                          <p className="text-sm text-gray-500">{paciente.lead.email}</p>
-                        </div>
-                      </div>
-                      <Badge 
-                        variant={paciente.status_tratamento === 'ativo' ? 'default' : 'secondary'}
-                        className={paciente.status_tratamento === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                      >
-                        {paciente.status_tratamento}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span>Cadastrado em {new Date(paciente.created_at).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                      {paciente.lead.objetivo && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Target className="w-4 h-4 mr-2" />
-                          <span>{paciente.lead.objetivo}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {filteredPacientes.length === 0 && (
-              <Card className="bg-white border-gray-200 shadow-soft">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <User className="w-12 h-12 text-gray-400 mb-4" />
-                  <p className="text-gray-500 text-center">
-                    {searchTerm ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Header do paciente */}
-            <Card className="bg-white border-gray-200 shadow-soft">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                      <User className="w-8 h-8 text-purple-600" />
-                    </div>
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900">{selectedPatient.lead.nome}</h1>
-                      <p className="text-gray-600">{selectedPatient.lead.email}</p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Badge 
-                          variant={selectedPatient.status_tratamento === 'ativo' ? 'default' : 'secondary'}
-                          className={selectedPatient.status_tratamento === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                        >
-                          {selectedPatient.status_tratamento}
-                        </Badge>
-                        {selectedPatient.lead.objetivo && (
-                          <Badge variant="outline" className="border-purple-200 text-purple-600">
-                            {selectedPatient.lead.objetivo}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSelectedPatient(null)}
-                    className="border-purple-200 text-purple-600 hover:bg-purple-50"
-                  >
-                    Voltar
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Tabs do painel */}
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 bg-gray-100">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-purple-600">
-                  <Activity className="w-4 h-4 mr-2" />
-                  Visão Geral
-                </TabsTrigger>
-                <TabsTrigger value="progress" className="data-[state=active]:bg-white data-[state=active]:text-purple-600">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Progresso
-                </TabsTrigger>
-                <TabsTrigger value="consultations" className="data-[state=active]:bg-white data-[state=active]:text-purple-600">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Consultas
-                </TabsTrigger>
-                <TabsTrigger value="photos" className="data-[state=active]:bg-white data-[state=active]:text-purple-600">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Fotos
-                </TabsTrigger>
-                <TabsTrigger value="messages" className="data-[state=active]:bg-white data-[state=active]:text-purple-600">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Mensagens
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:text-purple-600">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configurações
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <Card className="bg-white border-gray-200 shadow-soft">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600">Peso Atual</CardTitle>
-                      <Scale className="h-4 w-4 text-purple-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-gray-900">--</div>
-                      <p className="text-xs text-gray-500">Não informado</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white border-gray-200 shadow-soft">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600">IMC</CardTitle>
-                      <Heart className="h-4 w-4 text-purple-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-gray-900">--</div>
-                      <p className="text-xs text-gray-500">Não calculado</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white border-gray-200 shadow-soft">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600">Consultas</CardTitle>
-                      <Calendar className="h-4 w-4 text-purple-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-gray-900">0</div>
-                      <p className="text-xs text-gray-500">Total realizadas</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white border-gray-200 shadow-soft">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-gray-600">Progresso</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-purple-600" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-gray-900">{selectedPatient.lead.progresso || 0}%</div>
-                      <p className="text-xs text-gray-500">Meta atual</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="progress">
-                <Card className="bg-white border-gray-200 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Acompanhamento de Progresso</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">Funcionalidade em desenvolvimento...</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="consultations">
-                <Card className="bg-white border-gray-200 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Histórico de Consultas</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">Nenhuma consulta registrada ainda.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="photos">
-                <Card className="bg-white border-gray-200 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Fotos de Progresso</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">Nenhuma foto adicionada ainda.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="messages">
-                <Card className="bg-white border-gray-200 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Mensagens</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">Nenhuma mensagem ainda.</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="settings">
-                <Card className="bg-white border-gray-200 shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Configurações do Paciente</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">Configurações em desenvolvimento...</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+          );
+        })}
       </div>
+
+      {filteredPatients.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">Nenhum paciente encontrado</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Patient Detail Modal/Sidebar could be added here */}
+      {selectedPatient && (
+        <Card className="fixed inset-4 z-50 overflow-auto">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Detalhes - {selectedPatient.nome}</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setSelectedPatient(null)}
+              >
+                Fechar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Patient responses history */}
+              <div>
+                <h4 className="font-medium mb-3">Histórico de Respostas</h4>
+                <div className="space-y-2">
+                  {getPatientResponses(selectedPatient.telefone).map((response, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted rounded">
+                      <div>
+                        <div className="font-medium text-sm">{response.question_category}</div>
+                        <div className="text-xs text-muted-foreground">{response.response_date}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Pontuação:</span>
+                        <Badge variant={response.response_score >= 2 ? 'default' : 'destructive'}>
+                          {response.response_score}/2
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-};
-
-export default PainelPaciente;
+}

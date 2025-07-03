@@ -86,15 +86,10 @@ const Consultas = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
-          <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
-          <div className="flex items-center justify-center h-64">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-transparent"></div>
-              <p className="text-gray-500 text-sm">Carregando consultas...</p>
-            </div>
-          </div>
+      <div className="p-6 space-y-6">
+        <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
       </div>
     );
@@ -102,14 +97,10 @@ const Consultas = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
-          <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
-          <div className="text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <p className="text-red-600">Erro ao carregar pacientes: {error.message}</p>
-            </div>
-          </div>
+      <div className="p-6 space-y-6">
+        <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
+        <div className="text-center text-red-500">
+          Erro ao carregar pacientes: {error.message}
         </div>
       </div>
     );
@@ -118,7 +109,7 @@ const Consultas = () => {
   // Se um paciente está selecionado, mostrar perfil em tela cheia
   if (selectedPatient) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-indigo-950">
         <ConsultasPatientProfile
           selectedPatient={selectedPatient}
           onBack={() => setSelectedPatient(null)}
@@ -136,36 +127,34 @@ const Consultas = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
-        <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
+    <div className="p-6 space-y-8 min-h-screen bg-indigo-950">
+      <Header title="Consultas" description="Gerencie consultas e perfis dos seus pacientes" />
 
-        <PacientesStats pacientes={pacientes} />
+      <PacientesStats pacientes={pacientes} />
 
-        <ConsultasProximas />
+      <ConsultasProximas />
 
-        {/* Grid horizontal de pacientes */}
-        <ConsultasPatientGrid
-          pacientes={filteredAndSortedPacientes}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          onSelectPatient={setSelectedPatient}
-          onDeletePatient={handleDeletePatient}
-          viewMode={viewMode}
-        />
+      {/* Grid horizontal de pacientes */}
+      <ConsultasPatientGrid
+        pacientes={filteredAndSortedPacientes}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onSelectPatient={setSelectedPatient}
+        onDeletePatient={handleDeletePatient}
+        viewMode={viewMode}
+      />
 
-        {/* Dialog para excluir paciente */}
-        <DeletePacienteDialog 
-          open={!!selectedPacienteForDelete} 
-          onOpenChange={(open) => {
-            if (!open) {
-              setSelectedPacienteForDelete(null);
-            }
-          }} 
-          paciente={selectedPacienteForDelete} 
-          onDeleteSuccess={handleDeleteSuccess} 
-        />
-      </div>
+      {/* Dialog para excluir paciente */}
+      <DeletePacienteDialog 
+        open={!!selectedPacienteForDelete} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPacienteForDelete(null);
+          }
+        }} 
+        paciente={selectedPacienteForDelete} 
+        onDeleteSuccess={handleDeleteSuccess} 
+      />
     </div>
   );
 };
