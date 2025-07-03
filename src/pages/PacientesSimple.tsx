@@ -1,301 +1,210 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Users, UserPlus, Eye, Edit, Trash } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Header } from "@/components/Header";
-import { usePacientes, Paciente } from "@/hooks/usePacientes";
+import { usePacientes } from "@/hooks/usePacientes";
+import { PacientesToolbar } from "@/components/pacientes/PacientesToolbar";
+import { PacientesList } from "@/components/pacientes/PacientesList";
+import { PacientesStats } from "@/components/pacientes/PacientesStats";
+import { PatientProfile } from "@/components/pacientes/PatientProfile";
 import { NewPacienteDialog } from "@/components/NewPacienteDialog";
 import { EditPacienteDialog } from "@/components/EditPacienteDialog";
 import { DeletePacienteDialog } from "@/components/DeletePacienteDialog";
+import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
+import React from "react";
 
 const PacientesSimple = () => {
-  console.log('PacientesSimple component rendering...');
-  
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [newPacienteDialogOpen, setNewPacienteDialogOpen] = useState(false);
   const [editPacienteDialogOpen, setEditPacienteDialogOpen] = useState(false);
   const [deletePacienteDialogOpen, setDeletePacienteDialogOpen] = useState(false);
-  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
-  
-  const { data: pacientesData, isLoading, error } = usePacientes();
+  const [selectedPacienteForEdit, setSelectedPacienteForEdit] = useState<any>(null);
+  const [selectedPacienteForDelete, setSelectedPacienteForDelete] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
-  console.log('Query state:', { isLoading, error: error?.message, pacientesData });
+  const { data: pacientes = [], isLoading, error } = usePacientes();
 
-  const pacientes = pacientesData || [];
-
-  console.log('Pacientes data:', pacientesData);
-  console.log('Total pacientes:', pacientes.length);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ativo":
-        return "bg-green-500";
-      case "inativo":
-        return "bg-red-500";
-      case "em_tratamento":
-        return "bg-blue-500";
-      case "acompanhamento":
-        return "bg-orange-500";
-      case "arquivado":
-        return "bg-gray-500";
-      default:
-        return "bg-gray-500";
+  // Limpar paciente selecionado se ele foi deletado
+  React.useEffect(() => {
+    if (selectedPatient && !pacientes.find(p => p.id === selectedPatient.id)) {
+      setSelectedPatient(null);
     }
-  };
+  }, [pacientes, selectedPatient]);
 
-  const formatStatusDisplay = (status: string) => {
-    switch (status) {
-      case "ativo":
-        return "Ativo";
-      case "inativo":
-        return "Inativo";
-      case "em_tratamento":
-        return "Em Tratamento";
-      case "acompanhamento":
-        return "Acompanhamento";
-      default:
-        return status;
-    }
-  };
-
-  const filteredPacientes = pacientes.filter(paciente => {
-    const lead = paciente.lead;
-    if (!lead) return false;
-    
-    return searchTerm === "" || 
-      (lead.nome && lead.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
-      (lead.telefone && lead.telefone.includes(searchTerm)) || 
-      (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
-  });
-
-  const handleViewPaciente = (paciente: Paciente) => {
-    console.log('Visualizar paciente:', paciente.lead.nome);
-    // Pode implementar navegação para tela de detalhes ou modal
-  };
-
-  const handleEditPaciente = (paciente: Paciente) => {
-    console.log('Editar paciente:', paciente.lead.nome);
-    setSelectedPaciente(paciente);
+  const handleEditPatient = (paciente: any) => {
+    setSelectedPacienteForEdit(paciente);
     setEditPacienteDialogOpen(true);
   };
 
-  const handleDeletePaciente = (paciente: Paciente) => {
-    console.log('Excluir paciente:', paciente.lead.nome);
-    setSelectedPaciente(paciente);
+  const handleDeletePatient = (paciente: any) => {
+    setSelectedPacienteForDelete(paciente);
     setDeletePacienteDialogOpen(true);
   };
 
-  const handleDeleteSuccess = () => {
-    setSelectedPaciente(null);
+  const handleDeleteSuccess = (deletedPacienteId: string) => {
+    if (selectedPatient?.id === deletedPacienteId) {
+      setSelectedPatient(null);
+    }
+    setSelectedPacienteForDelete(null);
     setDeletePacienteDialogOpen(false);
   };
 
-  console.log('About to render, isLoading:', isLoading, 'error:', error);
+  // Filtrar e ordenar pacientes
+  const filteredAndSortedPacientes = React.useMemo(() => {
+    let filtered = pacientes.filter(paciente => {
+      const matchesSearch = paciente.lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        paciente.lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        paciente.lead.telefone.includes(searchTerm);
+
+      const matchesTags = selectedTags.length === 0 || 
+        (paciente.lead.tags && paciente.lead.tags.some((tag: any) => selectedTags.includes(tag.id)));
+
+      return matchesSearch && matchesTags;
+    });
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      let valueA: any, valueB: any;
+      
+      switch (sortBy) {
+        case 'name':
+          valueA = a.lead.nome.toLowerCase();
+          valueB = b.lead.nome.toLowerCase();
+          break;
+        case 'created_at':
+          valueA = new Date(a.created_at);
+          valueB = new Date(b.created_at);
+          break;
+        case 'progresso':
+          valueA = a.lead.progresso || 0;
+          valueB = b.lead.progresso || 0;
+          break;
+        case 'ultima_consulta':
+          valueA = a.lead.ultima_consulta ? new Date(a.lead.ultima_consulta) : new Date(0);
+          valueB = b.lead.ultima_consulta ? new Date(b.lead.ultima_consulta) : new Date(0);
+          break;
+        default:
+          return 0;
+      }
+
+      if (sortOrder === 'asc') {
+        return valueA > valueB ? 1 : -1;
+      } else {
+        return valueA < valueB ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [pacientes, searchTerm, selectedTags, sortBy, sortOrder]);
 
   if (isLoading) {
-    console.log('Rendering loading state...');
     return (
-      <div className="p-6 space-y-6">
-        <Header title="Pacientes" description="Gerencie seus pacientes" />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
+          <Header title="Pacientes" description="Gerencie seus pacientes" />
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center space-y-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-transparent"></div>
+              <p className="text-gray-500 text-sm">Carregando pacientes...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   if (error) {
-    console.log('Rendering error state:', error);
     return (
-      <div className="p-6 space-y-6">
-        <Header title="Pacientes" description="Gerencie seus pacientes" />
-        <div className="text-center text-red-500">
-          Erro ao carregar pacientes: {error.message}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
+          <Header title="Pacientes" description="Gerencie seus pacientes" />
+          <div className="text-center">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <p className="text-red-600">Erro ao carregar pacientes: {error.message}</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  console.log('Rendering main content...');
+  // Se um paciente está selecionado, mostrar perfil em tela cheia
+  if (selectedPatient) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {activeTab === "consultation" ? (
+          <NewConsultationTab
+            selectedPatient={selectedPatient}
+            onBack={() => setActiveTab("overview")}
+          />
+        ) : (
+          <PatientProfile
+            selectedPatient={selectedPatient}
+            onBack={() => setSelectedPatient(null)}
+            onEdit={handleEditPatient}
+            onDelete={handleDeletePatient}
+            onStartConsultation={() => setActiveTab("consultation")}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <Header title="Pacientes (Versão Simples)" description="Gerencie seus pacientes" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        <Header title="Pacientes" description="Gerencie seus pacientes" />
+        
+        <PacientesStats pacientes={pacientes} />
 
-      {/* Estatísticas Simples */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 border-none text-white">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-indigo-100">Total de Pacientes</CardTitle>
-            <Users className="h-4 w-4 text-indigo-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{pacientes.length}</div>
-            <p className="text-xs text-indigo-200">
-              {pacientes.length === 0 ? "Nenhum paciente cadastrado" : "Total de pacientes cadastrados"}
-            </p>
-          </CardContent>
-        </Card>
+        <PacientesToolbar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          selectedTags={selectedTags}
+          setSelectedTags={setSelectedTags}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          onAddNew={() => setNewPacienteDialogOpen(true)}
+        />
 
-        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-none text-white">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-100">Filtrados</CardTitle>
-            <UserPlus className="h-4 w-4 text-emerald-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{filteredPacientes.length}</div>
-            <p className="text-xs text-emerald-200">
-              Pacientes encontrados
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <PacientesList
+          pacientes={filteredAndSortedPacientes}
+          viewMode={viewMode}
+          onSelectPatient={setSelectedPatient}
+          onEditPatient={handleEditPatient}
+          onDeletePatient={handleDeletePatient}
+        />
 
-      {/* Busca */}
-      <div className="flex gap-4 justify-between">
-        <div className="flex gap-2">
-          <Button 
-            className="bg-purple-600 hover:bg-purple-700"
-            onClick={() => setNewPacienteDialogOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Paciente
-          </Button>
-        </div>
+        <NewPacienteDialog 
+          open={newPacienteDialogOpen} 
+          onOpenChange={setNewPacienteDialogOpen} 
+        />
 
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Buscar pacientes..." 
-            value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)} 
-            className="pl-10 w-64" 
+        {selectedPacienteForEdit && (
+          <EditPacienteDialog 
+            open={editPacienteDialogOpen} 
+            onOpenChange={setEditPacienteDialogOpen} 
+            paciente={selectedPacienteForEdit} 
           />
-        </div>
+        )}
+
+        {selectedPacienteForDelete && (
+          <DeletePacienteDialog 
+            open={deletePacienteDialogOpen} 
+            onOpenChange={setDeletePacienteDialogOpen} 
+            paciente={selectedPacienteForDelete} 
+            onDeleteSuccess={handleDeleteSuccess} 
+          />
+        )}
       </div>
-
-      {/* Tabela de Pacientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resultados: {filteredPacientes.length}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredPacientes.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {pacientes.length === 0 
-                ? "Nenhum paciente cadastrado. Clique em 'Novo Paciente' para começar." 
-                : "Nenhum paciente encontrado com os filtros aplicados."
-              }
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Paciente</TableHead>
-                  <TableHead>UF</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Cadastro</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPacientes.map((paciente) => {
-                  const lead = paciente.lead;
-                  
-                  if (!lead) {
-                    console.warn('Paciente sem lead:', paciente);
-                    return null;
-                  }
-
-                  return (
-                    <TableRow key={paciente.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            {lead.foto_perfil && (
-                              <AvatarImage src={lead.foto_perfil} alt={lead.nome || 'Paciente'} className="object-cover" />
-                            )}
-                            <AvatarFallback className="bg-purple-100 text-purple-600">
-                              {lead.nome ? lead.nome.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'P'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{lead.nome || 'Nome não informado'}</div>
-                            <div className="text-sm text-gray-500">{lead.telefone || 'Telefone não informado'}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{lead.estado || '-'}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(lead.status || 'inativo')}>
-                          {formatStatusDisplay(lead.status || 'inativo')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {lead.created_at ? new Date(lead.created_at).toLocaleDateString('pt-BR') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleViewPaciente(paciente)}
-                            title="Visualizar"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-blue-600 hover:text-blue-700"
-                            onClick={() => handleEditPaciente(paciente)}
-                            title="Editar"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => handleDeletePaciente(paciente)}
-                            title="Excluir"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dialogs */}
-      <NewPacienteDialog 
-        open={newPacienteDialogOpen} 
-        onOpenChange={setNewPacienteDialogOpen} 
-      />
-      
-      <EditPacienteDialog 
-        open={editPacienteDialogOpen} 
-        onOpenChange={setEditPacienteDialogOpen}
-        paciente={selectedPaciente}
-      />
-      
-      <DeletePacienteDialog 
-        open={deletePacienteDialogOpen} 
-        onOpenChange={setDeletePacienteDialogOpen}
-        paciente={selectedPaciente}
-        onDeleteSuccess={handleDeleteSuccess}
-      />
     </div>
   );
 };

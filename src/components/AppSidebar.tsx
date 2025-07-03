@@ -65,32 +65,32 @@ export function AppSidebar() {
   const { signOut } = useAuth()
 
   return (
-    <Sidebar className="border-r border-gray-200 bg-white">
-      <SidebarHeader className="p-6 border-b border-gray-100">
+    <Sidebar className="border-r border-purple-100 bg-gradient-to-b from-purple-600 to-purple-700 text-white shadow-lg">
+      <SidebarHeader className="p-6 border-b border-purple-500/30">
         <div className="flex items-center justify-center">
           <img 
             src="/lovable-uploads/83d718e0-f178-4131-ae80-27b184b0402a.png" 
             alt="Nutribox Logo" 
-            className="h-10 w-auto object-contain" 
+            className="h-12 w-auto object-contain filter brightness-0 invert" 
           />
         </div>
       </SidebarHeader>
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          <SidebarGroupLabel className="text-xs font-medium text-purple-100 uppercase tracking-wider mb-3">
             Navegação
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={location.pathname === item.url}
-                    className="w-full justify-start px-3 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-100 data-[active=true]:bg-purple-50 data-[active=true]:text-purple-600 data-[active=true]:border-purple-200"
+                    className="w-full justify-start px-4 py-3 text-sm font-medium transition-all duration-200 rounded-xl hover:bg-purple-500/30 hover:shadow-md hover:scale-[1.02] data-[active=true]:bg-white data-[active=true]:text-purple-600 data-[active=true]:shadow-lg data-[active=true]:font-semibold"
                   >
                     <Link to={item.url} className="flex items-center space-x-3">
-                      <item.icon className="w-4 h-4" />
+                      <item.icon className="w-5 h-5" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -100,14 +100,14 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-3 border-t border-gray-100">
+      <SidebarFooter className="p-4 border-t border-purple-500/30">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={signOut}
-              className="w-full justify-start px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="w-full justify-start px-4 py-3 text-sm font-medium text-purple-100 hover:text-white hover:bg-purple-500/30 rounded-xl transition-all duration-200 hover:shadow-md"
             >
-              <LogOut className="w-4 h-4 mr-3" />
+              <LogOut className="w-5 h-5 mr-3" />
               <span>Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
