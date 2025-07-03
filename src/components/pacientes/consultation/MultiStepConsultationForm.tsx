@@ -58,21 +58,27 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [showConsultationManager, setShowConsultationManager] = useState(true);
   
-  const { currentConsultation, totalConsultations, createNewConsultation, isLoading } = useConsultations(selectedPatient.id);
+  const { currentConsultation, totalConsultations, createNewConsultation, isLoading, setActiveConsultation, loadConsultations } = useConsultations(selectedPatient.id);
 
   const totalSteps = steps.length;
   const progress = (currentStep / totalSteps) * 100;
 
-  const handleNewConsultation = (consultation: Consultation) => {
-    console.log('Nova consulta criada:', consultation);
+  const handleNewConsultation = async (consultation: Consultation) => {
+    // Primeiro atualizar o currentConsultation manualmente para evitar delay
+    setActiveConsultation(consultation);
+    // Depois esconder o manager e resetar o form
     setShowConsultationManager(false);
     setCurrentStep(1);
     setCurrentSubStep("2a");
     setCompletedSteps([]);
+    // Recarregar as consultas em background
+    await loadConsultations();
   };
 
-  const handleSelectConsultation = (consultation: Consultation) => {
-    console.log('Consulta selecionada:', consultation);
+  const handleSelectConsultation = async (consultation: Consultation) => {
+    // Primeiro atualizar o currentConsultation manualmente
+    setActiveConsultation(consultation);
+    // Depois esconder o manager e resetar o form
     setShowConsultationManager(false);
     setCurrentStep(1);
     setCurrentSubStep("2a");
@@ -200,11 +206,8 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   const renderStepContent = () => {
-    console.log('renderStepContent called - isLoading:', isLoading, 'currentConsultation:', currentConsultation, 'currentStep:', currentStep);
-    
     // Se está carregando, mostrar loading
     if (isLoading) {
-      console.log('Showing loading state');
       return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -217,7 +220,6 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
 
     // Se não há consulta ativa, mostrar mensagem
     if (!currentConsultation) {
-      console.log('No current consultation found');
       return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -229,8 +231,6 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
         </div>
       );
     }
-
-    console.log('Renderizando step:', currentStep, 'subStep:', currentSubStep, 'consultationId:', currentConsultation.id);
 
     switch (currentStep) {
       case 1:
