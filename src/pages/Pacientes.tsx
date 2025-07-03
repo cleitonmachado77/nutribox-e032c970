@@ -1,8 +1,8 @@
 
-import PacientesModern from "./PacientesModern";
+import LeadsModern from "./LeadsModern";
 
 const Pacientes = () => {
-  return <PacientesModern />;
+  return <LeadsModern />;
 };
 
 export default Pacientes;
