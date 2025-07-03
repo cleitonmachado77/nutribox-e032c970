@@ -26,6 +26,11 @@ export interface Lead {
   data_nascimento?: string;
   sexo?: string;
   consultas_realizadas?: number;
+  tags?: Array<{
+    id: string;
+    nome: string;
+    cor: string;
+  }>;
   objetivo_tag?: {
     id: string;
     nome: string;

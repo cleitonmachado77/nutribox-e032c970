@@ -4,9 +4,10 @@ import { Paciente } from "@/hooks/usePacientes";
 
 interface NewConsultationTabProps {
   selectedPatient: Paciente;
+  onBack?: () => void;
 }
 
-export const NewConsultationTab = ({ selectedPatient }: NewConsultationTabProps) => {
+export const NewConsultationTab = ({ selectedPatient, onBack }: NewConsultationTabProps) => {
   return (
     <MultiStepConsultationForm selectedPatient={selectedPatient} />
   );
