@@ -25,7 +25,8 @@ import KanbanOperacional from "./pages/KanbanOperacional";
 
 const queryClient = new QueryClient();
 
-const App = () => <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <WhatsAppProvider>
@@ -33,11 +34,12 @@ const App = () => <QueryClientProvider client={queryClient}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard/*" element={<ProtectedRoute>
+              <Route path="/dashboard/*" element={
+                <ProtectedRoute>
                   <SidebarProvider>
-                    <div className="min-h-screen flex w-full">
+                    <div className="min-h-screen flex w-full bg-gray-50">
                       <AppSidebar />
-                      <div className="flex-1 bg-indigo-950">
+                      <div className="flex-1">
                         <Routes>
                           <Route index element={<Dashboard />} />
                           <Route path="leads" element={<Leads />} />
@@ -54,7 +56,8 @@ const App = () => <QueryClientProvider client={queryClient}>
                       </div>
                     </div>
                   </SidebarProvider>
-                </ProtectedRoute>} />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
@@ -62,6 +65,7 @@ const App = () => <QueryClientProvider client={queryClient}>
       </AuthProvider>
     </TooltipProvider>
     <Toaster />
-  </QueryClientProvider>;
+  </QueryClientProvider>
+);
 
 export default App;
