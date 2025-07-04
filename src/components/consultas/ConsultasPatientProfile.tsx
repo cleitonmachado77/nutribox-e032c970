@@ -57,7 +57,8 @@ export const ConsultasPatientProfile = ({
     estado: selectedPatient.lead.estado || '',
     data_nascimento: selectedPatient.lead.data_nascimento || '',
     sexo: selectedPatient.lead.sexo || '',
-    anotacoes: selectedPatient.lead.anotacoes || ''
+    anotacoes: selectedPatient.lead.anotacoes || '',
+    foto_perfil: selectedPatient.lead.foto_perfil || ''
   });
 
   const getObjetivoColor = (objetivo: string) => {
@@ -165,7 +166,8 @@ export const ConsultasPatientProfile = ({
         estado: selectedPatient.lead.estado || '',
         data_nascimento: selectedPatient.lead.data_nascimento || '',
         sexo: selectedPatient.lead.sexo || '',
-        anotacoes: selectedPatient.lead.anotacoes || ''
+        anotacoes: selectedPatient.lead.anotacoes || '',
+        foto_perfil: selectedPatient.lead.foto_perfil || ''
       };
 
       // Criar objeto apenas com campos que mudaram
@@ -203,6 +205,9 @@ export const ConsultasPatientProfile = ({
       }
       if (editingData.anotacoes !== originalData.anotacoes) {
         changedFields.anotacoes = editingData.anotacoes.trim() || null;
+      }
+      if (editingData.foto_perfil !== originalData.foto_perfil) {
+        changedFields.foto_perfil = editingData.foto_perfil.trim() || null;
       }
 
       // Se nenhum campo mudou, não fazer nada
@@ -673,55 +678,55 @@ export const ConsultasPatientProfile = ({
                             Ver Todas ({photos.length})
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Todas as Fotos - {selectedPatient.lead.nome}</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {photos.map((photo) => (
-                              <div key={photo.id} className="space-y-2">
-                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative group">
-                                  <img 
-                                    src={photo.url} 
-                                    alt={photo.descricao}
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="absolute top-2 right-2 w-8 h-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => deletePhoto(photo.id)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                                <div className="text-sm">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {photo.tipo}
-                                  </Badge>
-                                  <p className="text-gray-600 mt-1 text-xs">
-                                    {format(new Date(photo.created_at), 'dd/MM/yyyy')}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                            {photos.length === 0 && (
-                              <div className="col-span-full text-center py-8 text-gray-500">
-                                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                                <p>Nenhuma foto adicionada ainda</p>
-                              </div>
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                           <DialogHeader>
+                             <DialogTitle>Todas as Fotos - {selectedPatient.lead.nome}</DialogTitle>
+                           </DialogHeader>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                             {photos.map((photo) => (
+                               <div key={photo.id} className="space-y-2">
+                                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative group">
+                                   <img 
+                                     src={photo.url} 
+                                     alt={photo.descricao}
+                                     className="w-full h-full object-cover"
+                                   />
+                                   <Button
+                                     size="sm"
+                                     variant="destructive"
+                                     className="absolute top-2 right-2 w-8 h-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                     onClick={() => deletePhoto(photo.id)}
+                                   >
+                                     <X className="h-4 w-4" />
+                                   </Button>
+                                 </div>
+                                 <div className="text-sm">
+                                   <Badge variant="secondary" className="text-xs">
+                                     {photo.tipo}
+                                   </Badge>
+                                   <p className="text-gray-600 mt-1 text-xs">
+                                     {format(new Date(photo.created_at), 'dd/MM/yyyy')}
+                                   </p>
+                                 </div>
+                               </div>
+                             ))}
+                             {photos.length === 0 && (
+                               <div className="col-span-full text-center py-8 text-gray-500">
+                                 <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                                 <p>Nenhuma foto adicionada ainda</p>
+                               </div>
+                             )}
+                           </div>
+                         </DialogContent>
+                       </Dialog>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
+           </CardContent>
+         </Card>
+       </div>
       
       {/* Dialog para adicionar foto */}
       <Dialog open={showAddPhotoDialog} onOpenChange={setShowAddPhotoDialog}>
@@ -752,132 +757,148 @@ export const ConsultasPatientProfile = ({
               Altere as informações do paciente conforme necessário
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Dados pessoais */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Dados Pessoais</h3>
-              
-              <div>
-                <Label htmlFor="nome">Nome Completo</Label>
-                <Input
-                  id="nome"
-                  value={editingData.nome}
-                  onChange={(e) => setEditingData({...editingData, nome: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input
-                  id="telefone"
-                  value={editingData.telefone}
-                  onChange={(e) => setEditingData({...editingData, telefone: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={editingData.email}
-                  onChange={(e) => setEditingData({...editingData, email: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                <Input
-                  id="data_nascimento"
-                  type="date"
-                  value={editingData.data_nascimento}
-                  onChange={(e) => setEditingData({...editingData, data_nascimento: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="sexo">Sexo</Label>
-                <Select value={editingData.sexo} onValueChange={(value) => setEditingData({...editingData, sexo: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o sexo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="masculino">Masculino</SelectItem>
-                    <SelectItem value="feminino">Feminino</SelectItem>
-                    <SelectItem value="outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Seção de Foto de Perfil */}
+            <div className="border-b pb-4">
+              <h3 className="font-semibold text-gray-800 mb-4">Foto de Perfil</h3>
+              <ImageUpload
+                value={editingData.foto_perfil}
+                onChange={(url) => setEditingData({...editingData, foto_perfil: url})}
+                label="Foto de Perfil"
+                placeholder="Cole o URL da imagem ou faça upload de uma nova foto"
+              />
             </div>
 
-            {/* Dados físicos e localização */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Dados Físicos e Localização</h3>
+            {/* Dados pessoais e outros campos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Dados pessoais */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-800">Dados Pessoais</h3>
               
-              <div>
-                <Label htmlFor="peso">Peso (kg)</Label>
-                <Input
-                  id="peso"
-                  value={editingData.peso}
-                  onChange={(e) => setEditingData({...editingData, peso: e.target.value})}
-                />
+                <div>
+                  <Label htmlFor="nome">Nome Completo</Label>
+                  <Input
+                    id="nome"
+                    value={editingData.nome}
+                    onChange={(e) => setEditingData({...editingData, nome: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={editingData.telefone}
+                    onChange={(e) => setEditingData({...editingData, telefone: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={editingData.email}
+                    onChange={(e) => setEditingData({...editingData, email: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                  <Input
+                    id="data_nascimento"
+                    type="date"
+                    value={editingData.data_nascimento}
+                    onChange={(e) => setEditingData({...editingData, data_nascimento: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="sexo">Sexo</Label>
+                  <Select value={editingData.sexo} onValueChange={(value) => setEditingData({...editingData, sexo: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o sexo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="feminino">Feminino</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="altura">Altura (cm)</Label>
-                <Input
-                  id="altura"
-                  value={editingData.altura}
-                  onChange={(e) => setEditingData({...editingData, altura: e.target.value})}
-                />
+              {/* Dados físicos e localização */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-800">Dados Físicos e Localização</h3>
+                
+                <div>
+                  <Label htmlFor="peso">Peso (kg)</Label>
+                  <Input
+                    id="peso"
+                    value={editingData.peso}
+                    onChange={(e) => setEditingData({...editingData, peso: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="altura">Altura (cm)</Label>
+                  <Input
+                    id="altura"
+                    value={editingData.altura}
+                    onChange={(e) => setEditingData({...editingData, altura: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="objetivo">Objetivo</Label>
+                  <Select value={editingData.objetivo} onValueChange={(value) => setEditingData({...editingData, objetivo: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o objetivo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Perda de Peso">Perda de Peso</SelectItem>
+                      <SelectItem value="Ganho de Massa">Ganho de Massa</SelectItem>
+                      <SelectItem value="Manutenção">Manutenção</SelectItem>
+                      <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
+                      <SelectItem value="Definição">Definição</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                    id="cidade"
+                    value={editingData.cidade}
+                    onChange={(e) => setEditingData({...editingData, cidade: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="estado">Estado</Label>
+                  <Input
+                    id="estado"
+                    value={editingData.estado}
+                    onChange={(e) => setEditingData({...editingData, estado: e.target.value})}
+                  />
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="objetivo">Objetivo</Label>
-                <Select value={editingData.objetivo} onValueChange={(value) => setEditingData({...editingData, objetivo: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o objetivo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Perda de Peso">Perda de Peso</SelectItem>
-                    <SelectItem value="Ganho de Massa">Ganho de Massa</SelectItem>
-                    <SelectItem value="Manutenção">Manutenção</SelectItem>
-                    <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
-                    <SelectItem value="Definição">Definição</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input
-                  id="cidade"
-                  value={editingData.cidade}
-                  onChange={(e) => setEditingData({...editingData, cidade: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="estado">Estado</Label>
-                <Input
-                  id="estado"
-                  value={editingData.estado}
-                  onChange={(e) => setEditingData({...editingData, estado: e.target.value})}
-                />
-              </div>
-            </div>
-
-            {/* Anotações - span full width */}
-            <div className="md:col-span-2 space-y-4">
-              <div>
-                <Label htmlFor="anotacoes">Anotações</Label>
-                <Textarea
-                  id="anotacoes"
-                  value={editingData.anotacoes}
-                  onChange={(e) => setEditingData({...editingData, anotacoes: e.target.value})}
-                  placeholder="Observações sobre o paciente..."
-                  rows={3}
-                />
+              {/* Anotações - span full width */}
+              <div className="md:col-span-2 space-y-4">
+                <div>
+                  <Label htmlFor="anotacoes">Anotações</Label>
+                  <Textarea
+                    id="anotacoes"
+                    value={editingData.anotacoes}
+                    onChange={(e) => setEditingData({...editingData, anotacoes: e.target.value})}
+                    placeholder="Observações sobre o paciente..."
+                    rows={3}
+                  />
+                </div>
               </div>
             </div>
           </div>
