@@ -9,7 +9,7 @@ import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
 import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 import { usePatientPhotos } from "@/hooks/usePatientPhotos";
 import { ImageUpload } from "@/components/ImageUpload";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -153,54 +153,107 @@ export const ConsultasPatientProfile = ({
 
   const handleSavePatientData = async () => {
     try {
-      // Preparar dados com validação de tipos
-      const updateData = {
-        nome: editingData.nome.trim(),
-        telefone: editingData.telefone.trim(),
-        email: editingData.email.trim() || null,
-        peso: editingData.peso ? editingData.peso.toString() : null,
-        altura: editingData.altura ? editingData.altura.toString() : null,
-        objetivo: editingData.objetivo || null,
-        cidade: editingData.cidade.trim() || null,
-        estado: editingData.estado.trim() || null,
-        data_nascimento: editingData.data_nascimento || null,
-        sexo: editingData.sexo || null,
-        anotacoes: editingData.anotacoes.trim() || null,
-        updated_at: new Date().toISOString()
+      // Dados originais
+      const originalData = {
+        nome: selectedPatient.lead.nome,
+        telefone: selectedPatient.lead.telefone,
+        email: selectedPatient.lead.email || '',
+        peso: selectedPatient.lead.peso || '',
+        altura: selectedPatient.lead.altura || '',
+        objetivo: selectedPatient.lead.objetivo || '',
+        cidade: selectedPatient.lead.cidade || '',
+        estado: selectedPatient.lead.estado || '',
+        data_nascimento: selectedPatient.lead.data_nascimento || '',
+        sexo: selectedPatient.lead.sexo || '',
+        anotacoes: selectedPatient.lead.anotacoes || ''
       };
 
-      console.log('Dados sendo enviados:', updateData);
+      // Criar objeto apenas com campos que mudaram
+      const changedFields: any = {};
+      
+      if (editingData.nome !== originalData.nome) {
+        changedFields.nome = editingData.nome.trim();
+      }
+      if (editingData.telefone !== originalData.telefone) {
+        changedFields.telefone = editingData.telefone.trim();
+      }
+      if (editingData.email !== originalData.email) {
+        changedFields.email = editingData.email.trim() || null;
+      }
+      if (editingData.peso !== originalData.peso) {
+        changedFields.peso = editingData.peso ? editingData.peso.toString() : null;
+      }
+      if (editingData.altura !== originalData.altura) {
+        changedFields.altura = editingData.altura ? editingData.altura.toString() : null;
+      }
+      if (editingData.objetivo !== originalData.objetivo) {
+        changedFields.objetivo = editingData.objetivo || null;
+      }
+      if (editingData.cidade !== originalData.cidade) {
+        changedFields.cidade = editingData.cidade.trim() || null;
+      }
+      if (editingData.estado !== originalData.estado) {
+        changedFields.estado = editingData.estado.trim() || null;
+      }
+      if (editingData.data_nascimento !== originalData.data_nascimento) {
+        changedFields.data_nascimento = editingData.data_nascimento || null;
+      }
+      if (editingData.sexo !== originalData.sexo) {
+        changedFields.sexo = editingData.sexo || null;
+      }
+      if (editingData.anotacoes !== originalData.anotacoes) {
+        changedFields.anotacoes = editingData.anotacoes.trim() || null;
+      }
+
+      // Se nenhum campo mudou, não fazer nada
+      if (Object.keys(changedFields).length === 0) {
+        toast({
+          title: "Informação",
+          description: "Nenhuma alteração foi detectada",
+        });
+        setShowEditPatientDialog(false);
+        return;
+      }
+
+      // Adicionar updated_at apenas se há mudanças
+      changedFields.updated_at = new Date().toISOString();
+
+      console.log('Campos alterados:', changedFields);
       console.log('ID do lead:', selectedPatient.lead.id);
 
-      // Atualizar dados do lead
+      // Tentar atualização simples primeiro
       const { data, error: leadError } = await supabase
         .from('leads')
-        .update(updateData)
-        .eq('id', selectedPatient.lead.id)
-        .select();
+        .update(changedFields)
+        .eq('id', selectedPatient.lead.id);
 
       if (leadError) {
-        console.error('Erro detalhado:', leadError);
+        console.error('Erro detalhado do Supabase:', {
+          message: leadError.message,
+          details: leadError.details,
+          hint: leadError.hint,
+          code: leadError.code
+        });
         throw leadError;
       }
 
-      console.log('Dados atualizados:', data);
+      console.log('Atualização bem-sucedida:', data);
 
       toast({
         title: "Sucesso!",
-        description: "Dados do paciente atualizados com sucesso",
+        description: `${Object.keys(changedFields).length - 1} campo(s) atualizado(s) com sucesso`,
       });
 
       setShowEditPatientDialog(false);
       
-      // Recarregar a página ou atualizar os dados localmente
+      // Recarregar a página
       window.location.reload();
 
     } catch (error) {
-      console.error('Erro ao atualizar dados:', error);
+      console.error('Erro completo:', error);
       toast({
         title: "Erro",
-        description: `Erro ao atualizar dados do paciente: ${error.message || 'Erro desconhecido'}`,
+        description: `Erro ao atualizar: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive"
       });
     }
@@ -675,9 +728,9 @@ export const ConsultasPatientProfile = ({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adicionar Foto - {selectedPhotoType}</DialogTitle>
-            <div className="text-sm text-gray-600">
+            <DialogDescription>
               Faça upload ou cole o URL de uma nova foto para o paciente
-            </div>
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <ImageUpload
@@ -695,9 +748,9 @@ export const ConsultasPatientProfile = ({
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Dados do Paciente</DialogTitle>
-            <div className="text-sm text-gray-600">
+            <DialogDescription>
               Altere as informações do paciente conforme necessário
-            </div>
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Dados pessoais */}
