@@ -198,7 +198,7 @@ const Dashboard = () => {
               {monthlyData.length > 0 ? <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
                   <XAxis dataKey="month" />
-                  <YAxis domain={[0, 'auto']} />
+                  <YAxis domain={[0, (dataMax) => (dataMax === 0 ? 1 : 'auto')]} />
                   <Tooltip />
                   <Bar dataKey="leads" fill="#3B82F6" name="Leads" />
                   <Bar dataKey="consultas" fill="#10B981" name="Consultas" />
@@ -254,7 +254,7 @@ const Dashboard = () => {
               bottom: 5
             }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
-                  <XAxis type="number" domain={[0, 'auto']} />
+                  <XAxis type="number" domain={[0, (dataMax) => (dataMax === 0 ? 1 : 'auto')]} />
                   <YAxis dataKey="estado" type="category" width={50} tick={{
                 fontSize: 12
               }} />
