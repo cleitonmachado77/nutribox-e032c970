@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
-import { useTwilioAPI } from "@/hooks/useTwilioAPI";
-import { useUserSettings } from "@/hooks/useUserSettings";
-import { usePacientes } from "@/hooks/usePacientes";
-import { TwilioNumberSetup } from "@/components/TwilioNumberSetup";
+import { useEvolutionSupabase } from "@/hooks/useEvolutionSupabase";
+import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,60 +23,34 @@ import {
   UserPlus,
   QrCode,
   Wifi,
-  WifiOff
+  WifiOff,
+  RefreshCw,
+  Bot,
+  User,
+  Smartphone,
+  Monitor
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Link } from "react-router-dom";
-
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
-  profilePicture?: string;
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  unreadCount?: number;
-}
-
-interface Message {
-  id: string;
-  conversationId: string;
-  from: string;
-  to: string;
-  body: string;
-  timestamp: Date;
-  fromMe: boolean;
-  messageType: 'text' | 'image' | 'audio' | 'video' | 'document';
-  isRead: boolean;
-}
+import { EvolutionContact, EvolutionMessage, EvolutionSession } from "@/hooks/useEvolutionSupabase";
 
 export default function Conversas() {
-  const { data: userSettings } = useUserSettings();
-  const { data: pacientes = [] } = usePacientes();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("conversas");
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedContact, setSelectedContact] = useState<EvolutionContact | null>(null);
+  const [messages, setMessages] = useState<EvolutionMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchPacientes, setSearchPacientes] = useState("");
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
-    userNumber,
-    conversations,
+    session,
+    contacts,
     loading,
-    loadMessages,
-    sendMessage,
-    markAsRead
-  } = useTwilioAPI();
-
-  // Set connection status based on userNumber
-  useEffect(() => {
-    setIsConnected(!!userNumber?.is_active);
-  }, [userNumber]);
+    createInstance,
+    checkInstanceStatus,
+    fetchContacts,
+    fetchMessages,
+    sendMessage
+  } = useEvolutionSupabase();
 
   // Scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -89,126 +61,67 @@ export default function Conversas() {
     scrollToBottom();
   }, [messages]);
 
-  // Convert conversations to contacts format
-  const contacts: Contact[] = conversations
-    .map(conv => ({
-      id: conv.id,
-      name: conv.contact_name || conv.contact_phone.replace(/\D/g, '').slice(-8),
-      phone: conv.contact_phone,
-      lastMessage: conv.last_message || undefined,
-      lastMessageTime: conv.last_message_time ? new Date(conv.last_message_time) : undefined,
-      unreadCount: conv.unread_count
-    }))
-    .filter(contact => 
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.phone.includes(searchTerm)
-    );
+  // Auto-check status every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (session?.status === 'connected') {
+        checkInstanceStatus();
+      }
+    }, 30000);
 
-  // Filter pacientes for search
-  const filteredPacientes = pacientes.filter(paciente => 
-    paciente.lead?.nome?.toLowerCase().includes(searchPacientes.toLowerCase()) ||
-    paciente.lead?.telefone?.includes(searchPacientes)
+    return () => clearInterval(interval);
+  }, [session?.status, checkInstanceStatus]);
+
+  // Fetch contacts when connected
+  useEffect(() => {
+    if (session?.status === 'connected') {
+      fetchContacts();
+    }
+  }, [session?.status, fetchContacts]);
+
+  // Filter contacts based on search
+  const filteredContacts = contacts.filter(contact => 
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.phone.includes(searchTerm)
   );
 
-  const handleSelectContact = async (contact: Contact) => {
+  const handleSelectContact = async (contact: EvolutionContact) => {
     setSelectedContact(contact);
-    setActiveTab("conversas"); // Switch to conversations tab when selecting a contact
     
-    // Mark as read
-    await markAsRead(contact.id);
-    
-    // Load messages
-    const contactMessages = await loadMessages(contact.id);
-    const formattedMessages: Message[] = contactMessages.map(msg => ({
-      id: msg.id,
-      conversationId: msg.conversation_id,
-      from: msg.sender_type === 'contact' ? contact.phone : 'me',
-      to: msg.sender_type === 'user' ? contact.phone : 'me',
-      body: msg.content || '',
-      timestamp: new Date(msg.timestamp),
-      fromMe: msg.sender_type === 'user',
-      messageType: 'text',
-      isRead: msg.is_read || false
-    }));
-    setMessages(formattedMessages);
-  };
-
-  const handleSelectPaciente = async (paciente: any) => {
-    if (!paciente.lead?.telefone) {
-      toast({
-        title: "Erro",
-        description: "Este paciente não possui telefone cadastrado",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Try to find existing conversation or create a new contact
-    const existingContact = contacts.find(c => c.phone === paciente.lead.telefone);
-    
-    if (existingContact) {
-      await handleSelectContact(existingContact);
-    } else {
-      // Create new conversation
-      const newContact: Contact = {
-        id: `new-${Date.now()}`,
-        name: paciente.lead.nome,
-        phone: paciente.lead.telefone,
-        lastMessage: undefined,
-        lastMessageTime: undefined,
-        unreadCount: 0
-      };
-      
-      setSelectedContact(newContact);
-      setMessages([]);
-      setActiveTab("conversas");
-      
-      toast({
-        title: "Nova conversa",
-        description: `Conversa iniciada com ${paciente.lead.nome}`,
-      });
-    }
+    // Load messages for this contact
+    const contactMessages = await fetchMessages(contact.phone);
+    setMessages(contactMessages);
   };
 
   const handleSendMessage = async () => {
     if (!selectedContact || !newMessage.trim()) return;
 
     try {
-      await sendMessage(selectedContact.id, selectedContact.phone, newMessage);
+      const success = await sendMessage(selectedContact.phone, newMessage);
       
-      // Add message to local state immediately for better UX
-      const newMsg: Message = {
-        id: Date.now().toString(),
-        conversationId: selectedContact.id,
-        from: 'me',
-        to: selectedContact.phone,
-        body: newMessage,
-        timestamp: new Date(),
-        fromMe: true,
-        messageType: 'text',
-        isRead: true
-      };
-      
-      setMessages(prev => [...prev, newMsg]);
-      setNewMessage("");
-      
-      // Reload messages after a short delay to get the actual message from server
-      setTimeout(async () => {
-        const contactMessages = await loadMessages(selectedContact.id);
-        const formattedMessages: Message[] = contactMessages.map(msg => ({
-          id: msg.id,
-          conversationId: msg.conversation_id,
-          from: msg.sender_type === 'contact' ? selectedContact.phone : 'me',
-          to: msg.sender_type === 'user' ? selectedContact.phone : 'me',
-          body: msg.content || '',
-          timestamp: new Date(msg.timestamp),
-          fromMe: msg.sender_type === 'user',
+      if (success) {
+        // Add message to local state immediately for better UX
+        const newMsg: EvolutionMessage = {
+          id: Date.now().toString(),
+          conversationId: selectedContact.phone,
+          from: 'me',
+          to: selectedContact.phone,
+          body: newMessage,
+          timestamp: new Date(),
+          fromMe: true,
           messageType: 'text',
-          isRead: msg.is_read || false
-        }));
-        setMessages(formattedMessages);
-      }, 1000);
-      
+          isRead: true
+        };
+        
+        setMessages(prev => [...prev, newMsg]);
+        setNewMessage("");
+        
+        // Reload messages after a short delay to get the actual message from server
+        setTimeout(async () => {
+          const contactMessages = await fetchMessages(selectedContact.phone);
+          setMessages(contactMessages);
+        }, 2000);
+      }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       toast({
@@ -226,27 +139,73 @@ export default function Conversas() {
     });
   };
 
-  // Check if WhatsApp is configured
-  if (!userNumber) {
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Check if WhatsApp is not connected
+  if (!session || session.status === 'disconnected') {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <Header 
-          title="Conversas WhatsApp" 
-          description="Central de conversas com seus pacientes" 
+          title="Conversas WhatsApp - Evolution API" 
+          description="Central de conversas integrada com Evolution API" 
         />
         
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between w-full">
-            <span>
-              Configure seu WhatsApp Business para começar a usar as conversas. Um número será provisionado automaticamente.
-            </span>
-            <Button size="sm" onClick={() => setShowQRModal(true)}>
-              <Phone className="w-4 h-4 mr-2" />
-              Configurar WhatsApp
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <WhatsAppConnection
+          instance={session}
+          onConnect={createInstance}
+          onRefresh={checkInstanceStatus}
+          loading={loading}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-blue-500" />
+                Multi-Tenant
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Cada usuário possui sua própria instância isolada do WhatsApp
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-green-500" />
+                Evolution API
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Integração nativa com Evolution API para WhatsApp Business
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-purple-500" />
+                QR Code
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Autenticação individual via QR Code para cada usuário
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -254,8 +213,8 @@ export default function Conversas() {
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <Header 
-        title="Conversas WhatsApp" 
-        description="Central de conversas com seus pacientes" 
+        title="Conversas WhatsApp - Evolution API" 
+        description="Central de conversas integrada com Evolution API" 
       />
       
       {/* Status do WhatsApp */}
@@ -263,24 +222,37 @@ export default function Conversas() {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${
+                session.status === 'connected' ? 'bg-green-500 animate-pulse' : 
+                session.status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+              }`}></div>
               <div>
                 <p className="font-medium">
-                  WhatsApp Business {isConnected ? 'Conectado' : 'Desconectado'}
+                  WhatsApp {
+                    session.status === 'connected' ? 'Conectado' : 
+                    session.status === 'connecting' ? 'Conectando...' : 'Desconectado'
+                  }
                 </p>
                 <p className="text-sm text-gray-600">
-                  Número: {userNumber?.twilio_phone_number}
+                  Instância: {session.instanceName}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {userNumber?.consultorio_nome}
-                </p>
+                {session.phoneNumber && (
+                  <p className="text-xs text-gray-500">
+                    Número: {session.phoneNumber}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {isConnected ? (
+              {session.status === 'connected' ? (
                 <Badge variant="outline" className="text-green-600 border-green-200">
                   <Wifi className="w-3 h-3 mr-1" />
                   Online
+                </Badge>
+              ) : session.status === 'connecting' ? (
+                <Badge variant="outline" className="text-yellow-600 border-yellow-200">
+                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                  Conectando
                 </Badge>
               ) : (
                 <>
@@ -290,11 +262,12 @@ export default function Conversas() {
                   </Badge>
                   <Button 
                     size="sm" 
-                    onClick={() => setShowQRModal(true)}
+                    onClick={createInstance}
+                    disabled={loading}
                     className="bg-green-500 hover:bg-green-600 text-white"
                   >
                     <QrCode className="w-4 h-4 mr-2" />
-                    Conectar
+                    Reconectar
                   </Button>
                 </>
               )}
@@ -305,158 +278,86 @@ export default function Conversas() {
 
       {/* Interface de Chat */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
-        {/* Painel Lateral */}
+        {/* Lista de Conversas */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="conversas" className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Conversas ({contacts.length})
-                </TabsTrigger>
-                <TabsTrigger value="pacientes" className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Pacientes ({pacientes.length})
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Conversas ({filteredContacts.length})
+            </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Buscar conversas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
           
           <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsContent value="conversas" className="mt-0">
-                <div className="p-4 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Buscar conversas..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+            <ScrollArea className="h-[400px]">
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
                 </div>
-                
-                <ScrollArea className="h-[400px]">
-                  {loading ? (
-                    <div className="flex items-center justify-center h-32">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                    </div>
-                  ) : contacts.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      {searchTerm ? "Nenhuma conversa encontrada" : "Nenhuma conversa ainda"}
-                    </div>
-                  ) : (
-                    contacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        onClick={() => handleSelectContact(contact)}
-                        className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                          selectedContact?.id === contact.id ? 'bg-blue-50 border-blue-200' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={contact.profilePicture} />
-                            <AvatarFallback>
-                              {contact.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium truncate">{contact.name}</p>
-                              {contact.lastMessageTime && (
-                                <span className="text-xs text-gray-500">
-                                  {formatTime(contact.lastMessageTime)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-sm text-gray-600 truncate">
-                                {contact.lastMessage || "Nenhuma mensagem"}
-                              </p>
-                              {contact.unreadCount && contact.unreadCount > 0 && (
-                                <Badge className="bg-green-500 text-white text-xs h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                                  {contact.unreadCount}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
+              ) : filteredContacts.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Nenhuma conversa encontrada</p>
+                  <p className="text-sm">
+                    {session.status === 'connected' 
+                      ? 'Aguardando mensagens...' 
+                      : 'Conecte-se para ver conversas'
+                    }
+                  </p>
+                </div>
+              ) : (
+                filteredContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    onClick={() => handleSelectContact(contact)}
+                    className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedContact?.id === contact.id ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={contact.profilePicture} />
+                        <AvatarFallback>
+                          {contact.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium truncate">{contact.name}</p>
+                          {contact.lastMessageTime && (
+                            <span className="text-xs text-gray-500">
+                              {formatTime(contact.lastMessageTime)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-gray-600 truncate">
+                            {contact.lastMessage || "Nenhuma mensagem"}
+                          </p>
+                          {contact.unreadCount && contact.unreadCount > 0 && (
+                            <Badge className="bg-green-500 text-white text-xs h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                              {contact.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Phone className="w-3 h-3 text-gray-400" />
+                          <span className="text-xs text-gray-500">{contact.phone}</span>
                         </div>
                       </div>
-                    ))
-                  )}
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="pacientes" className="mt-0">
-                <div className="p-4 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Buscar pacientes..."
-                      value={searchPacientes}
-                      onChange={(e) => setSearchPacientes(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <ScrollArea className="h-[400px]">
-                  {filteredPacientes.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      {searchPacientes ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado"}
-                      {!searchPacientes && (
-                        <div className="mt-2">
-                          <Button asChild size="sm" variant="outline">
-                            <Link to="/dashboard/pacientes">
-                              <UserPlus className="w-4 h-4 mr-2" />
-                              Cadastrar Paciente
-                            </Link>
-                          </Button>
-                        </div>
-                      )}
                     </div>
-                  ) : (
-                    filteredPacientes.map((paciente) => (
-                      <div
-                        key={paciente.id}
-                        onClick={() => handleSelectPaciente(paciente)}
-                        className="p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={paciente.lead?.foto_perfil} />
-                            <AvatarFallback>
-                              {paciente.lead?.nome?.slice(0, 2).toUpperCase() || 'P'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium truncate">{paciente.lead?.nome || 'Nome não informado'}</p>
-                              <Badge variant={paciente.status_tratamento === 'ativo' ? 'default' : 'secondary'}>
-                                {paciente.status_tratamento}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Phone className="w-3 h-3 text-gray-400" />
-                              <p className="text-sm text-gray-600">
-                                {paciente.lead?.telefone || 'Telefone não informado'}
-                              </p>
-                            </div>
-                            {paciente.lead?.objetivo && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Objetivo: {paciente.lead.objetivo}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
+                  </div>
+                ))
+              )}
+            </ScrollArea>
           </CardContent>
         </Card>
 
@@ -466,19 +367,27 @@ export default function Conversas() {
             <>
               {/* Header do Chat */}
               <CardHeader className="border-b">
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={selectedContact.profilePicture} />
-                    <AvatarFallback>
-                      {selectedContact.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{selectedContact.name}</h3>
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <Phone className="w-3 h-3" />
-                      {selectedContact.phone}
-                    </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={selectedContact.profilePicture} />
+                      <AvatarFallback>
+                        {selectedContact.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold">{selectedContact.name}</h3>
+                      <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        {selectedContact.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-green-600 border-green-200">
+                      <Bot className="w-3 h-3 mr-1" />
+                      Evolution API
+                    </Badge>
                   </div>
                 </div>
               </CardHeader>
@@ -501,26 +410,41 @@ export default function Conversas() {
                           key={message.id}
                           className={`flex ${message.fromMe ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
-                              message.fromMe
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-100 text-gray-900'
-                            }`}
-                          >
-                            <p className="text-sm">{message.body}</p>
-                            <div className={`flex items-center gap-1 mt-1 ${
-                              message.fromMe ? 'justify-end' : 'justify-start'
-                            }`}>
-                              <span className={`text-xs ${
-                                message.fromMe ? 'text-blue-100' : 'text-gray-500'
+                          <div className="flex items-end gap-2 max-w-[80%]">
+                            {!message.fromMe && (
+                              <Avatar className="w-6 h-6">
+                                <AvatarImage src={selectedContact.profilePicture} />
+                                <AvatarFallback className="text-xs">
+                                  {selectedContact.name.slice(0, 1).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div
+                              className={`rounded-lg p-3 ${
+                                message.fromMe
+                                  ? 'bg-blue-500 text-white'
+                                  : 'bg-gray-100 text-gray-900'
+                              }`}
+                            >
+                              <p className="text-sm">{message.body}</p>
+                              <div className={`flex items-center gap-1 mt-1 ${
+                                message.fromMe ? 'justify-end' : 'justify-start'
                               }`}>
-                                {formatTime(message.timestamp)}
-                              </span>
-                              {message.fromMe && (
-                                <Clock className="w-3 h-3 text-blue-100" />
-                              )}
+                                <span className={`text-xs ${
+                                  message.fromMe ? 'text-blue-100' : 'text-gray-500'
+                                }`}>
+                                  {formatTime(message.timestamp)}
+                                </span>
+                                {message.fromMe && (
+                                  <CheckCircle2 className="w-3 h-3 text-blue-100" />
+                                )}
+                              </div>
                             </div>
+                            {message.fromMe && (
+                              <div className="flex items-center">
+                                <User className="w-6 h-6 text-blue-500" />
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -543,15 +467,22 @@ export default function Conversas() {
                         }
                       }}
                       className="flex-1"
+                      disabled={session.status !== 'connected'}
                     />
                     <Button 
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
+                      disabled={!newMessage.trim() || session.status !== 'connected'}
                       size="icon"
+                      className="bg-green-500 hover:bg-green-600"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
+                  {session.status !== 'connected' && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Conecte-se ao WhatsApp para enviar mensagens
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </>
@@ -561,17 +492,16 @@ export default function Conversas() {
                 <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium mb-2">Selecione uma conversa</h3>
                 <p>Escolha um contato da lista para começar a conversar</p>
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💡 Conversas aparecem automaticamente quando você recebe mensagens
+                  </p>
+                </div>
               </div>
             </CardContent>
           )}
         </Card>
       </div>
-
-      {/* Twilio Number Setup Modal */}
-      <TwilioNumberSetup 
-        open={showQRModal} 
-        onOpenChange={setShowQRModal} 
-      />
     </div>
   );
 }

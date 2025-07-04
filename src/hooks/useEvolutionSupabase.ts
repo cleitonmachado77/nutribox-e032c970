@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { EVOLUTION_CONFIG, generateInstanceName, validateEvolutionConfig } from '@/config/evolutionApi';
 
 export interface EvolutionSession {
   id: string;
@@ -41,15 +42,13 @@ export const useEvolutionSupabase = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Configuração da Evolution API Local
-  const API_URL = 'http://localhost:8080';
-  const API_TOKEN = 'nutribox-evolution-key-2024';
-  const INSTANCE_NAME = 'nutribox-instance';
+  // Configuração usando arquivo de configuração central
+  const API_URL = EVOLUTION_CONFIG.API_URL;
+  const API_TOKEN = EVOLUTION_CONFIG.API_TOKEN;
+  // Nome da instância único por usuário para multi-tenant
+  const INSTANCE_NAME = user ? generateInstanceName(user.id) : 'nutribox-temp';
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': API_TOKEN
-  };
+  const headers = EVOLUTION_CONFIG.getHeaders();
 
   // Sincronizar sessão com Supabase
   const syncSessionWithSupabase = async (sessionData: Partial<EvolutionSession>) => {
