@@ -192,25 +192,36 @@ export const useEvolutionSupabase = () => {
   // Buscar contatos
   const fetchContacts = async () => {
     try {
+      console.log('Buscando contatos para instância:', INSTANCE_NAME);
       const response = await fetch(`${API_URL}/chat/findContacts/${INSTANCE_NAME}`, {
         headers
       });
 
+      console.log('Resposta dos contatos:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        const formattedContacts: EvolutionContact[] = data.map((contact: any) => ({
-          id: contact.id,
-          name: contact.pushName || contact.id.split('@')[0],
-          phone: contact.id.split('@')[0],
-          profilePicture: contact.profilePictureUrl,
-          lastMessage: contact.lastMessage?.message,
-          lastMessageTime: contact.lastMessage?.messageTimestamp ? 
-            new Date(contact.lastMessage.messageTimestamp * 1000) : undefined,
-          unreadCount: contact.unreadCount || 0
-        }));
+        console.log('Dados dos contatos recebidos:', data);
+        
+        const formattedContacts: EvolutionContact[] = data.map((contact: any) => {
+          const formattedContact = {
+            id: contact.id || `unknown-${Date.now()}`,
+            name: contact.pushName || contact.id?.split('@')[0] || 'Contato Desconhecido',
+            phone: contact.id?.split('@')[0] || 'unknown',
+            profilePicture: contact.profilePictureUrl || undefined,
+            lastMessage: contact.lastMessage?.message || undefined,
+            lastMessageTime: contact.lastMessage?.messageTimestamp ? 
+              new Date(contact.lastMessage.messageTimestamp * 1000) : undefined,
+            unreadCount: Number(contact.unreadCount) || 0
+          };
+          console.log('Contato formatado:', formattedContact);
+          return formattedContact;
+        });
         
         setContacts(formattedContacts);
         await syncContactsWithSupabase(formattedContacts);
+      } else {
+        console.error('Erro na resposta:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
@@ -280,24 +291,28 @@ export const useEvolutionSupabase = () => {
     if (user) {
       const loadSession = async () => {
         try {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('whatsapp_sessions')
             .select('*')
             .eq('user_id', user.id)
             .eq('is_connected', true)
             .single();
 
-          if (data) {
+          console.log('Carregando sessão:', { data, error });
+
+          if (data && !error) {
             setSession({
-              id: data.id,
+              id: data.id || INSTANCE_NAME,
               instanceName: INSTANCE_NAME,
               status: data.is_connected ? 'connected' : 'disconnected',
               phoneNumber: data.phone_number || undefined,
               qrCode: data.qr_code || undefined
             });
+          } else {
+            console.log('Nenhuma sessão encontrada ou erro:', error);
           }
         } catch (error) {
-          console.log('Nenhuma sessão ativa encontrada');
+          console.log('Erro ao carregar sessão:', error);
         }
       };
 
