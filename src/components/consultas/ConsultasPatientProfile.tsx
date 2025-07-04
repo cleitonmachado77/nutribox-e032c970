@@ -2,11 +2,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock, Camera, User, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, Phone, Mail, Target, Scale, Activity, Heart, Clock, Camera, User, MapPin, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paciente } from "@/hooks/usePacientes";
 import { NewConsultationTab } from "@/components/pacientes/NewConsultationTab";
 import { HistoricoConsultas } from "@/components/HistoricoConsultas";
+import { usePatientPhotos } from "@/hooks/usePatientPhotos";
+import { ImageUpload } from "@/components/ImageUpload";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -26,6 +29,11 @@ export const ConsultasPatientProfile = ({
   const [showConsultationHistory, setShowConsultationHistory] = useState(false);
   const [showPatientProfile, setShowPatientProfile] = useState(false);
   const [showNutritionalReport, setShowNutritionalReport] = useState(false);
+  const [showAddPhotoDialog, setShowAddPhotoDialog] = useState(false);
+  const [selectedPhotoType, setSelectedPhotoType] = useState<'perfil' | 'antes' | 'depois' | 'progresso'>('perfil');
+  
+  // Hook para gerenciar fotos do paciente
+  const { photos, isLoading: photosLoading, addPhoto, deletePhoto } = usePatientPhotos(selectedPatient.id);
 
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
@@ -97,6 +105,21 @@ export const ConsultasPatientProfile = ({
     setShowConsultationForm(false);
     setShowConsultationHistory(false);
     setShowPatientProfile(false);
+  };
+
+  const handleAddPhoto = (type: 'perfil' | 'antes' | 'depois' | 'progresso') => {
+    setSelectedPhotoType(type);
+    setShowAddPhotoDialog(true);
+  };
+
+  const handlePhotoUpload = async (url: string) => {
+    await addPhoto(url, selectedPhotoType, `Foto ${selectedPhotoType} - ${format(new Date(), 'dd/MM/yyyy')}`);
+    setShowAddPhotoDialog(false);
+  };
+
+  // Filtrar fotos por tipo
+  const getPhotosByType = (type: 'perfil' | 'antes' | 'depois' | 'progresso') => {
+    return photos.filter(photo => photo.tipo === type);
   };
 
   // If the consultation form is active, show only it
@@ -387,7 +410,7 @@ export const ConsultasPatientProfile = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
                     <Camera className="h-5 w-5" />
-                    Fotos
+                    Fotos ({photos.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -395,29 +418,100 @@ export const ConsultasPatientProfile = ({
                     <div>
                       <h4 className="font-medium text-white mb-3">Perfil</h4>
                       <div className="grid grid-cols-4 gap-3">
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
-                          <Camera className="h-8 w-8 text-purple-100" />
-                        </div>
-                        <div className="aspect-square bg-white/30 rounded-lg"></div>
-                        <div className="aspect-square bg-white/30 rounded-lg"></div>
-                        <div className="aspect-square bg-white/30 rounded-lg"></div>
+                        {getPhotosByType('perfil').slice(0, 3).map((photo) => (
+                          <div key={photo.id} className="aspect-square bg-white/30 rounded-lg overflow-hidden relative group">
+                            <img 
+                              src={photo.url} 
+                              alt="Foto de perfil"
+                              className="w-full h-full object-cover"
+                            />
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => deletePhoto(photo.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        {getPhotosByType('perfil').length < 4 && (
+                          <div 
+                            className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300 cursor-pointer hover:bg-white/40 transition-colors"
+                            onClick={() => handleAddPhoto('perfil')}
+                          >
+                            <Camera className="h-8 w-8 text-purple-100" />
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div>
                       <h4 className="font-medium text-white mb-3">Antes e Depois</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
-                          <div className="text-center">
-                            <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
-                            <span className="text-xs text-purple-100">Antes</span>
+                        <div>
+                          <div className="text-center mb-2">
+                            <span className="text-xs text-purple-100">Antes ({getPhotosByType('antes').length})</span>
                           </div>
+                          {getPhotosByType('antes').length > 0 ? (
+                            <div className="aspect-square bg-white/30 rounded-lg overflow-hidden relative group">
+                              <img 
+                                src={getPhotosByType('antes')[0].url} 
+                                alt="Foto antes"
+                                className="w-full h-full object-cover"
+                              />
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => deletePhoto(getPhotosByType('antes')[0].id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div 
+                              className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300 cursor-pointer hover:bg-white/40 transition-colors"
+                              onClick={() => handleAddPhoto('antes')}
+                            >
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                                <span className="text-xs text-purple-100">Antes</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300">
-                          <div className="text-center">
-                            <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
-                            <span className="text-xs text-purple-100">Depois</span>
+                        <div>
+                          <div className="text-center mb-2">
+                            <span className="text-xs text-purple-100">Depois ({getPhotosByType('depois').length})</span>
                           </div>
+                          {getPhotosByType('depois').length > 0 ? (
+                            <div className="aspect-square bg-white/30 rounded-lg overflow-hidden relative group">
+                              <img 
+                                src={getPhotosByType('depois')[0].url} 
+                                alt="Foto depois"
+                                className="w-full h-full object-cover"
+                              />
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => deletePhoto(getPhotosByType('depois')[0].id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div 
+                              className="aspect-square bg-white/30 rounded-lg flex items-center justify-center border-2 border-dashed border-purple-300 cursor-pointer hover:bg-white/40 transition-colors"
+                              onClick={() => handleAddPhoto('depois')}
+                            >
+                              <div className="text-center">
+                                <Camera className="h-6 w-6 text-purple-100 mx-auto mb-1" />
+                                <span className="text-xs text-purple-100">Depois</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -427,16 +521,61 @@ export const ConsultasPatientProfile = ({
                         variant="outline" 
                         size="sm" 
                         className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
-                      >
-                        Alterar Foto
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                        onClick={() => handleAddPhoto('progresso')}
                       >
                         Adicionar Foto
                       </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                          >
+                            Ver Todas ({photos.length})
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Todas as Fotos - {selectedPatient.lead.nome}</DialogTitle>
+                          </DialogHeader>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {photos.map((photo) => (
+                              <div key={photo.id} className="space-y-2">
+                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative group">
+                                  <img 
+                                    src={photo.url} 
+                                    alt={photo.descricao}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="absolute top-2 right-2 w-8 h-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => deletePhoto(photo.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="text-sm">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {photo.tipo}
+                                  </Badge>
+                                  <p className="text-gray-600 mt-1 text-xs">
+                                    {format(new Date(photo.created_at), 'dd/MM/yyyy')}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                            {photos.length === 0 && (
+                              <div className="col-span-full text-center py-8 text-gray-500">
+                                <Camera className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                                <p>Nenhuma foto adicionada ainda</p>
+                              </div>
+                            )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
                 </CardContent>
@@ -445,6 +584,23 @@ export const ConsultasPatientProfile = ({
           </CardContent>
         </Card>
       </div>
+      
+      {/* Dialog para adicionar foto */}
+      <Dialog open={showAddPhotoDialog} onOpenChange={setShowAddPhotoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Foto - {selectedPhotoType}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <ImageUpload
+              value=""
+              onChange={handlePhotoUpload}
+              label={`Foto ${selectedPhotoType}`}
+              placeholder="Cole o URL da imagem ou faça upload"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
