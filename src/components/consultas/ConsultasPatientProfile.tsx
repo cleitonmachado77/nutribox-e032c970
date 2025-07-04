@@ -24,6 +24,8 @@ export const ConsultasPatientProfile = ({
 }: ConsultasPatientProfileProps) => {
   const [showConsultationForm, setShowConsultationForm] = useState(false);
   const [showConsultationHistory, setShowConsultationHistory] = useState(false);
+  const [showPatientProfile, setShowPatientProfile] = useState(false);
+  const [showNutritionalReport, setShowNutritionalReport] = useState(false);
 
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
@@ -65,11 +67,36 @@ export const ConsultasPatientProfile = ({
   const handleBackToProfile = () => {
     setShowConsultationForm(false);
     setShowConsultationHistory(false);
+    setShowPatientProfile(false);
+    setShowNutritionalReport(false);
   };
 
   const handleNovaConsulta = () => {
     setShowConsultationForm(true);
     setShowConsultationHistory(false);
+    setShowPatientProfile(false);
+    setShowNutritionalReport(false);
+  };
+
+  const handlePatientProfile = () => {
+    setShowPatientProfile(true);
+    setShowConsultationForm(false);
+    setShowConsultationHistory(false);
+    setShowNutritionalReport(false);
+  };
+
+  const handleConsultationHistory = () => {
+    setShowConsultationHistory(true);
+    setShowConsultationForm(false);
+    setShowPatientProfile(false);
+    setShowNutritionalReport(false);
+  };
+
+  const handleNutritionalReport = () => {
+    setShowNutritionalReport(true);
+    setShowConsultationForm(false);
+    setShowConsultationHistory(false);
+    setShowPatientProfile(false);
   };
 
   // If the consultation form is active, show only it
@@ -88,6 +115,52 @@ export const ConsultasPatientProfile = ({
           <h1 className="text-2xl font-bold text-gray-800">Nova Consulta</h1>
         </div>
         <NewConsultationTab selectedPatient={selectedPatient} />
+      </div>
+    );
+  }
+
+  // If the patient profile is active, show patient profile
+  if (showPatientProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToProfile}
+            className="bg-white hover:bg-gray-50 border-purple-200"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Perfil
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-800">Perfil do Paciente</h1>
+        </div>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Informações Detalhadas</h2>
+          <p className="text-gray-600">Aqui você verá o perfil completo do paciente {selectedPatient.lead.nome}.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If the nutritional report is active, show nutritional report
+  if (showNutritionalReport) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-purple-50 p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToProfile}
+            className="bg-white hover:bg-gray-50 border-purple-200"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar ao Perfil
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-800">Relatório Nutricional</h1>
+        </div>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Relatório Nutricional de {selectedPatient.lead.nome}</h2>
+          <p className="text-gray-600">Aqui você verá o relatório nutricional completo do paciente.</p>
+        </div>
       </div>
     );
   }
@@ -202,13 +275,25 @@ export const ConsultasPatientProfile = ({
                 >
                   Consultas
                 </Button>
-                <Button variant="outline" className="border-purple-200">
+                <Button 
+                  variant="outline" 
+                  className="border-purple-200"
+                  onClick={handlePatientProfile}
+                >
                   Perfil do Paciente
                 </Button>
-                <Button variant="outline" className="border-purple-200">
+                <Button 
+                  variant="outline" 
+                  className="border-purple-200"
+                  onClick={handleConsultationHistory}
+                >
                   Histórico de Consultas
                 </Button>
-                <Button variant="outline" className="border-purple-200">
+                <Button 
+                  variant="outline" 
+                  className="border-purple-200"
+                  onClick={handleNutritionalReport}
+                >
                   Relatório Nutricional
                 </Button>
               </div>
