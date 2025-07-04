@@ -153,26 +153,38 @@ export const ConsultasPatientProfile = ({
 
   const handleSavePatientData = async () => {
     try {
-      // Atualizar dados do lead
-      const { error: leadError } = await supabase
-        .from('leads')
-        .update({
-          nome: editingData.nome,
-          telefone: editingData.telefone,
-          email: editingData.email,
-          peso: editingData.peso,
-          altura: editingData.altura,
-          objetivo: editingData.objetivo,
-          cidade: editingData.cidade,
-          estado: editingData.estado,
-          data_nascimento: editingData.data_nascimento,
-          sexo: editingData.sexo,
-          anotacoes: editingData.anotacoes,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedPatient.lead.id);
+      // Preparar dados com validação de tipos
+      const updateData = {
+        nome: editingData.nome.trim(),
+        telefone: editingData.telefone.trim(),
+        email: editingData.email.trim() || null,
+        peso: editingData.peso ? editingData.peso.toString() : null,
+        altura: editingData.altura ? editingData.altura.toString() : null,
+        objetivo: editingData.objetivo || null,
+        cidade: editingData.cidade.trim() || null,
+        estado: editingData.estado.trim() || null,
+        data_nascimento: editingData.data_nascimento || null,
+        sexo: editingData.sexo || null,
+        anotacoes: editingData.anotacoes.trim() || null,
+        updated_at: new Date().toISOString()
+      };
 
-      if (leadError) throw leadError;
+      console.log('Dados sendo enviados:', updateData);
+      console.log('ID do lead:', selectedPatient.lead.id);
+
+      // Atualizar dados do lead
+      const { data, error: leadError } = await supabase
+        .from('leads')
+        .update(updateData)
+        .eq('id', selectedPatient.lead.id)
+        .select();
+
+      if (leadError) {
+        console.error('Erro detalhado:', leadError);
+        throw leadError;
+      }
+
+      console.log('Dados atualizados:', data);
 
       toast({
         title: "Sucesso!",
@@ -188,7 +200,7 @@ export const ConsultasPatientProfile = ({
       console.error('Erro ao atualizar dados:', error);
       toast({
         title: "Erro",
-        description: "Erro ao atualizar dados do paciente",
+        description: `Erro ao atualizar dados do paciente: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive"
       });
     }
@@ -663,6 +675,9 @@ export const ConsultasPatientProfile = ({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adicionar Foto - {selectedPhotoType}</DialogTitle>
+            <div className="text-sm text-gray-600">
+              Faça upload ou cole o URL de uma nova foto para o paciente
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             <ImageUpload
@@ -680,6 +695,9 @@ export const ConsultasPatientProfile = ({
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Dados do Paciente</DialogTitle>
+            <div className="text-sm text-gray-600">
+              Altere as informações do paciente conforme necessário
+            </div>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Dados pessoais */}
