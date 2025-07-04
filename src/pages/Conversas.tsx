@@ -147,8 +147,8 @@ export default function Conversas() {
     });
   };
 
-  // Check if WhatsApp is not connected
-  if (!session || session.status === 'disconnected') {
+  // Check if WhatsApp needs connection or is connecting
+  if (!session || session.status === 'disconnected' || session.status === 'connecting') {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <Header 

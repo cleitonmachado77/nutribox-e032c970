@@ -83,6 +83,7 @@ export const WhatsAppConnection = ({
   }
 
   if (instance.status === 'connecting' && instance.qrCode) {
+    console.log('Exibindo QR Code:', { status: instance.status, hasQrCode: !!instance.qrCode, qrCodeLength: instance.qrCode?.length });
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-gray-50">
         <Card className="w-full max-w-lg">
@@ -99,9 +100,14 @@ export const WhatsAppConnection = ({
             {/* QR Code */}
             <div className="flex justify-center p-4 bg-white rounded-lg border">
               <img 
-                src={`data:image/png;base64,${instance.qrCode}`}
+                src={instance.qrCode.startsWith('data:') ? instance.qrCode : `data:image/png;base64,${instance.qrCode}`}
                 alt="QR Code WhatsApp"
                 className="w-64 h-64"
+                onError={(e) => {
+                  console.error('Erro ao carregar QR Code:', e);
+                  console.log('QR Code source:', instance.qrCode?.substring(0, 100) + '...');
+                }}
+                onLoad={() => console.log('QR Code carregado com sucesso')}
               />
             </div>
 
