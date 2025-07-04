@@ -10,6 +10,12 @@ import { HistoricoConsultas } from "@/components/HistoricoConsultas";
 import { usePatientPhotos } from "@/hooks/usePatientPhotos";
 import { ImageUpload } from "@/components/ImageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -30,10 +36,29 @@ export const ConsultasPatientProfile = ({
   const [showPatientProfile, setShowPatientProfile] = useState(false);
   const [showNutritionalReport, setShowNutritionalReport] = useState(false);
   const [showAddPhotoDialog, setShowAddPhotoDialog] = useState(false);
+  const [showEditPatientDialog, setShowEditPatientDialog] = useState(false);
   const [selectedPhotoType, setSelectedPhotoType] = useState<'perfil' | 'antes' | 'depois' | 'progresso'>('perfil');
   
   // Hook para gerenciar fotos do paciente
   const { photos, isLoading: photosLoading, addPhoto, deletePhoto } = usePatientPhotos(selectedPatient.id);
+  
+  // Hook para toast notifications
+  const { toast } = useToast();
+  
+  // Estado para edição de dados
+  const [editingData, setEditingData] = useState({
+    nome: selectedPatient.lead.nome,
+    telefone: selectedPatient.lead.telefone,
+    email: selectedPatient.lead.email || '',
+    peso: selectedPatient.lead.peso || '',
+    altura: selectedPatient.lead.altura || '',
+    objetivo: selectedPatient.lead.objetivo || '',
+    cidade: selectedPatient.lead.cidade || '',
+    estado: selectedPatient.lead.estado || '',
+    data_nascimento: selectedPatient.lead.data_nascimento || '',
+    sexo: selectedPatient.lead.sexo || '',
+    anotacoes: selectedPatient.lead.anotacoes || ''
+  });
 
   const getObjetivoColor = (objetivo: string) => {
     switch (objetivo) {
@@ -120,6 +145,53 @@ export const ConsultasPatientProfile = ({
   // Filtrar fotos por tipo
   const getPhotosByType = (type: 'perfil' | 'antes' | 'depois' | 'progresso') => {
     return photos.filter(photo => photo.tipo === type);
+  };
+
+  const handleEditPatient = () => {
+    setShowEditPatientDialog(true);
+  };
+
+  const handleSavePatientData = async () => {
+    try {
+      // Atualizar dados do lead
+      const { error: leadError } = await supabase
+        .from('leads')
+        .update({
+          nome: editingData.nome,
+          telefone: editingData.telefone,
+          email: editingData.email,
+          peso: editingData.peso,
+          altura: editingData.altura,
+          objetivo: editingData.objetivo,
+          cidade: editingData.cidade,
+          estado: editingData.estado,
+          data_nascimento: editingData.data_nascimento,
+          sexo: editingData.sexo,
+          anotacoes: editingData.anotacoes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedPatient.lead.id);
+
+      if (leadError) throw leadError;
+
+      toast({
+        title: "Sucesso!",
+        description: "Dados do paciente atualizados com sucesso",
+      });
+
+      setShowEditPatientDialog(false);
+      
+      // Recarregar a página ou atualizar os dados localmente
+      window.location.reload();
+
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar dados do paciente",
+        variant: "destructive"
+      });
+    }
   };
 
   // If the consultation form is active, show only it
@@ -398,6 +470,7 @@ export const ConsultasPatientProfile = ({
                       variant="outline" 
                       size="sm" 
                       className="w-full bg-white/20 hover:bg-white/30 border-purple-300 text-white"
+                      onClick={handleEditPatient}
                     >
                       Alterar Dados
                     </Button>
@@ -598,6 +671,153 @@ export const ConsultasPatientProfile = ({
               label={`Foto ${selectedPhotoType}`}
               placeholder="Cole o URL da imagem ou faça upload"
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar dados do paciente */}
+      <Dialog open={showEditPatientDialog} onOpenChange={setShowEditPatientDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Dados do Paciente</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Dados pessoais */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-800">Dados Pessoais</h3>
+              
+              <div>
+                <Label htmlFor="nome">Nome Completo</Label>
+                <Input
+                  id="nome"
+                  value={editingData.nome}
+                  onChange={(e) => setEditingData({...editingData, nome: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input
+                  id="telefone"
+                  value={editingData.telefone}
+                  onChange={(e) => setEditingData({...editingData, telefone: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editingData.email}
+                  onChange={(e) => setEditingData({...editingData, email: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                <Input
+                  id="data_nascimento"
+                  type="date"
+                  value={editingData.data_nascimento}
+                  onChange={(e) => setEditingData({...editingData, data_nascimento: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="sexo">Sexo</Label>
+                <Select value={editingData.sexo} onValueChange={(value) => setEditingData({...editingData, sexo: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o sexo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="feminino">Feminino</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Dados físicos e localização */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-800">Dados Físicos e Localização</h3>
+              
+              <div>
+                <Label htmlFor="peso">Peso (kg)</Label>
+                <Input
+                  id="peso"
+                  value={editingData.peso}
+                  onChange={(e) => setEditingData({...editingData, peso: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="altura">Altura (cm)</Label>
+                <Input
+                  id="altura"
+                  value={editingData.altura}
+                  onChange={(e) => setEditingData({...editingData, altura: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="objetivo">Objetivo</Label>
+                <Select value={editingData.objetivo} onValueChange={(value) => setEditingData({...editingData, objetivo: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o objetivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Perda de Peso">Perda de Peso</SelectItem>
+                    <SelectItem value="Ganho de Massa">Ganho de Massa</SelectItem>
+                    <SelectItem value="Manutenção">Manutenção</SelectItem>
+                    <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
+                    <SelectItem value="Definição">Definição</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={editingData.cidade}
+                  onChange={(e) => setEditingData({...editingData, cidade: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="estado">Estado</Label>
+                <Input
+                  id="estado"
+                  value={editingData.estado}
+                  onChange={(e) => setEditingData({...editingData, estado: e.target.value})}
+                />
+              </div>
+            </div>
+
+            {/* Anotações - span full width */}
+            <div className="md:col-span-2 space-y-4">
+              <div>
+                <Label htmlFor="anotacoes">Anotações</Label>
+                <Textarea
+                  id="anotacoes"
+                  value={editingData.anotacoes}
+                  onChange={(e) => setEditingData({...editingData, anotacoes: e.target.value})}
+                  placeholder="Observações sobre o paciente..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t">
+            <Button onClick={handleSavePatientData} className="flex-1 bg-purple-600 hover:bg-purple-700">
+              Salvar Alterações
+            </Button>
+            <Button onClick={() => setShowEditPatientDialog(false)} variant="outline" className="flex-1">
+              Cancelar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
