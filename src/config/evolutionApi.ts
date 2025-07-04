@@ -1,12 +1,12 @@
 // Configuração da Evolution API
-// Substitua estas configurações pela sua instância do servidor
+// Servidor DigitalOcean configurado
 
 export const EVOLUTION_CONFIG = {
-  // URL do seu servidor DigitalOcean (sem barra no final)
-  API_URL: 'http://localhost:8080', // Substitua por: 'http://SEU_IP:8080'
+  // URL do servidor DigitalOcean
+  API_URL: 'http://134.199.202.47:8080',
   
   // Token de acesso da Evolution API
-  API_TOKEN: 'nutribox-evolution-key-2024',
+  API_TOKEN: '429683C4C977415CAAFCCE10F7D57E11',
   
   // Configurações da instância
   INSTANCE_CONFIG: {
