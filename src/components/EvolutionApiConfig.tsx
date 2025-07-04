@@ -1,390 +1,231 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Settings, 
-  ExternalLink,
-  Copy,
-  Check,
-  Info,
-  AlertCircle,
-  TestTube,
-  CheckCircle2,
-  XCircle,
-  RefreshCw
+  Server, 
+  CheckCircle, 
+  AlertCircle, 
+  Monitor,
+  Shield,
+  Zap
 } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { EVOLUTION_CONFIG, validateEvolutionConfig } from "@/config/evolutionApi";
 
-interface TestResult {
-  test: string;
-  status: 'success' | 'error' | 'loading';
-  message: string;
-  details?: any;
-}
-
-export const EvolutionAPIConfig = () => {
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [isTesting, setIsTesting] = useState(false);
+export const EvolutionApiConfig = () => {
+  const [serverUrl, setServerUrl] = useState(EVOLUTION_CONFIG.API_URL);
+  const [apiToken, setApiToken] = useState(EVOLUTION_CONFIG.API_TOKEN);
+  const [testing, setTesting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  const runTests = async () => {
-    setIsTesting(true);
-    setTestResults([]);
-
-    const tests: TestResult[] = [];
-
-    // Test 1: Authentication
-    tests.push({
-      test: 'Autenticação do Usuário',
-      status: 'loading',
-      message: 'Verificando autenticação...'
-    });
-    setTestResults([...tests]);
+  const testConnection = async () => {
+    setTesting(true);
+    setConnectionStatus('idle');
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        tests[0] = {
-          test: 'Autenticação do Usuário',
-          status: 'success',
-          message: 'Usuário autenticado com sucesso',
-          details: { userId: user?.id }
-        };
-      } else {
-        tests[0] = {
-          test: 'Autenticação do Usuário',
-          status: 'error',
-          message: 'Usuário não autenticado'
-        };
-      }
-    } catch (error) {
-      tests[0] = {
-        test: 'Autenticação do Usuário',
-        status: 'error',
-        message: 'Erro na autenticação',
-        details: error
-      };
-    }
-    setTestResults([...tests]);
-
-    // Test 2: Edge Function Availability
-    tests.push({
-      test: 'Edge Function Evolution API Proxy',
-      status: 'loading',
-      message: 'Testando Edge Function...'
-    });
-    setTestResults([...tests]);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('evolution-api-proxy', {
-        body: {
-          endpoint: '/instance/fetchInstances',
-          method: 'GET'
+      // Test basic connectivity
+      const response = await fetch(`${serverUrl}/instance/fetchInstances`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apiToken
         }
       });
 
-      if (error) {
-        tests[1] = {
-          test: 'Edge Function Evolution API Proxy',
-          status: 'error',
-          message: 'Erro na Edge Function',
-          details: error
-        };
+      if (response.ok) {
+        setConnectionStatus('success');
+        toast({
+          title: "Conexão bem-sucedida!",
+          description: "Servidor Evolution API conectado com sucesso"
+        });
       } else {
-        tests[1] = {
-          test: 'Edge Function Evolution API Proxy',
-          status: 'success',
-          message: 'Edge Function funcionando',
-          details: data
-        };
+        throw new Error(`HTTP ${response.status}`);
       }
-    } catch (error) {
-      tests[1] = {
-        test: 'Edge Function Evolution API Proxy',
-        status: 'error',
-        message: 'Falha ao chamar Edge Function',
-        details: error
-      };
-    }
-    setTestResults([...tests]);
-
-    // Test 3: Evolution API Connection
-    tests.push({
-      test: 'Conexão com Evolution API',
-      status: 'loading',
-      message: 'Testando conexão com servidor...'
-    });
-    setTestResults([...tests]);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('evolution-api-proxy', {
-        body: {
-          endpoint: '/instance/fetchInstances',
-          method: 'GET',
-          instanceName: `nutribox-${user?.id?.slice(0, 8)}`
-        }
+    } catch (error: any) {
+      setConnectionStatus('error');
+      toast({
+        title: "Erro de conexão",
+        description: `Falha ao conectar: ${error.message}`,
+        variant: "destructive"
       });
-
-      if (error) {
-        tests[2] = {
-          test: 'Conexão com Evolution API',
-          status: 'error',
-          message: 'Erro ao conectar com Evolution API',
-          details: error
-        };
-      } else {
-        tests[2] = {
-          test: 'Conexão com Evolution API',
-          status: 'success',
-          message: 'Conexão com Evolution API estabelecida',
-          details: data
-        };
-      }
-    } catch (error) {
-      tests[2] = {
-        test: 'Conexão com Evolution API',
-        status: 'error',
-        message: 'Falha na conexão com Evolution API',
-        details: error
-      };
-    }
-    setTestResults([...tests]);
-
-    // Test 4: Instance Creation
-    tests.push({
-      test: 'Criação de Instância',
-      status: 'loading',
-      message: 'Testando criação de instância...'
-    });
-    setTestResults([...tests]);
-
-    try {
-      const instanceName = `test-${Date.now()}`;
-      const { data, error } = await supabase.functions.invoke('evolution-api-proxy', {
-        body: {
-          endpoint: '/instance/create',
-          method: 'POST',
-          body: {
-            instanceName,
-            qrcode: true,
-            integration: 'WHATSAPP-BAILEYS'
-          },
-          instanceName
-        }
-      });
-
-      if (error) {
-        tests[3] = {
-          test: 'Criação de Instância',
-          status: 'error',
-          message: 'Erro ao criar instância',
-          details: error
-        };
-      } else {
-        tests[3] = {
-          test: 'Criação de Instância',
-          status: 'success',
-          message: 'Instância criada com sucesso',
-          details: { instanceName, data }
-        };
-
-        // Clean up - delete test instance
-        try {
-          await supabase.functions.invoke('evolution-api-proxy', {
-            body: {
-              endpoint: `/instance/delete/${instanceName}`,
-              method: 'DELETE',
-              instanceName
-            }
-          });
-        } catch (cleanupError) {
-          console.warn('Failed to cleanup test instance:', cleanupError);
-        }
-      }
-    } catch (error) {
-      tests[3] = {
-        test: 'Criação de Instância',
-        status: 'error',
-        message: 'Falha ao criar instância',
-        details: error
-      };
-    }
-    setTestResults([...tests]);
-
-    setIsTesting(false);
-    toast({
-      title: "Testes Concluídos",
-      description: "Verifique os resultados abaixo"
-    });
-  };
-
-  const copyConfig = () => {
-    const config = `
-# Evolution API Configuration
-EVOLUTION_API_URL=http://134.199.202.47:8080
-EVOLUTION_API_TOKEN=nutribox-evolution-key-2024
-
-# Supabase Configuration
-SUPABASE_URL=${process.env.NEXT_PUBLIC_SUPABASE_URL}
-SUPABASE_ANON_KEY=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}
-    `.trim();
-
-    navigator.clipboard.writeText(config);
-    toast({
-      title: "Configuração Copiada",
-      description: "Configuração copiada para a área de transferência"
-    });
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case 'error': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'loading': return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />;
-      default: return <Settings className="w-4 h-4 text-gray-500" />;
+    } finally {
+      setTesting(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'success': return <Badge variant="default" className="bg-green-100 text-green-800">Sucesso</Badge>;
-      case 'error': return <Badge variant="destructive">Erro</Badge>;
-      case 'loading': return <Badge variant="secondary">Testando...</Badge>;
-      default: return <Badge variant="outline">Desconhecido</Badge>;
-    }
-  };
+  const { valid, errors, warnings } = validateEvolutionConfig();
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Configuração Evolution API
-          </CardTitle>
-          <CardDescription>
-            Teste e configure a integração com Evolution API
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-medium mb-2">Configurações Atuais</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>API URL:</span>
-                  <code className="bg-gray-100 px-2 py-1 rounded">http://134.199.202.47:8080</code>
-                </div>
-                <div className="flex justify-between">
-                  <span>Token:</span>
-                  <code className="bg-gray-100 px-2 py-1 rounded">nutribox-evolution-key-2024</code>
-                </div>
-                <div className="flex justify-between">
-                  <span>Usuário ID:</span>
-                  <code className="bg-gray-100 px-2 py-1 rounded">{user?.id?.slice(0, 8)}...</code>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-2">Ações</h4>
-              <div className="space-y-2">
-                <Button 
-                  onClick={runTests}
-                  disabled={isTesting}
-                  className="w-full"
-                >
-                  {isTesting ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Executando Testes...
-                    </>
-                  ) : (
-                    <>
-                      <TestTube className="w-4 h-4 mr-2" />
-                      Executar Testes
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  onClick={copyConfig}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copiar Configuração
-                </Button>
-              </div>
-            </div>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <Server className="w-6 h-6 text-blue-500" />
+          <div>
+            <CardTitle>Configuração Evolution API</CardTitle>
+            <p className="text-sm text-gray-600">
+              Configure a conexão com seu servidor DigitalOcean
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardHeader>
 
-      {/* Test Results */}
-      {testResults.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Resultados dos Testes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {testResults.map((result, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
-                  {getStatusIcon(result.status)}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-medium">{result.test}</h4>
-                      {getStatusBadge(result.status)}
-                    </div>
-                    <p className="text-sm text-gray-600">{result.message}</p>
-                    {result.details && (
-                      <details className="mt-2">
-                        <summary className="text-xs text-gray-500 cursor-pointer">
-                          Ver detalhes
-                        </summary>
-                        <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
-                          {JSON.stringify(result.details, null, 2)}
-                        </pre>
-                      </details>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Troubleshooting Guide */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Solução de Problemas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Alert>
-              <ExternalLink className="w-4 h-4" />
-              <AlertDescription>
-                <div className="space-y-2">
-                  <p className="font-medium">Problemas Comuns:</p>
-                  <ul className="list-disc list-inside space-y-1 text-sm">
-                    <li>Verifique se o servidor Evolution API está rodando</li>
-                    <li>Confirme se as variáveis de ambiente estão configuradas no Supabase</li>
-                    <li>Verifique se a Edge Function foi deployada corretamente</li>
-                    <li>Teste a conectividade com o servidor Evolution API</li>
+      <CardContent className="space-y-6">
+        {/* Status da Validação */}
+        <Alert className={valid ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+          <div className="flex items-center gap-2">
+            {valid ? (
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-600" />
+            )}
+            <AlertDescription className={valid ? "text-green-800" : "text-red-800"}>
+              {valid ? (
+                "Configuração válida - pronto para usar!"
+              ) : (
+                <div>
+                  <p className="font-medium mb-1">Configuração incompleta:</p>
+                  <ul className="list-disc list-inside text-sm">
+                    {errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
                   </ul>
                 </div>
-              </AlertDescription>
-            </Alert>
+              )}
+            </AlertDescription>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </Alert>
+
+        {/* Warnings de Mixed Content */}
+        {warnings && warnings.length > 0 && (
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <AlertCircle className="w-4 h-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <div>
+                <p className="font-medium mb-1">Aviso de Segurança:</p>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  {warnings.map((warning, index) => (
+                    <li key={index}>{warning}</li>
+                  ))}
+                </ul>
+                <p className="text-xs mt-2">
+                  Para resolver: Configure HTTPS no seu servidor ou use um proxy HTTPS.
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Configurações do Servidor */}
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="serverUrl">URL do Servidor Evolution API</Label>
+            <Input
+              id="serverUrl"
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.target.value)}
+              placeholder="http://143.198.50.100:8080"
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-gray-500">
+              Ex: http://SEU_IP_DIGITALOCEAN:8080 (sem barra no final)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="apiToken">Token de Acesso</Label>
+            <Input
+              id="apiToken"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              placeholder="seu-token-de-acesso"
+              className="font-mono text-sm"
+              type="password"
+            />
+            <p className="text-xs text-gray-500">
+              Token configurado no seu servidor Evolution API
+            </p>
+          </div>
+        </div>
+
+        {/* Teste de Conexão */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label>Teste de Conexão</Label>
+            <Badge 
+              variant={
+                connectionStatus === 'success' ? 'default' : 
+                connectionStatus === 'error' ? 'destructive' : 'secondary'
+              }
+            >
+              {connectionStatus === 'success' && <CheckCircle className="w-3 h-3 mr-1" />}
+              {connectionStatus === 'error' && <AlertCircle className="w-3 h-3 mr-1" />}
+              {connectionStatus === 'success' ? 'Conectado' : 
+               connectionStatus === 'error' ? 'Erro' : 'Não testado'}
+            </Badge>
+          </div>
+          
+          <Button 
+            onClick={testConnection} 
+            disabled={testing || !serverUrl || !apiToken}
+            className="w-full"
+            variant="outline"
+          >
+            {testing ? (
+              <>
+                <div className="w-4 h-4 mr-2 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                Testando conexão...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                Testar Conexão
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Recursos Disponíveis */}
+        <div className="space-y-3">
+          <Label>Recursos Evolution API</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-3 border rounded-lg text-center">
+              <Monitor className="w-6 h-6 mx-auto mb-2 text-blue-500" />
+              <p className="text-sm font-medium">Multi-tenant</p>
+              <p className="text-xs text-gray-600">Instância por usuário</p>
+            </div>
+            <div className="p-3 border rounded-lg text-center">
+              <Shield className="w-6 h-6 mx-auto mb-2 text-green-500" />
+              <p className="text-sm font-medium">Seguro</p>
+              <p className="text-xs text-gray-600">Conexão protegida</p>
+            </div>
+            <div className="p-3 border rounded-lg text-center">
+              <Zap className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
+              <p className="text-sm font-medium">Tempo Real</p>
+              <p className="text-xs text-gray-600">Mensagens instantâneas</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Instruções */}
+        <Alert>
+          <Settings className="w-4 h-4" />
+          <AlertDescription>
+            <p className="font-medium mb-2">Para configurar seu servidor:</p>
+            <ol className="list-decimal list-inside text-sm space-y-1">
+              <li>Edite o arquivo <code>src/config/evolutionApi.ts</code></li>
+              <li>Substitua <code>API_URL</code> pela URL do seu servidor</li>
+              <li>Configure o <code>API_TOKEN</code> com seu token</li>
+              <li>Teste a conexão usando o botão acima</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
   );
 };

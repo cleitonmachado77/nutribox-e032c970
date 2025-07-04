@@ -1,11 +1,12 @@
+
 import { useState } from 'react';
 import { QrCode, Smartphone, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EvolutionSession } from '@/hooks/useEvolutionSupabase';
+import { EvolutionInstance } from '@/hooks/useEvolutionAPI';
 
 interface WhatsAppConnectionProps {
-  instance: EvolutionSession | null;
+  instance: EvolutionInstance | null;
   onConnect: () => void;
   onRefresh: () => void;
   loading: boolean;
