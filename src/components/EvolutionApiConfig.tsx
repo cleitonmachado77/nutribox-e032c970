@@ -59,7 +59,7 @@ export const EvolutionApiConfig = () => {
     }
   };
 
-  const { valid, errors } = validateEvolutionConfig();
+  const { valid, errors, warnings } = validateEvolutionConfig();
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -100,6 +100,26 @@ export const EvolutionApiConfig = () => {
             </AlertDescription>
           </div>
         </Alert>
+
+        {/* Warnings de Mixed Content */}
+        {warnings && warnings.length > 0 && (
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <AlertCircle className="w-4 h-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              <div>
+                <p className="font-medium mb-1">Aviso de Segurança:</p>
+                <ul className="list-disc list-inside text-sm space-y-1">
+                  {warnings.map((warning, index) => (
+                    <li key={index}>{warning}</li>
+                  ))}
+                </ul>
+                <p className="text-xs mt-2">
+                  Para resolver: Configure HTTPS no seu servidor ou use um proxy HTTPS.
+                </p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Configurações do Servidor */}
         <div className="grid grid-cols-1 gap-4">

@@ -2,7 +2,7 @@
 // Servidor DigitalOcean configurado
 
 export const EVOLUTION_CONFIG = {
-  // URL do servidor DigitalOcean
+  // URL do servidor DigitalOcean  
   API_URL: 'http://134.199.202.47:8080',
   
   // Token de acesso da Evolution API
@@ -20,13 +20,17 @@ export const EVOLUTION_CONFIG = {
   // Headers padrão para as requisições
   getHeaders: () => ({
     'Content-Type': 'application/json',
-    'apikey': EVOLUTION_CONFIG.API_TOKEN
+    'apikey': EVOLUTION_CONFIG.API_TOKEN,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey'
   })
 };
 
 // Função para validar a configuração
-export const validateEvolutionConfig = (): { valid: boolean; errors: string[] } => {
+export const validateEvolutionConfig = (): { valid: boolean; errors: string[]; warnings: string[] } => {
   const errors: string[] = [];
+  const warnings: string[] = [];
   
   if (!EVOLUTION_CONFIG.API_URL || EVOLUTION_CONFIG.API_URL === 'http://localhost:8080') {
     errors.push('Configure a URL do servidor Evolution API');
@@ -35,10 +39,16 @@ export const validateEvolutionConfig = (): { valid: boolean; errors: string[] } 
   if (!EVOLUTION_CONFIG.API_TOKEN) {
     errors.push('Configure o token de acesso da Evolution API');
   }
+
+  // Verificar Mixed Content
+  if (EVOLUTION_CONFIG.API_URL.startsWith('http://') && window.location.protocol === 'https:') {
+    warnings.push('⚠️ AVISO: Mixed Content - Servidor HTTP em página HTTPS pode ser bloqueado pelo navegador');
+  }
   
   return {
     valid: errors.length === 0,
-    errors
+    errors,
+    warnings
   };
 };
 
