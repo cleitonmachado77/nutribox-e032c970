@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { EVOLUTION_CONFIG, generateInstanceName, validateEvolutionConfig } from '@/config/evolutionApi';
+import { generateInstanceName } from '@/config/evolutionApi';
 
 export interface EvolutionSession {
   id: string;
@@ -42,13 +41,37 @@ export const useEvolutionSupabase = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Configuração usando arquivo de configuração central
-  const API_URL = EVOLUTION_CONFIG.API_URL;
-  const API_TOKEN = EVOLUTION_CONFIG.API_TOKEN;
   // Nome da instância único por usuário para multi-tenant
   const INSTANCE_NAME = user ? generateInstanceName(user.id) : 'nutribox-temp';
 
-  const headers = EVOLUTION_CONFIG.getHeaders();
+  // Função para chamar a Evolution API via Supabase Edge Function
+  const callEvolutionAPI = async (endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any) => {
+    try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      
+      if (!authSession) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const response = await supabase.functions.invoke('evolution-api-proxy', {
+        body: {
+          endpoint,
+          method,
+          body,
+          instanceName: INSTANCE_NAME
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro na chamada da API');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao chamar Evolution API:', error);
+      throw error;
+    }
+  };
 
   // Sincronizar sessão com Supabase
   const syncSessionWithSupabase = async (sessionData: Partial<EvolutionSession>) => {
@@ -123,115 +146,91 @@ export const useEvolutionSupabase = () => {
     setLoading(true);
     try {
       // Primeiro, verifica se a instância já existe
-      const statusResponse = await fetch(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`, {
-        headers
-      });
-
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        console.log('Status da instância existente:', statusData);
+      const statusData = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
+      console.log('Status da instância existente:', statusData);
+      
+      // Se a instância existe mas não está conectada, busca o QR code
+      if (statusData.instance && statusData.instance.state !== 'open') {
+        const qrData = await callEvolutionAPI(`/instance/connect/${INSTANCE_NAME}`);
+        console.log('QR Code obtido:', qrData);
         
-        // Se a instância existe mas não está conectada, busca o QR code
-        if (statusData.instance && statusData.instance.state !== 'open') {
-          const qrResponse = await fetch(`${API_URL}/instance/connect/${INSTANCE_NAME}`, {
-            method: 'GET',
-            headers
-          });
-          
-          if (qrResponse.ok) {
-            const qrData = await qrResponse.json();
-            console.log('QR Code obtido:', qrData);
-            
-            const sessionData: EvolutionSession = {
-              id: INSTANCE_NAME,
-              instanceName: INSTANCE_NAME,
-              status: 'connecting',
-              qrCode: qrData.base64 || qrData.qrcode?.base64
-            };
-            
-            setSession(sessionData);
-            await syncSessionWithSupabase(sessionData);
-            
-            toast({
-              title: "QR Code atualizado",
-              description: "Escaneie o QR Code para conectar"
-            });
-            return;
-          }
-        }
-        
-        // Se já está conectada
-        if (statusData.instance && statusData.instance.state === 'open') {
-          const sessionData: EvolutionSession = {
-            id: INSTANCE_NAME,
-            instanceName: INSTANCE_NAME,
-            status: 'connected'
-          };
-          
-          setSession(sessionData);
-          await syncSessionWithSupabase(sessionData);
-          
-          toast({
-            title: "WhatsApp conectado",
-            description: "Sua instância já está ativa"
-          });
-          return;
-        }
-      }
-
-      // Se não existe, cria nova instância
-      const createResponse = await fetch(`${API_URL}/instance/create`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          instanceName: INSTANCE_NAME,
-          token: API_TOKEN,
-          qrcode: true,
-          integration: 'WHATSAPP-BAILEYS'
-        })
-      });
-
-      if (createResponse.ok) {
-        const data = await createResponse.json();
-        console.log('Nova instância criada:', data);
-        
-        const newSession: EvolutionSession = {
+        const sessionData: EvolutionSession = {
           id: INSTANCE_NAME,
           instanceName: INSTANCE_NAME,
           status: 'connecting',
-          qrCode: data.qrcode?.base64
+          qrCode: qrData.base64 || qrData.qrcode?.base64
         };
         
-        setSession(newSession);
-        await syncSessionWithSupabase(newSession);
+        setSession(sessionData);
+        await syncSessionWithSupabase(sessionData);
         
         toast({
-          title: "Instância criada",
+          title: "QR Code atualizado",
           description: "Escaneie o QR Code para conectar"
         });
-      } else {
-        const errorData = await createResponse.json();
-        console.error('Erro ao criar instância:', errorData);
-        
-        // Se o erro for que a instância já existe (403), tenta buscar o QR code
-        if (createResponse.status === 403 && errorData.response?.message?.[0]?.includes('already in use')) {
-          toast({
-            title: "Reconectando",
-            description: "Instância já existe, buscando QR Code..."
-          });
-          // Chama recursivamente para buscar o QR code
-          setTimeout(() => createInstance(), 1000);
-        } else {
-          throw new Error(`Erro ${createResponse.status}: ${errorData.message || 'Falha na criação'}`);
-        }
+        return;
       }
+      
+      // Se já está conectada
+      if (statusData.instance && statusData.instance.state === 'open') {
+        const sessionData: EvolutionSession = {
+          id: INSTANCE_NAME,
+          instanceName: INSTANCE_NAME,
+          status: 'connected'
+        };
+        
+        setSession(sessionData);
+        await syncSessionWithSupabase(sessionData);
+        
+        toast({
+          title: "WhatsApp conectado",
+          description: "Sua instância já está ativa"
+        });
+        return;
+      }
+
+      // Se não existe, cria nova instância
+      const data = await callEvolutionAPI('/instance/create', 'POST', {
+        instanceName: INSTANCE_NAME,
+        qrcode: true,
+        integration: 'WHATSAPP-BAILEYS'
+      });
+
+      console.log('Nova instância criada:', data);
+      
+      const newSession: EvolutionSession = {
+        id: INSTANCE_NAME,
+        instanceName: INSTANCE_NAME,
+        status: 'connecting',
+        qrCode: data.qrcode?.base64
+      };
+      
+      setSession(newSession);
+      await syncSessionWithSupabase(newSession);
+      
+      toast({
+        title: "Instância criada",
+        description: "Escaneie o QR Code para conectar"
+      });
+
     } catch (error) {
       console.error('Erro ao conectar instância:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao conectar WhatsApp. Tente novamente.",
-        variant: "destructive"
-      });
+      
+      // Se o erro for que a instância já existe, tenta buscar o QR code
+      if (error instanceof Error && error.message.includes('already in use')) {
+        toast({
+          title: "Reconectando",
+          description: "Instância já existe, buscando QR Code..."
+        });
+        // Chama recursivamente para buscar o QR code
+        setTimeout(() => createInstance(), 1000);
+      } else {
+        toast({
+          title: "Erro",
+          description: "Falha ao conectar WhatsApp. Tente novamente.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -240,24 +239,18 @@ export const useEvolutionSupabase = () => {
   // Verificar status da instância
   const checkInstanceStatus = async () => {
     try {
-      const response = await fetch(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`, {
-        headers
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const isConnected = data.instance?.state === 'open';
-        
-        const updatedSession = session ? {
-          ...session,
-          status: isConnected ? 'connected' as const : 'disconnected' as const
-        } : null;
-        
-        setSession(updatedSession);
-        
-        if (updatedSession) {
-          await syncSessionWithSupabase(updatedSession);
-        }
+      const data = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
+      const isConnected = data.instance?.state === 'open';
+      
+      const updatedSession = session ? {
+        ...session,
+        status: isConnected ? 'connected' as const : 'disconnected' as const
+      } : null;
+      
+      setSession(updatedSession);
+      
+      if (updatedSession) {
+        await syncSessionWithSupabase(updatedSession);
       }
     } catch (error) {
       console.error('Erro ao verificar status:', error);
@@ -275,40 +268,21 @@ export const useEvolutionSupabase = () => {
       
       // Endpoints corretos da Evolution API v2.2.3
       const endpoints = [
-        {
-          url: `${API_URL}/instance/fetchContacts/${INSTANCE_NAME}`,
-          method: 'GET',
-          name: 'GET /instance/fetchContacts'
-        },
-        {
-          url: `${API_URL}/chat/fetchChats/${INSTANCE_NAME}`,
-          method: 'GET',
-          name: 'GET /chat/fetchChats'
-        }
+        `/instance/fetchContacts/${INSTANCE_NAME}`,
+        `/chat/fetchChats/${INSTANCE_NAME}`
       ];
 
       let data = null;
 
       for (const endpoint of endpoints) {
         try {
-          console.log(`🔄 Tentando: ${endpoint.name} - ${endpoint.url}`);
+          console.log(`🔄 Tentando: ${endpoint}`);
           
-          const fetchOptions: RequestInit = {
-            method: endpoint.method,
-            headers
-          };
-
-          const response = await fetch(endpoint.url, fetchOptions);
-          
-          if (response.ok) {
-            data = await response.json();
-            console.log(`✅ Dados encontrados usando ${endpoint.name}:`, data);
-            break;
-          } else {
-            console.log(`❌ ${endpoint.name} retornou ${response.status}: ${response.statusText}`);
-          }
+          data = await callEvolutionAPI(endpoint);
+          console.log(`✅ Dados encontrados usando ${endpoint}:`, data);
+          break;
         } catch (error) {
-          console.log(`💥 Erro no endpoint ${endpoint.name}:`, error);
+          console.log(`💥 Erro no endpoint ${endpoint}:`, error);
           continue;
         }
       }
@@ -388,45 +362,38 @@ export const useEvolutionSupabase = () => {
     try {
       // Tentar diferentes formatos de endpoints para mensagens
       const endpoints = [
-        `${API_URL}/chat/findMessages/${INSTANCE_NAME}?where[key.remoteJid]=${contactPhone}@s.whatsapp.net`,
-        `${API_URL}/chat/messages/${INSTANCE_NAME}/${contactPhone}@s.whatsapp.net`,
-        `${API_URL}/messages/${INSTANCE_NAME}/${contactPhone}`,
-        `${API_URL}/chat/findMessages/${INSTANCE_NAME}/${contactPhone}`
+        `/chat/findMessages/${INSTANCE_NAME}?where[key.remoteJid]=${contactPhone}@s.whatsapp.net`,
+        `/chat/messages/${INSTANCE_NAME}/${contactPhone}@s.whatsapp.net`,
+        `/messages/${INSTANCE_NAME}/${contactPhone}`,
+        `/chat/findMessages/${INSTANCE_NAME}/${contactPhone}`
       ];
 
       for (const endpoint of endpoints) {
         try {
-          const response = await fetch(endpoint, { headers });
-
-          if (response.ok) {
-            const data = await response.json();
-            console.log(`Mensagens encontradas usando endpoint: ${endpoint}`, data);
-            
-            let messages = Array.isArray(data) ? data : data.messages || [];
-            
-            return messages.map((msg: any) => ({
-              id: msg.key?.id || msg.id || `msg-${Date.now()}-${Math.random()}`,
-              conversationId: contactPhone,
-              from: msg.key?.remoteJid || msg.from || contactPhone,
-              to: msg.key?.remoteJid || msg.to || contactPhone,
-              body: msg.message?.conversation || 
-                    msg.message?.extendedTextMessage?.text || 
-                    msg.text || 
-                    msg.body || 
-                    '',
-              timestamp: msg.messageTimestamp ? 
-                new Date(Number(msg.messageTimestamp) * 1000) : 
-                msg.timestamp ?
-                new Date(Number(msg.timestamp)) :
-                new Date(),
-              fromMe: Boolean(msg.key?.fromMe || msg.fromMe),
-              messageType: 'text' as const,
-              isRead: Boolean(msg.isRead !== false) // Default to true unless explicitly false
-            }));
-          } else if (response.status === 404) {
-            console.log(`Endpoint de mensagens ${endpoint} não encontrado (404)`);
-            continue;
-          }
+          const data = await callEvolutionAPI(endpoint);
+          console.log(`Mensagens encontradas usando endpoint: ${endpoint}`, data);
+          
+          let messages = Array.isArray(data) ? data : data.messages || [];
+          
+          return messages.map((msg: any) => ({
+            id: msg.key?.id || msg.id || `msg-${Date.now()}-${Math.random()}`,
+            conversationId: contactPhone,
+            from: msg.key?.remoteJid || msg.from || contactPhone,
+            to: msg.key?.remoteJid || msg.to || contactPhone,
+            body: msg.message?.conversation || 
+                  msg.message?.extendedTextMessage?.text || 
+                  msg.text || 
+                  msg.body || 
+                  '',
+            timestamp: msg.messageTimestamp ? 
+              new Date(Number(msg.messageTimestamp) * 1000) : 
+              msg.timestamp ?
+              new Date(Number(msg.timestamp)) :
+              new Date(),
+            fromMe: Boolean(msg.key?.fromMe || msg.fromMe),
+            messageType: 'text' as const,
+            isRead: Boolean(msg.isRead !== false) // Default to true unless explicitly false
+          }));
         } catch (error) {
           console.log(`Erro ao tentar endpoint de mensagens ${endpoint}:`, error);
           continue;
@@ -447,32 +414,17 @@ export const useEvolutionSupabase = () => {
       // Garantir que o número tenha o formato correto
       const phoneNumber = to.includes('@') ? to.split('@')[0] : to;
       
-      const response = await fetch(`${API_URL}/message/sendText/${INSTANCE_NAME}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          number: phoneNumber,
-          text: message
-        })
+      const data = await callEvolutionAPI(`/message/sendText/${INSTANCE_NAME}`, 'POST', {
+        number: phoneNumber,
+        text: message
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Mensagem enviada com sucesso:', data);
-        toast({
-          title: "Mensagem enviada",
-          description: "Sua mensagem foi enviada com sucesso"
-        });
-        return true;
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Erro ao enviar mensagem:', response.status, errorData);
-        toast({
-          title: "Erro",
-          description: `Falha ao enviar mensagem: ${errorData.message || response.statusText}`,
-          variant: "destructive"
-        });
-      }
+      console.log('Mensagem enviada com sucesso:', data);
+      toast({
+        title: "Mensagem enviada",
+        description: "Sua mensagem foi enviada com sucesso"
+      });
+      return true;
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       toast({
@@ -480,8 +432,8 @@ export const useEvolutionSupabase = () => {
         description: "Falha ao enviar mensagem",
         variant: "destructive"
       });
+      return false;
     }
-    return false;
   };
 
   // Carregar sessão do Supabase ao inicializar
