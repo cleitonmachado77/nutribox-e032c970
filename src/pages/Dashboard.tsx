@@ -198,7 +198,7 @@ const Dashboard = () => {
               {monthlyData.length > 0 ? <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
                   <XAxis dataKey="month" />
-                  <YAxis domain={[0, (dataMax) => (dataMax == null || isNaN(dataMax)) ? 1 : Math.max(dataMax, 1)]} />
+                  <YAxis domain={[0, (dataMax) => (dataMax == null || isNaN(dataMax) || dataMax === undefined) ? 1 : Math.max(dataMax || 1, 1)]} />
                   <Tooltip />
                   <Bar dataKey="leads" fill="#3B82F6" name="Leads" />
                   <Bar dataKey="consultas" fill="#10B981" name="Consultas" />
@@ -223,7 +223,7 @@ const Dashboard = () => {
                     cy="50%" 
                     outerRadius={100} 
                     dataKey="value" 
-                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({name, percent}) => `${name || 'N/A'}: ${((percent || 0) * 100).toFixed(0)}%`}
                   >
                     {objetivosPacientesData.map((entry, index) => 
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -254,7 +254,7 @@ const Dashboard = () => {
               bottom: 5
             }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5E5E5" />
-                  <XAxis type="number" domain={[0, (dataMax) => (dataMax == null || isNaN(dataMax)) ? 1 : Math.max(dataMax, 1)]} />
+                  <XAxis type="number" domain={[0, (dataMax) => (dataMax == null || isNaN(dataMax) || dataMax === undefined) ? 1 : Math.max(dataMax || 1, 1)]} />
                   <YAxis dataKey="estado" type="category" width={50} tick={{
                 fontSize: 12
               }} />
@@ -284,7 +284,7 @@ const Dashboard = () => {
                     cy="50%" 
                     outerRadius={100} 
                     dataKey="value" 
-                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({name, percent}) => `${name || 'N/A'}: ${((percent || 0) * 100).toFixed(0)}%`}
                   >
                     <Cell fill="#10B981" />
                     <Cell fill="#EF4444" />

@@ -25,7 +25,7 @@ export const QuestionnaireDetails = ({ item, isOpen, onClose }: QuestionnaireDet
     { date: '2024-01-01', value: 1 },
     { date: '2024-01-07', value: 2 },
     { date: '2024-01-14', value: 2 },
-    { date: '2024-01-21', value: item.metaAtual || 0 },
+    { date: '2024-01-21', value: Number(item?.metaAtual) || 0 },
   ];
 
   const mockResponses = [
