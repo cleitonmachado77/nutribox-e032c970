@@ -2,8 +2,8 @@
 // Servidor DigitalOcean configurado
 
 export const EVOLUTION_CONFIG = {
-  // URL do servidor DigitalOcean via Cloudflare Tunnel
-  API_URL: 'https://evolution-api.SEUDOMINIO.com',
+  // URL do servidor DigitalOcean com HTTPS
+  API_URL: 'https://134.199.202.47:8080',
   
   // Token de acesso da Evolution API
   API_TOKEN: '429683C4C977415CAAFCCE10F7D57E11',
