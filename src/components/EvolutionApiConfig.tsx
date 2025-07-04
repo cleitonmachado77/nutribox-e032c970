@@ -10,82 +10,254 @@ import {
   Copy,
   Check,
   Info,
-  AlertCircle
+  AlertCircle,
+  TestTube,
+  CheckCircle2,
+  XCircle,
+  RefreshCw
 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface TestResult {
+  test: string;
+  status: 'success' | 'error' | 'loading';
+  message: string;
+  details?: any;
+}
 
 export const EvolutionAPIConfig = () => {
-  const [copied, setCopied] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [isTesting, setIsTesting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    toast({
-      title: "Copiado",
-      description: `${label} copiado para a área de transferência`
+  const runTests = async () => {
+    setIsTesting(true);
+    setTestResults([]);
+
+    const tests: TestResult[] = [];
+
+    // Test 1: Authentication
+    tests.push({
+      test: 'Autenticação do Usuário',
+      status: 'loading',
+      message: 'Verificando autenticação...'
     });
-    setTimeout(() => setCopied(null), 2000);
+    setTestResults([...tests]);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        tests[0] = {
+          test: 'Autenticação do Usuário',
+          status: 'success',
+          message: 'Usuário autenticado com sucesso',
+          details: { userId: user?.id }
+        };
+      } else {
+        tests[0] = {
+          test: 'Autenticação do Usuário',
+          status: 'error',
+          message: 'Usuário não autenticado'
+        };
+      }
+    } catch (error) {
+      tests[0] = {
+        test: 'Autenticação do Usuário',
+        status: 'error',
+        message: 'Erro na autenticação',
+        details: error
+      };
+    }
+    setTestResults([...tests]);
+
+    // Test 2: Edge Function Availability
+    tests.push({
+      test: 'Edge Function Evolution API Proxy',
+      status: 'loading',
+      message: 'Testando Edge Function...'
+    });
+    setTestResults([...tests]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('evolution-api-proxy', {
+        body: {
+          endpoint: '/instance/fetchInstances',
+          method: 'GET'
+        }
+      });
+
+      if (error) {
+        tests[1] = {
+          test: 'Edge Function Evolution API Proxy',
+          status: 'error',
+          message: 'Erro na Edge Function',
+          details: error
+        };
+      } else {
+        tests[1] = {
+          test: 'Edge Function Evolution API Proxy',
+          status: 'success',
+          message: 'Edge Function funcionando',
+          details: data
+        };
+      }
+    } catch (error) {
+      tests[1] = {
+        test: 'Edge Function Evolution API Proxy',
+        status: 'error',
+        message: 'Falha ao chamar Edge Function',
+        details: error
+      };
+    }
+    setTestResults([...tests]);
+
+    // Test 3: Evolution API Connection
+    tests.push({
+      test: 'Conexão com Evolution API',
+      status: 'loading',
+      message: 'Testando conexão com servidor...'
+    });
+    setTestResults([...tests]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('evolution-api-proxy', {
+        body: {
+          endpoint: '/instance/fetchInstances',
+          method: 'GET',
+          instanceName: `nutribox-${user?.id?.slice(0, 8)}`
+        }
+      });
+
+      if (error) {
+        tests[2] = {
+          test: 'Conexão com Evolution API',
+          status: 'error',
+          message: 'Erro ao conectar com Evolution API',
+          details: error
+        };
+      } else {
+        tests[2] = {
+          test: 'Conexão com Evolution API',
+          status: 'success',
+          message: 'Conexão com Evolution API estabelecida',
+          details: data
+        };
+      }
+    } catch (error) {
+      tests[2] = {
+        test: 'Conexão com Evolution API',
+        status: 'error',
+        message: 'Falha na conexão com Evolution API',
+        details: error
+      };
+    }
+    setTestResults([...tests]);
+
+    // Test 4: Instance Creation
+    tests.push({
+      test: 'Criação de Instância',
+      status: 'loading',
+      message: 'Testando criação de instância...'
+    });
+    setTestResults([...tests]);
+
+    try {
+      const instanceName = `test-${Date.now()}`;
+      const { data, error } = await supabase.functions.invoke('evolution-api-proxy', {
+        body: {
+          endpoint: '/instance/create',
+          method: 'POST',
+          body: {
+            instanceName,
+            qrcode: true,
+            integration: 'WHATSAPP-BAILEYS'
+          },
+          instanceName
+        }
+      });
+
+      if (error) {
+        tests[3] = {
+          test: 'Criação de Instância',
+          status: 'error',
+          message: 'Erro ao criar instância',
+          details: error
+        };
+      } else {
+        tests[3] = {
+          test: 'Criação de Instância',
+          status: 'success',
+          message: 'Instância criada com sucesso',
+          details: { instanceName, data }
+        };
+
+        // Clean up - delete test instance
+        try {
+          await supabase.functions.invoke('evolution-api-proxy', {
+            body: {
+              endpoint: `/instance/delete/${instanceName}`,
+              method: 'DELETE',
+              instanceName
+            }
+          });
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup test instance:', cleanupError);
+        }
+      }
+    } catch (error) {
+      tests[3] = {
+        test: 'Criação de Instância',
+        status: 'error',
+        message: 'Falha ao criar instância',
+        details: error
+      };
+    }
+    setTestResults([...tests]);
+
+    setIsTesting(false);
+    toast({
+      title: "Testes Concluídos",
+      description: "Verifique os resultados abaixo"
+    });
   };
 
-  const configSteps = [
-    {
-      title: "1. Configurar Variáveis de Ambiente",
-      description: "No painel do Supabase, vá em Settings > Edge Functions e configure:",
-      items: [
-        {
-          label: "EVOLUTION_API_URL",
-          value: "http://134.199.202.47:8080",
-          description: "URL do servidor Evolution API"
-        },
-        {
-          label: "EVOLUTION_API_TOKEN", 
-          value: "nutribox-evolution-key-2024",
-          description: "Token de autenticação da API"
-        }
-      ]
-    },
-    {
-      title: "2. Verificar Servidor Evolution API",
-      description: "Confirme se o servidor está rodando e acessível:",
-      items: [
-        {
-          label: "Status do Servidor",
-          value: "http://134.199.202.47:8080",
-          description: "Teste se o servidor responde"
-        }
-      ]
-    },
-    {
-      title: "3. Deploy da Edge Function",
-      description: "Certifique-se de que a edge function está deployada:",
-      items: [
-        {
-          label: "Deploy Command",
-          value: "supabase functions deploy evolution-api-proxy",
-          description: "Comando para fazer deploy"
-        }
-      ]
-    }
-  ];
+  const copyConfig = () => {
+    const config = `
+# Evolution API Configuration
+EVOLUTION_API_URL=http://134.199.202.47:8080
+EVOLUTION_API_TOKEN=nutribox-evolution-key-2024
 
-  const troubleshootingSteps = [
-    {
-      issue: "Erro de Autenticação (401)",
-      solution: "Verifique se o EVOLUTION_API_TOKEN está correto no Supabase"
-    },
-    {
-      issue: "Erro de Rede (503)",
-      solution: "Confirme se o servidor Evolution API está online e acessível"
-    },
-    {
-      issue: "Endpoint não encontrado (404)",
-      solution: "Verifique a versão da Evolution API e os endpoints utilizados"
-    },
-    {
-      issue: "Timeout (408)",
-      solution: "O servidor está demorando para responder. Tente novamente."
+# Supabase Configuration
+SUPABASE_URL=${process.env.NEXT_PUBLIC_SUPABASE_URL}
+SUPABASE_ANON_KEY=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    `.trim();
+
+    navigator.clipboard.writeText(config);
+    toast({
+      title: "Configuração Copiada",
+      description: "Configuração copiada para a área de transferência"
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case 'error': return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'loading': return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />;
+      default: return <Settings className="w-4 h-4 text-gray-500" />;
     }
-  ];
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success': return <Badge variant="default" className="bg-green-100 text-green-800">Sucesso</Badge>;
+      case 'error': return <Badge variant="destructive">Erro</Badge>;
+      case 'loading': return <Badge variant="secondary">Testando...</Badge>;
+      default: return <Badge variant="outline">Desconhecido</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -96,142 +268,120 @@ export const EvolutionAPIConfig = () => {
             Configuração Evolution API
           </CardTitle>
           <CardDescription>
-            Configure a integração com o WhatsApp via Evolution API
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {configSteps.map((step, index) => (
-            <div key={index} className="space-y-3">
-              <h3 className="font-medium text-sm">{step.title}</h3>
-              <p className="text-sm text-gray-600">{step.description}</p>
-              
-              {step.items.map((item, itemIndex) => (
-                <div key={itemIndex} className="bg-gray-50 p-3 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                    <Button
-                      onClick={() => copyToClipboard(item.value, item.label)}
-                      variant="ghost"
-                      size="sm"
-                    >
-                      {copied === item.label ? (
-                        <Check className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                  <code className="text-xs bg-white p-2 rounded border block">
-                    {item.value}
-                  </code>
-                  <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-orange-500" />
-            Solução de Problemas
-          </CardTitle>
-          <CardDescription>
-            Problemas comuns e suas soluções
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {troubleshootingSteps.map((step, index) => (
-              <div key={index} className="border-l-4 border-orange-200 pl-4">
-                <h4 className="font-medium text-sm text-orange-800">{step.issue}</h4>
-                <p className="text-sm text-gray-600">{step.solution}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5 text-blue-500" />
-            Informações Técnicas
-          </CardTitle>
-          <CardDescription>
-            Detalhes sobre a integração
+            Teste e configure a integração com Evolution API
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-sm mb-2">Versão da API</h4>
-              <Badge variant="outline">Evolution API v2.2.3</Badge>
+              <h4 className="font-medium mb-2">Configurações Atuais</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>API URL:</span>
+                  <code className="bg-gray-100 px-2 py-1 rounded">http://134.199.202.47:8080</code>
+                </div>
+                <div className="flex justify-between">
+                  <span>Token:</span>
+                  <code className="bg-gray-100 px-2 py-1 rounded">nutribox-evolution-key-2024</code>
+                </div>
+                <div className="flex justify-between">
+                  <span>Usuário ID:</span>
+                  <code className="bg-gray-100 px-2 py-1 rounded">{user?.id?.slice(0, 8)}...</code>
+                </div>
+              </div>
             </div>
+            
             <div>
-              <h4 className="font-medium text-sm mb-2">Integração</h4>
-              <Badge variant="outline">WHATSAPP-BAILEYS</Badge>
-            </div>
-            <div>
-              <h4 className="font-medium text-sm mb-2">Multi-Tenant</h4>
-              <Badge variant="outline" className="text-green-600">Ativo</Badge>
-            </div>
-            <div>
-              <h4 className="font-medium text-sm mb-2">Segurança</h4>
-              <Badge variant="outline" className="text-blue-600">Supabase Auth</Badge>
+              <h4 className="font-medium mb-2">Ações</h4>
+              <div className="space-y-2">
+                <Button 
+                  onClick={runTests}
+                  disabled={isTesting}
+                  className="w-full"
+                >
+                  {isTesting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Executando Testes...
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="w-4 h-4 mr-2" />
+                      Executar Testes
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={copyConfig}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar Configuração
+                </Button>
+              </div>
             </div>
           </div>
-
-          <Alert>
-            <Info className="w-4 h-4" />
-            <AlertDescription>
-              <p className="text-sm">
-                <strong>Multi-Tenant:</strong> Cada usuário possui sua própria instância isolada do WhatsApp, 
-                garantindo privacidade e segurança dos dados.
-              </p>
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
 
+      {/* Test Results */}
+      {testResults.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resultados dos Testes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {testResults.map((result, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
+                  {getStatusIcon(result.status)}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-medium">{result.test}</h4>
+                      {getStatusBadge(result.status)}
+                    </div>
+                    <p className="text-sm text-gray-600">{result.message}</p>
+                    {result.details && (
+                      <details className="mt-2">
+                        <summary className="text-xs text-gray-500 cursor-pointer">
+                          Ver detalhes
+                        </summary>
+                        <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
+                          {JSON.stringify(result.details, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Troubleshooting Guide */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="w-5 h-5" />
-            Links Úteis
-          </CardTitle>
+          <CardTitle>Solução de Problemas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-              onClick={() => window.open('https://doc.evolution-api.com/', '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Documentação Evolution API
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-              onClick={() => window.open('https://supabase.com/docs/guides/functions', '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Documentação Supabase Edge Functions
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start"
-              onClick={() => window.open('https://github.com/EvolutionAPI/evolution-api', '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Repositório GitHub Evolution API
-            </Button>
+          <div className="space-y-4">
+            <Alert>
+              <ExternalLink className="w-4 h-4" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p className="font-medium">Problemas Comuns:</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Verifique se o servidor Evolution API está rodando</li>
+                    <li>Confirme se as variáveis de ambiente estão configuradas no Supabase</li>
+                    <li>Verifique se a Edge Function foi deployada corretamente</li>
+                    <li>Teste a conectividade com o servidor Evolution API</li>
+                  </ul>
+                </div>
+              </AlertDescription>
+            </Alert>
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ export interface EvolutionSession {
   status: 'connected' | 'disconnected' | 'connecting';
   qrCode?: string;
   phoneNumber?: string;
+  lastChecked?: Date;
 }
 
 export interface EvolutionContact {
@@ -39,19 +40,22 @@ export const useEvolutionSupabase = () => {
   const [session, setSession] = useState<EvolutionSession | null>(null);
   const [contacts, setContacts] = useState<EvolutionContact[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   // Nome da instância único por usuário para multi-tenant
   const INSTANCE_NAME = user ? generateInstanceName(user.id) : 'nutribox-temp';
 
   // Função para chamar a Evolution API via Supabase Edge Function
-  const callEvolutionAPI = async (endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any) => {
+  const callEvolutionAPI = useCallback(async (endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any) => {
     try {
       const { data: { session: authSession } } = await supabase.auth.getSession();
       
       if (!authSession) {
         throw new Error('Usuário não autenticado');
       }
+
+      console.log(`🔄 Chamando Evolution API: ${method} ${endpoint}`);
 
       const response = await supabase.functions.invoke('evolution-api-proxy', {
         body: {
@@ -63,21 +67,26 @@ export const useEvolutionSupabase = () => {
       });
 
       if (response.error) {
+        console.error('❌ Erro na Edge Function:', response.error);
         throw new Error(response.error.message || 'Erro na chamada da API');
       }
 
+      console.log(`✅ Resposta da Evolution API:`, response.data);
       return response.data;
     } catch (error) {
-      console.error('Erro ao chamar Evolution API:', error);
+      console.error('❌ Erro ao chamar Evolution API:', error);
       throw error;
     }
-  };
+  }, [INSTANCE_NAME]);
 
   // Sincronizar sessão com Supabase
-  const syncSessionWithSupabase = async (sessionData: Partial<EvolutionSession>) => {
+  const syncSessionWithSupabase = useCallback(async (sessionData: Partial<EvolutionSession>) => {
     if (!user) return;
 
     try {
+      // Preparar dados para Supabase (remover lastChecked que é um Date)
+      const { lastChecked, ...sessionDataForSupabase } = sessionData;
+      
       const { error } = await supabase
         .from('whatsapp_sessions')
         .upsert({
@@ -85,116 +94,172 @@ export const useEvolutionSupabase = () => {
           phone_number: sessionData.phoneNumber || null,
           is_connected: sessionData.status === 'connected',
           qr_code: sessionData.qrCode || null,
-          session_data: sessionData,
+          session_data: sessionDataForSupabase,
           updated_at: new Date().toISOString()
         });
 
       if (error) {
-        console.error('Erro ao sincronizar sessão:', error);
+        console.error('❌ Erro ao sincronizar sessão:', error);
+      } else {
+        console.log('✅ Sessão sincronizada com Supabase');
       }
     } catch (error) {
-      console.error('Erro ao salvar sessão no Supabase:', error);
+      console.error('❌ Erro ao salvar sessão no Supabase:', error);
     }
-  };
+  }, [user]);
 
-  // Sincronizar contatos com Supabase
-  const syncContactsWithSupabase = async (contactsData: EvolutionContact[]) => {
-    if (!user) return;
-
+  // Verificar status real da instância na Evolution API
+  const checkRealInstanceStatus = useCallback(async (): Promise<'connected' | 'disconnected' | 'connecting'> => {
     try {
-      for (const contact of contactsData) {
-        // Verificar se já existe conversa
-        const { data: existingConversation } = await supabase
-          .from('whatsapp_conversations')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('contact_phone', contact.phone)
-          .single();
+      console.log('🔍 Verificando status real da instância...');
+      
+      const data = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
+      
+      if (!data || !data.instance) {
+        console.log('❌ Instância não encontrada na Evolution API');
+        return 'disconnected';
+      }
 
-        if (!existingConversation) {
-          // Criar nova conversa
-          await supabase
-            .from('whatsapp_conversations')
-            .insert({
-              user_id: user.id,
-              contact_phone: contact.phone,
-              contact_name: contact.name,
-              last_message: contact.lastMessage || null,
-              last_message_time: contact.lastMessageTime?.toISOString() || null,
-              unread_count: contact.unreadCount || 0
-            });
-        } else {
-          // Atualizar conversa existente
-          await supabase
-            .from('whatsapp_conversations')
-            .update({
-              contact_name: contact.name,
-              last_message: contact.lastMessage || null,
-              last_message_time: contact.lastMessageTime?.toISOString() || null,
-              unread_count: contact.unreadCount || 0
-            })
-            .eq('id', existingConversation.id);
+      const state = data.instance.state;
+      console.log(`📊 Estado da instância: ${state}`);
+
+      if (state === 'open') {
+        return 'connected';
+      } else if (state === 'connecting' || state === 'pairing') {
+        return 'connecting';
+      } else {
+        return 'disconnected';
+      }
+    } catch (error) {
+      console.error('❌ Erro ao verificar status real:', error);
+      return 'disconnected';
+    }
+  }, [callEvolutionAPI, INSTANCE_NAME]);
+
+  // Atualizar status da sessão
+  const updateSessionStatus = useCallback(async (newStatus: 'connected' | 'disconnected' | 'connecting', qrCode?: string, phoneNumber?: string) => {
+    const updatedSession: EvolutionSession = {
+      id: INSTANCE_NAME,
+      instanceName: INSTANCE_NAME,
+      status: newStatus,
+      qrCode,
+      phoneNumber,
+      lastChecked: new Date()
+    };
+
+    console.log(`🔄 Atualizando status da sessão para: ${newStatus}`);
+    setSession(updatedSession);
+    await syncSessionWithSupabase(updatedSession);
+  }, [INSTANCE_NAME, syncSessionWithSupabase]);
+
+  // Verificar status da instância
+  const checkInstanceStatus = useCallback(async () => {
+    try {
+      const realStatus = await checkRealInstanceStatus();
+      await updateSessionStatus(realStatus);
+      
+      // Se o status mudou, mostrar notificação
+      if (session && session.status !== realStatus) {
+        if (realStatus === 'connected') {
+          toast({
+            title: "WhatsApp Conectado",
+            description: "Sua conta foi conectada com sucesso!"
+          });
+        } else if (realStatus === 'disconnected') {
+          toast({
+            title: "WhatsApp Desconectado",
+            description: "Sua conta foi desconectada",
+            variant: "destructive"
+          });
         }
       }
     } catch (error) {
-      console.error('Erro ao sincronizar contatos:', error);
+      console.error('❌ Erro ao verificar status:', error);
+      // Se não conseguir verificar, marcar como desconectado
+      await updateSessionStatus('disconnected');
     }
-  };
+  }, [checkRealInstanceStatus, updateSessionStatus, session, toast]);
 
   // Conectar ou reconectar instância
-  const createInstance = async () => {
+  const createInstance = useCallback(async () => {
     setLoading(true);
     try {
       console.log('🔄 Iniciando processo de conexão...');
+      console.log('👤 Usuário ID:', user?.id);
+      console.log('🏷️ Nome da instância:', INSTANCE_NAME);
       
-      // Primeiro, verifica se a instância já existe
-      const statusData = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
-      console.log('📊 Status da instância existente:', statusData);
+      // Primeiro, tenta verificar se a instância existe
+      let instanceExists = false;
+      let existingState = null;
+      let statusData = null;
       
-      // Se a instância existe mas não está conectada, busca o QR code
-      if (statusData.instance && statusData.instance.state !== 'open') {
-        console.log('🔗 Instância existe mas não está conectada, buscando QR code...');
-        const qrData = await callEvolutionAPI(`/instance/connect/${INSTANCE_NAME}`);
-        console.log('📱 QR Code obtido:', qrData);
+      try {
+        statusData = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
+        console.log('📊 Status da instância existente:', statusData);
         
-        const sessionData: EvolutionSession = {
-          id: INSTANCE_NAME,
-          instanceName: INSTANCE_NAME,
-          status: 'connecting',
-          qrCode: qrData.base64 || qrData.qrcode?.base64
-        };
-        
-        setSession(sessionData);
-        await syncSessionWithSupabase(sessionData);
-        
-        toast({
-          title: "QR Code atualizado",
-          description: "Escaneie o QR Code para conectar"
-        });
-        return;
+        if (statusData.instance) {
+          instanceExists = true;
+          existingState = statusData.instance.state;
+        }
+      } catch (statusError) {
+        console.log('❌ Instância não encontrada ou erro ao verificar:', statusError);
+        // Se der erro 404 ou similar, significa que a instância não existe
+        instanceExists = false;
       }
       
-      // Se já está conectada
-      if (statusData.instance && statusData.instance.state === 'open') {
-        console.log('✅ Instância já está conectada');
-        const sessionData: EvolutionSession = {
-          id: INSTANCE_NAME,
-          instanceName: INSTANCE_NAME,
-          status: 'connected'
-        };
-        
-        setSession(sessionData);
-        await syncSessionWithSupabase(sessionData);
-        
-        toast({
-          title: "WhatsApp conectado",
-          description: "Sua instância já está ativa"
-        });
-        return;
+      if (instanceExists && existingState) {
+        if (existingState === 'open') {
+          // Já está conectada
+          console.log('✅ Instância já está conectada');
+          await updateSessionStatus('connected', undefined, statusData?.instance?.phoneNumber);
+          toast({
+            title: "WhatsApp conectado",
+            description: "Sua instância já está ativa"
+          });
+          return;
+        } else if (existingState === 'connecting' || existingState === 'pairing') {
+          // Está conectando, buscar QR code
+          console.log('🔗 Instância está conectando, buscando QR code...');
+          try {
+            const qrData = await callEvolutionAPI(`/instance/connect/${INSTANCE_NAME}`);
+            console.log('📱 QR Code obtido:', qrData);
+            
+            await updateSessionStatus('connecting', qrData.base64 || qrData.qrcode?.base64);
+            toast({
+              title: "QR Code atualizado",
+              description: "Escaneie o QR Code para conectar"
+            });
+            return;
+          } catch (qrError) {
+            console.log('❌ Erro ao buscar QR code, deletando instância:', qrError);
+            // Se não conseguir buscar QR code, deleta e recria
+            try {
+              await callEvolutionAPI(`/instance/delete/${INSTANCE_NAME}`, 'DELETE');
+              console.log('🗑️ Instância deletada com sucesso');
+            } catch (deleteError) {
+              console.log('⚠️ Erro ao deletar instância:', deleteError);
+            }
+          }
+        } else {
+          // Instância existe mas está desconectada, deletar e recriar
+          console.log('🗑️ Instância desconectada, deletando...');
+          try {
+            await callEvolutionAPI(`/instance/delete/${INSTANCE_NAME}`, 'DELETE');
+            console.log('🗑️ Instância deletada com sucesso');
+          } catch (deleteError) {
+            console.log('⚠️ Erro ao deletar instância:', deleteError);
+          }
+        }
       }
 
-      // Se não existe, cria nova instância
+      // Criar nova instância
       console.log('🆕 Criando nova instância...');
+      console.log('📝 Dados da instância:', {
+        instanceName: INSTANCE_NAME,
+        qrcode: true,
+        integration: 'WHATSAPP-BAILEYS'
+      });
+      
       const data = await callEvolutionAPI('/instance/create', 'POST', {
         instanceName: INSTANCE_NAME,
         qrcode: true,
@@ -203,67 +268,75 @@ export const useEvolutionSupabase = () => {
 
       console.log('✅ Nova instância criada:', data);
       
-      const newSession: EvolutionSession = {
-        id: INSTANCE_NAME,
-        instanceName: INSTANCE_NAME,
-        status: 'connecting',
-        qrCode: data.qrcode?.base64
-      };
-      
-      setSession(newSession);
-      await syncSessionWithSupabase(newSession);
-      
-      toast({
-        title: "Instância criada",
-        description: "Escaneie o QR Code para conectar"
-      });
+      // Verificar se o QR code foi gerado
+      if (data.qrcode?.base64) {
+        await updateSessionStatus('connecting', data.qrcode.base64);
+        toast({
+          title: "Instância criada",
+          description: "Escaneie o QR Code para conectar"
+        });
+      } else {
+        console.log('⚠️ QR code não encontrado na resposta, tentando buscar...');
+        try {
+          const qrData = await callEvolutionAPI(`/instance/connect/${INSTANCE_NAME}`);
+          await updateSessionStatus('connecting', qrData.base64 || qrData.qrcode?.base64);
+          toast({
+            title: "QR Code obtido",
+            description: "Escaneie o QR Code para conectar"
+          });
+        } catch (qrError) {
+          console.error('❌ Erro ao buscar QR code após criação:', qrError);
+          await updateSessionStatus('connecting');
+          toast({
+            title: "Instância criada",
+            description: "Aguardando QR Code...",
+            variant: "destructive"
+          });
+        }
+      }
 
     } catch (error) {
       console.error('❌ Erro ao conectar instância:', error);
       
       // Se o erro for que a instância já existe, tenta buscar o QR code
-      if (error instanceof Error && error.message.includes('already in use')) {
+      if (error instanceof Error && (error.message.includes('already in use') || error.message.includes('already exists'))) {
+        console.log('🔄 Instância já existe, buscando QR Code...');
         toast({
           title: "Reconectando",
           description: "Instância já existe, buscando QR Code..."
         });
-        // Chama recursivamente para buscar o QR code
-        setTimeout(() => createInstance(), 1000);
+        
+        try {
+          const qrData = await callEvolutionAPI(`/instance/connect/${INSTANCE_NAME}`);
+          await updateSessionStatus('connecting', qrData.base64 || qrData.qrcode?.base64);
+          toast({
+            title: "QR Code obtido",
+            description: "Escaneie o QR Code para conectar"
+          });
+        } catch (qrError) {
+          console.error('❌ Erro ao buscar QR code:', qrError);
+          await updateSessionStatus('disconnected');
+          toast({
+            title: "Erro",
+            description: "Falha ao obter QR Code. Tente novamente.",
+            variant: "destructive"
+          });
+        }
       } else {
+        await updateSessionStatus('disconnected');
         toast({
           title: "Erro",
-          description: "Falha ao conectar WhatsApp. Tente novamente.",
+          description: `Falha ao conectar WhatsApp: ${error.message}`,
           variant: "destructive"
         });
       }
     } finally {
       setLoading(false);
     }
-  };
-
-  // Verificar status da instância
-  const checkInstanceStatus = async () => {
-    try {
-      const data = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
-      const isConnected = data.instance?.state === 'open';
-      
-      const updatedSession = session ? {
-        ...session,
-        status: isConnected ? 'connected' as const : 'disconnected' as const
-      } : null;
-      
-      setSession(updatedSession);
-      
-      if (updatedSession) {
-        await syncSessionWithSupabase(updatedSession);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar status:', error);
-    }
-  };
+  }, [callEvolutionAPI, INSTANCE_NAME, updateSessionStatus, toast, user?.id]);
 
   // Buscar contatos
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     if (!session || session.status !== 'connected') {
       console.log('❌ Sessão não está conectada, não é possível buscar contatos');
       return;
@@ -327,10 +400,6 @@ export const useEvolutionSupabase = () => {
         
         console.log(`📱 Contatos formatados: ${formattedContacts.length} encontrados`, formattedContacts);
         setContacts(formattedContacts);
-        
-        if (formattedContacts.length > 0) {
-          await syncContactsWithSupabase(formattedContacts);
-        }
       } else {
         console.log('❌ Nenhum endpoint de contatos funcional encontrado');
         setContacts([]);
@@ -339,10 +408,10 @@ export const useEvolutionSupabase = () => {
       console.error('💥 Erro geral ao buscar contatos:', error);
       setContacts([]);
     }
-  };
+  }, [session, callEvolutionAPI, INSTANCE_NAME]);
 
   // Buscar mensagens de um contato
-  const fetchMessages = async (contactPhone: string): Promise<EvolutionMessage[]> => {
+  const fetchMessages = useCallback(async (contactPhone: string): Promise<EvolutionMessage[]> => {
     try {
       console.log(`📨 Buscando mensagens para: ${contactPhone}`);
       
@@ -392,10 +461,10 @@ export const useEvolutionSupabase = () => {
       console.error('❌ Erro ao buscar mensagens:', error);
       return [];
     }
-  };
+  }, [callEvolutionAPI, INSTANCE_NAME]);
 
   // Enviar mensagem
-  const sendMessage = async (to: string, message: string) => {
+  const sendMessage = useCallback(async (to: string, message: string) => {
     try {
       console.log(`📤 Enviando mensagem para: ${to}`);
       
@@ -422,16 +491,16 @@ export const useEvolutionSupabase = () => {
       });
       return false;
     }
-  };
+  }, [callEvolutionAPI, INSTANCE_NAME, toast]);
 
-  // Carregar sessão do Supabase ao inicializar
+  // Inicializar sessão
   useEffect(() => {
     if (user && !session) {
-      const loadSession = async () => {
+      const initializeSession = async () => {
         try {
-          console.log('🔄 Carregando sessão do Supabase...');
+          console.log('🔄 Inicializando sessão...');
           
-          // Buscar todas as sessões do usuário, ordenadas pela mais recente
+          // Buscar sessão do Supabase
           const { data, error } = await supabase
             .from('whatsapp_sessions')
             .select('*')
@@ -443,13 +512,17 @@ export const useEvolutionSupabase = () => {
             const sessionData = data[0];
             console.log('📊 Sessão encontrada no Supabase:', sessionData);
             
-            setSession({
+            // Carregar sessão do Supabase
+            const loadedSession: EvolutionSession = {
               id: sessionData.id || INSTANCE_NAME,
               instanceName: INSTANCE_NAME,
               status: sessionData.is_connected ? 'connected' : 'disconnected',
               phoneNumber: sessionData.phone_number || undefined,
-              qrCode: sessionData.qr_code || undefined
-            });
+              qrCode: sessionData.qr_code || undefined,
+              lastChecked: new Date(sessionData.updated_at)
+            };
+            
+            setSession(loadedSession);
             
             // Verificar status real da instância na Evolution API
             setTimeout(() => {
@@ -463,13 +536,53 @@ export const useEvolutionSupabase = () => {
             }, 1000);
           }
         } catch (error) {
-          console.error('❌ Erro ao carregar sessão:', error);
+          console.error('❌ Erro ao inicializar sessão:', error);
+          // Em caso de erro, criar nova instância
+          setTimeout(() => {
+            createInstance();
+          }, 1000);
         }
       };
 
-      loadSession();
+      initializeSession();
     }
-  }, [user]); // Removido session das dependências para evitar loop
+  }, [user, session, INSTANCE_NAME, checkInstanceStatus, createInstance]);
+
+  // Configurar verificação periódica de status
+  useEffect(() => {
+    if (session) {
+      // Limpar intervalo anterior
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+      }
+
+      // Configurar novo intervalo
+      const interval = setInterval(() => {
+        checkInstanceStatus();
+      }, 10000); // Verificar a cada 10 segundos
+
+      setStatusCheckInterval(interval);
+
+      // Limpar intervalo quando componente for desmontado
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    }
+  }, [session, checkInstanceStatus]);
+
+  // Buscar contatos quando conectar
+  useEffect(() => {
+    if (session?.status === 'connected') {
+      // Delay para garantir que a instância está pronta
+      const timer = setTimeout(() => {
+        fetchContacts();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [session?.status, fetchContacts]);
 
   return {
     session,

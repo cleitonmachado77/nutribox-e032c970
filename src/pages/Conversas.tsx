@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { useEvolutionSupabase } from "@/hooks/useEvolutionSupabase";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
+import { WhatsAppStatusIndicator } from "@/components/WhatsAppStatusIndicator";
 import { EvolutionAPIErrorHandler } from "@/components/EvolutionAPIErrorHandler";
+import { EvolutionAPIConfig } from "@/components/EvolutionApiConfig";
+import { ConnectionDebugger } from "@/components/ConnectionDebugger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +32,10 @@ import {
   Bot,
   User,
   Smartphone,
-  Monitor
+  Monitor,
+  MessageCircle,
+  MoreHorizontal,
+  Bug
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EvolutionContact, EvolutionMessage, EvolutionSession } from "@/hooks/useEvolutionSupabase";
@@ -49,6 +55,8 @@ export default function Conversas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<EvolutionAPIError | null>(null);
   const [showErrorHandler, setShowErrorHandler] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -248,12 +256,21 @@ export default function Conversas() {
           description="Central de conversas integrada com Evolution API" 
         />
         
-        <WhatsAppConnection
-          instance={session}
+        <WhatsAppStatusIndicator
+          session={session}
           onConnect={createInstance}
           onRefresh={checkInstanceStatus}
           loading={loading}
         />
+
+        {session?.status === 'connecting' && session.qrCode && (
+          <WhatsAppConnection
+            instance={session}
+            onConnect={createInstance}
+            onRefresh={checkInstanceStatus}
+            loading={loading}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
@@ -298,16 +315,54 @@ export default function Conversas() {
             </CardContent>
           </Card>
         </div>
+
+        {error && (
+          <EvolutionAPIErrorHandler 
+            error={error}
+            onRetry={handleRetry}
+            onConfigure={handleConfigure}
+          />
+        )}
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <Header 
-        title="Conversas WhatsApp - Evolution API" 
-        description="Central de conversas integrada com Evolution API" 
-      />
+      <div className="flex items-center justify-between">
+        <Header 
+          title="Conversas WhatsApp - Evolution API" 
+          description="Central de conversas integrada com Evolution API" 
+        />
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowDebug(!showDebug)}
+            variant="outline"
+            size="sm"
+          >
+            <Bug className="w-4 h-4 mr-2" />
+            {showDebug ? 'Ocultar' : 'Debug'}
+          </Button>
+          <Button
+            onClick={() => setShowConfig(!showConfig)}
+            variant="outline"
+            size="sm"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            {showConfig ? 'Ocultar' : 'Configuração'}
+          </Button>
+        </div>
+      </div>
+      
+      {/* Debug Panel */}
+      {showDebug && (
+        <ConnectionDebugger />
+      )}
+
+      {/* Configuration Panel */}
+      {showConfig && (
+        <EvolutionAPIConfig />
+      )}
       
       {/* Error Alert */}
       {error && !showErrorHandler && (
@@ -330,63 +385,12 @@ export default function Conversas() {
       )}
       
       {/* Status do WhatsApp */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${
-                session.status === 'connected' ? 'bg-green-500 animate-pulse' : 
-                session.status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
-              }`}></div>
-              <div>
-                <p className="font-medium">
-                  WhatsApp {
-                    session.status === 'connected' ? 'Conectado' : 
-                    session.status === 'connecting' ? 'Conectando...' : 'Desconectado'
-                  }
-                </p>
-                <p className="text-sm text-gray-600">
-                  Instância: {session.instanceName}
-                </p>
-                {session.phoneNumber && (
-                  <p className="text-xs text-gray-500">
-                    Número: {session.phoneNumber}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {session.status === 'connected' ? (
-                <Badge variant="outline" className="text-green-600 border-green-200">
-                  <Wifi className="w-3 h-3 mr-1" />
-                  Online
-                </Badge>
-              ) : session.status === 'connecting' ? (
-                <Badge variant="outline" className="text-yellow-600 border-yellow-200">
-                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                  Conectando
-                </Badge>
-              ) : (
-                <>
-                  <Badge variant="outline" className="text-red-600 border-red-200">
-                    <WifiOff className="w-3 h-3 mr-1" />
-                    Offline
-                  </Badge>
-                  <Button 
-                    size="sm" 
-                    onClick={createInstance}
-                    disabled={loading}
-                    className="bg-green-500 hover:bg-green-600 text-white"
-                  >
-                    <QrCode className="w-4 h-4 mr-2" />
-                    Reconectar
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <WhatsAppStatusIndicator
+        session={session}
+        onConnect={createInstance}
+        onRefresh={checkInstanceStatus}
+        loading={loading}
+      />
 
       {/* Aviso de Mixed Content - só mostra se for HTTPS tentando acessar HTTP */}
       {window.location.protocol === 'https:' && (
