@@ -266,37 +266,36 @@ export const useEvolutionSupabase = () => {
 
   // Buscar contatos
   const fetchContacts = async () => {
+    if (!session || session.status !== 'connected') {
+      return;
+    }
+    
     try {
-      console.log('Buscando contatos para instância:', INSTANCE_NAME);
       const response = await fetch(`${API_URL}/chat/findContacts/${INSTANCE_NAME}`, {
         headers
       });
 
-      console.log('Resposta dos contatos:', response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Dados dos contatos recebidos:', data);
         
-        const formattedContacts: EvolutionContact[] = data.map((contact: any) => {
-          const formattedContact = {
-            id: contact.id || `unknown-${Date.now()}`,
-            name: contact.pushName || contact.id?.split('@')[0] || 'Contato Desconhecido',
-            phone: contact.id?.split('@')[0] || 'unknown',
-            profilePicture: contact.profilePictureUrl || undefined,
-            lastMessage: contact.lastMessage?.message || undefined,
-            lastMessageTime: contact.lastMessage?.messageTimestamp ? 
-              new Date(contact.lastMessage.messageTimestamp * 1000) : undefined,
-            unreadCount: Number(contact.unreadCount) || 0
-          };
-          console.log('Contato formatado:', formattedContact);
-          return formattedContact;
-        });
+        const formattedContacts: EvolutionContact[] = data.map((contact: any) => ({
+          id: contact.id || `unknown-${Date.now()}`,
+          name: contact.pushName || contact.id?.split('@')[0] || 'Contato Desconhecido',
+          phone: contact.id?.split('@')[0] || 'unknown',
+          profilePicture: contact.profilePictureUrl || undefined,
+          lastMessage: contact.lastMessage?.message || undefined,
+          lastMessageTime: contact.lastMessage?.messageTimestamp ? 
+            new Date(contact.lastMessage.messageTimestamp * 1000) : undefined,
+          unreadCount: Number(contact.unreadCount) || 0
+        }));
         
         setContacts(formattedContacts);
         await syncContactsWithSupabase(formattedContacts);
       } else {
-        console.error('Erro na resposta:', response.status, response.statusText);
+        // Only log if it's not a 404 (which is expected when no contacts exist)
+        if (response.status !== 404) {
+          console.error('Erro na resposta:', response.status, response.statusText);
+        }
       }
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
@@ -363,7 +362,7 @@ export const useEvolutionSupabase = () => {
 
   // Carregar sessão do Supabase ao inicializar
   useEffect(() => {
-    if (user) {
+    if (user && !session) {
       const loadSession = async () => {
         try {
           // Buscar todas as sessões do usuário, ordenadas pela mais recente
@@ -373,8 +372,6 @@ export const useEvolutionSupabase = () => {
             .eq('user_id', user.id)
             .order('updated_at', { ascending: false })
             .limit(1);
-
-          console.log('Carregando sessão:', { data, error });
 
           if (data && data.length > 0 && !error) {
             const sessionData = data[0];
@@ -391,20 +388,19 @@ export const useEvolutionSupabase = () => {
               checkInstanceStatus();
             }, 1000);
           } else {
-            console.log('Nenhuma sessão encontrada, verificando instância existente...');
             // Se não há sessão no Supabase, verifica se existe instância na Evolution API
             setTimeout(() => {
               createInstance();
             }, 1000);
           }
         } catch (error) {
-          console.log('Erro ao carregar sessão:', error);
+          console.error('Erro ao carregar sessão:', error);
         }
       };
 
       loadSession();
     }
-  }, [user]);
+  }, [user, session]);
 
   return {
     session,

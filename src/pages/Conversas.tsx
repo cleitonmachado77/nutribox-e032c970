@@ -75,9 +75,14 @@ export default function Conversas() {
   // Fetch contacts when connected
   useEffect(() => {
     if (session?.status === 'connected') {
-      fetchContacts();
+      // Delay to ensure instance is fully ready
+      const timer = setTimeout(() => {
+        fetchContacts();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [session?.status, fetchContacts]);
+  }, [session?.status]);
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact => 
