@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -67,7 +66,7 @@ export const ReportsCharts = ({ selectedPeriod }: ReportsChartsProps) => {
             <LineChart data={engagementData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis />
+              <YAxis domain={[0, 'auto']} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Line 
                 type="monotone" 
@@ -126,7 +125,7 @@ export const ReportsCharts = ({ selectedPeriod }: ReportsChartsProps) => {
             <BarChart data={engagementData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis />
+              <YAxis domain={[0, 'auto']} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="messages" fill="var(--color-messages)" name="Mensagens" />
               <Bar dataKey="responses" fill="var(--color-responses)" name="Respostas" />
@@ -145,7 +144,7 @@ export const ReportsCharts = ({ selectedPeriod }: ReportsChartsProps) => {
             <BarChart data={patientProgressData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="week" />
-              <YAxis />
+              <YAxis domain={[0, 'auto']} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="completed" fill="var(--color-completed)" name="Metas Completadas" />
               <Bar dataKey="total" fill="var(--color-total)" name="Total de Metas" />
