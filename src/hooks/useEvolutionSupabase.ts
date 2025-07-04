@@ -271,50 +271,50 @@ export const useEvolutionSupabase = () => {
     }
     
     try {
-      // Tentar diferentes endpoints para buscar chats/contatos
-      const endpoints = [
-        `${API_URL}/chat/findChats/${INSTANCE_NAME}`,
-        `${API_URL}/chat/find/${INSTANCE_NAME}`,
-        `${API_URL}/chats/${INSTANCE_NAME}`,
-        `${API_URL}/instance/fetchChats/${INSTANCE_NAME}`,
-        `${API_URL}/message/findChats/${INSTANCE_NAME}`,
-        `${API_URL}/message/find/${INSTANCE_NAME}`,
-        `${API_URL}/instance/find/${INSTANCE_NAME}`,
-        `${API_URL}/chat/fetchChats/${INSTANCE_NAME}`,
-        `${API_URL}/chat/all/${INSTANCE_NAME}`,
-        `${API_URL}/chats/all/${INSTANCE_NAME}`,
-        `${API_URL}/instance/chats/${INSTANCE_NAME}`,
-        `${API_URL}/message/chats/${INSTANCE_NAME}`
-      ];
+      console.log('🔍 Buscando contatos usando POST /chat/findChats...');
+      
+      // Usar POST conforme a API Evolution requer
+      const response = await fetch(`${API_URL}/chat/findChats`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          instanceName: INSTANCE_NAME
+        })
+      });
 
       let data = null;
-      let foundEndpoint = null;
 
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`Tentando endpoint: ${endpoint}`);
-          const response = await fetch(endpoint, { headers });
-          
-          if (response.ok) {
-            data = await response.json();
-            foundEndpoint = endpoint;
-            console.log(`✅ Contatos encontrados usando endpoint: ${endpoint}`, data);
-            break;
-          } else if (response.status === 404) {
-            console.log(`❌ Endpoint ${endpoint} não encontrado (404)`);
-            continue;
-          } else {
-            console.log(`⚠️ Endpoint ${endpoint} retornou ${response.status}: ${response.statusText}`);
-            // Tentar próximo endpoint mesmo com outros erros
+      if (response.ok) {
+        data = await response.json();
+        console.log('✅ Contatos encontrados usando POST /chat/findChats:', data);
+      } else {
+        console.log(`❌ POST /chat/findChats retornou ${response.status}: ${response.statusText}`);
+        
+        // Se POST não funcionar, tentar alguns endpoints GET como fallback
+        const getEndpoints = [
+          `${API_URL}/chat/findChats/${INSTANCE_NAME}`,
+          `${API_URL}/chats/${INSTANCE_NAME}`,
+          `${API_URL}/instance/fetchChats/${INSTANCE_NAME}`
+        ];
+
+        for (const endpoint of getEndpoints) {
+          try {
+            console.log(`Tentando fallback GET: ${endpoint}`);
+            const getResponse = await fetch(endpoint, { headers });
+            
+            if (getResponse.ok) {
+              data = await getResponse.json();
+              console.log(`✅ Contatos encontrados usando GET: ${endpoint}`, data);
+              break;
+            }
+          } catch (error) {
+            console.log(`💥 Erro no fallback GET ${endpoint}:`, error);
             continue;
           }
-        } catch (error) {
-          console.log(`💥 Erro ao tentar endpoint ${endpoint}:`, error);
-          continue;
         }
       }
 
-      if (data && foundEndpoint) {
+      if (data) {
         console.log('📊 Dados recebidos da API:', data);
         
         // Verificar se data é um array ou tem uma propriedade que contém os chats
