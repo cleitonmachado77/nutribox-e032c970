@@ -273,34 +273,17 @@ export const useEvolutionSupabase = () => {
     try {
       console.log('🔍 Tentando buscar contatos com diferentes endpoints...');
       
-      // Tentar vários endpoints comuns da Evolution API
+      // Endpoints corretos da Evolution API v2.2.3
       const endpoints = [
         {
-          url: `${API_URL}/chat/whatsChats/${INSTANCE_NAME}`,
+          url: `${API_URL}/instance/fetchContacts/${INSTANCE_NAME}`,
           method: 'GET',
-          name: 'GET /chat/whatsChats'
+          name: 'GET /instance/fetchContacts'
         },
         {
-          url: `${API_URL}/chat/whatsChats`,
-          method: 'POST',
-          body: { instanceName: INSTANCE_NAME },
-          name: 'POST /chat/whatsChats'
-        },
-        {
-          url: `${API_URL}/chat/findMessages/${INSTANCE_NAME}/0/100`,
+          url: `${API_URL}/chat/fetchChats/${INSTANCE_NAME}`,
           method: 'GET',
-          name: 'GET /chat/findMessages (conversas)'
-        },
-        {
-          url: `${API_URL}/chat/findMessages`,
-          method: 'POST',
-          body: { instanceName: INSTANCE_NAME, limit: 100 },
-          name: 'POST /chat/findMessages'
-        },
-        {
-          url: `${API_URL}/message/findMessages/${INSTANCE_NAME}`,
-          method: 'GET',
-          name: 'GET /message/findMessages'
+          name: 'GET /chat/fetchChats'
         }
       ];
 
@@ -314,10 +297,6 @@ export const useEvolutionSupabase = () => {
             method: endpoint.method,
             headers
           };
-
-          if (endpoint.body && endpoint.method === 'POST') {
-            fetchOptions.body = JSON.stringify(endpoint.body);
-          }
 
           const response = await fetch(endpoint.url, fetchOptions);
           
@@ -337,59 +316,32 @@ export const useEvolutionSupabase = () => {
       if (data) {
         console.log('📊 Dados recebidos da API:', data);
         
-        // Verificar se data é um array ou tem uma propriedade que contém os chats
-        let chats = Array.isArray(data) ? data : 
-                   data.chats || data.conversations || data.contacts || data.data || [];
+        // Processar dados da Evolution API v2.2.3
+        let contacts = Array.isArray(data) ? data : [];
 
-        if (!Array.isArray(chats) && typeof chats === 'object') {
-          chats = Object.values(chats);
-        }
-
-        if (!Array.isArray(chats)) {
-          console.log('❌ Formato de dados não reconhecido:', typeof chats);
+        if (!Array.isArray(contacts)) {
+          console.log('❌ Resposta não é um array:', typeof data);
           setContacts([]);
           return;
         }
 
-        const formattedContacts: EvolutionContact[] = chats
-          .filter((chat: any) => {
-            // Melhor validação de dados
-            if (!chat || typeof chat !== 'object') return false;
-            const hasId = chat.id || chat.remoteJid || chat.jid;
-            return hasId;
+        const formattedContacts: EvolutionContact[] = contacts
+          .filter((contact: any) => {
+            // Validar se o contato tem os campos necessários
+            return contact && (contact.id || contact.number);
           })
-          .map((chat: any) => {
-            // Extrair informações do chat de forma mais robusta
-            const chatId = chat.id || chat.remoteJid || chat.jid || '';
-            const phoneNumber = chatId.includes('@') ? chatId.split('@')[0] : chatId;
+          .map((contact: any) => {
+            // Formato esperado do /instance/fetchContacts
+            const phoneNumber = contact.number || contact.id?.split('@')[0] || '';
             
             return {
-              id: chatId || `unknown-${Date.now()}-${Math.random()}`,
-              name: chat.name || 
-                    chat.pushName || 
-                    chat.verifiedName || 
-                    chat.contact?.name ||
-                    chat.notify ||
-                    phoneNumber ||
-                    'Contato Desconhecido',
-              phone: phoneNumber || 'unknown',
-              profilePicture: chat.profilePictureUrl || 
-                            chat.contact?.profilePictureUrl || 
-                            chat.profilePicture ||
-                            undefined,
-              lastMessage: chat.lastMessage?.message || 
-                          chat.lastMessage?.text ||
-                          chat.lastMessage?.conversation ||
-                          chat.lastMessage?.body ||
-                          undefined,
-              lastMessageTime: chat.lastMessage?.messageTimestamp ? 
-                new Date(Number(chat.lastMessage.messageTimestamp) * 1000) : 
-                chat.lastMessage?.timestamp ?
-                new Date(Number(chat.lastMessage.timestamp)) :
-                chat.lastMessageTime ? 
-                new Date(chat.lastMessageTime) :
-                undefined,
-              unreadCount: Number(chat.unreadCount) || Number(chat.count) || 0
+              id: contact.id || `${phoneNumber}@s.whatsapp.net`,
+              name: contact.name || contact.pushName || phoneNumber || 'Contato Desconhecido',
+              phone: phoneNumber,
+              profilePicture: contact.profilePic || contact.profilePicture || undefined,
+              lastMessage: undefined, // Será preenchido pelo /chat/fetchChats se necessário
+              lastMessageTime: undefined,
+              unreadCount: 0
             };
           });
         
