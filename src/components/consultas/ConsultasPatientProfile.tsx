@@ -757,7 +757,6 @@ export const ConsultasPatientProfile = ({
               Altere as informações do paciente conforme necessário
             </DialogDescription>
           </DialogHeader>
-          </DialogHeader>
           
           <div className="space-y-6">
             {/* Seção de Foto de Perfil */}
