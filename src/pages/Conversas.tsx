@@ -70,7 +70,7 @@ export default function Conversas() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [session?.status, checkInstanceStatus]);
+  }, [session?.status]); // Removido checkInstanceStatus das dependências
 
   // Fetch contacts when connected
   useEffect(() => {
@@ -78,11 +78,11 @@ export default function Conversas() {
       // Delay to ensure instance is fully ready
       const timer = setTimeout(() => {
         fetchContacts();
-      }, 2000);
+      }, 5000); // Aumentado o delay para garantir que a instância esteja pronta
       
       return () => clearTimeout(timer);
     }
-  }, [session?.status]);
+  }, [session?.status]); // Removido fetchContacts das dependências
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact => 

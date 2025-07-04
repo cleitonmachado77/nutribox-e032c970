@@ -400,7 +400,7 @@ export const useEvolutionSupabase = () => {
 
       loadSession();
     }
-  }, [user, session]);
+  }, [user]); // Removido session das dependências para evitar loop
 
   return {
     session,
