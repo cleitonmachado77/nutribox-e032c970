@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { useEvolutionSupabase } from "@/hooks/useEvolutionSupabase";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
+import { EvolutionAPIErrorHandler } from "@/components/EvolutionAPIErrorHandler";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,12 +34,21 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EvolutionContact, EvolutionMessage, EvolutionSession } from "@/hooks/useEvolutionSupabase";
 
+interface EvolutionAPIError {
+  message: string;
+  status?: number;
+  details?: string;
+  timestamp?: string;
+}
+
 export default function Conversas() {
   const { toast } = useToast();
   const [selectedContact, setSelectedContact] = useState<EvolutionContact | null>(null);
   const [messages, setMessages] = useState<EvolutionMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState<EvolutionAPIError | null>(null);
+  const [showErrorHandler, setShowErrorHandler] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -70,7 +80,7 @@ export default function Conversas() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [session?.status]); // Removido checkInstanceStatus das dependências
+  }, [session?.status]);
 
   // Fetch contacts when connected
   useEffect(() => {
@@ -78,12 +88,18 @@ export default function Conversas() {
       // Delay to ensure instance is fully ready and avoid multiple calls
       const timer = setTimeout(() => {
         console.log('Iniciando busca de contatos...');
-        fetchContacts();
-      }, 3000); // Aumentado para 3 segundos
+        fetchContacts().catch((err) => {
+          console.error('Erro ao buscar contatos:', err);
+          setError({
+            message: err.message || 'Erro ao buscar contatos',
+            timestamp: new Date().toISOString()
+          });
+        });
+      }, 3000);
       
       return () => clearTimeout(timer);
     }
-  }, [session?.status]); // Removido fetchContacts das dependências
+  }, [session?.status]);
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact => 
@@ -94,16 +110,26 @@ export default function Conversas() {
 
   const handleSelectContact = async (contact: EvolutionContact) => {
     setSelectedContact(contact);
+    setError(null); // Clear any previous errors
     
-    // Load messages for this contact
-    const contactMessages = await fetchMessages(contact.phone);
-    setMessages(contactMessages);
+    try {
+      // Load messages for this contact
+      const contactMessages = await fetchMessages(contact.phone);
+      setMessages(contactMessages);
+    } catch (err) {
+      console.error('Erro ao carregar mensagens:', err);
+      setError({
+        message: err.message || 'Erro ao carregar mensagens',
+        timestamp: new Date().toISOString()
+      });
+    }
   };
 
   const handleSendMessage = async () => {
     if (!selectedContact || !newMessage.trim()) return;
 
     try {
+      setError(null); // Clear any previous errors
       const success = await sendMessage(selectedContact.phone, newMessage);
       
       if (success) {
@@ -125,18 +151,50 @@ export default function Conversas() {
         
         // Reload messages after a short delay to get the actual message from server
         setTimeout(async () => {
-          const contactMessages = await fetchMessages(selectedContact.phone);
-          setMessages(contactMessages);
+          try {
+            const contactMessages = await fetchMessages(selectedContact.phone);
+            setMessages(contactMessages);
+          } catch (err) {
+            console.error('Erro ao recarregar mensagens:', err);
+          }
         }, 2000);
       }
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+    } catch (err) {
+      console.error('Erro ao enviar mensagem:', err);
+      setError({
+        message: err.message || 'Falha ao enviar mensagem',
+        timestamp: new Date().toISOString()
+      });
       toast({
         title: "Erro",
         description: "Falha ao enviar mensagem. Tente novamente.",
         variant: "destructive"
       });
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setShowErrorHandler(false);
+    
+    if (session?.status === 'connected') {
+      fetchContacts().catch((err) => {
+        setError({
+          message: err.message || 'Erro ao buscar contatos',
+          timestamp: new Date().toISOString()
+        });
+      });
+    } else {
+      createInstance();
+    }
+  };
+
+  const handleConfigure = () => {
+    // This could open a settings modal or navigate to settings page
+    toast({
+      title: "Configurações",
+      description: "Verifique as configurações do Evolution API no painel do Supabase"
+    });
   };
 
   const formatTime = (date: Date) => {
@@ -153,6 +211,33 @@ export default function Conversas() {
       year: 'numeric'
     });
   };
+
+  // Show error handler if there's an error and user wants to see it
+  if (error && showErrorHandler) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <Header 
+          title="Conversas WhatsApp - Evolution API" 
+          description="Central de conversas integrada com Evolution API" 
+        />
+        
+        <EvolutionAPIErrorHandler
+          error={error}
+          onRetry={handleRetry}
+          onConfigure={handleConfigure}
+        />
+        
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => setShowErrorHandler(false)}
+            variant="outline"
+          >
+            Voltar para Conversas
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Check if WhatsApp needs connection or is connecting
   if (!session || session.status === 'disconnected' || session.status === 'connecting') {
@@ -223,6 +308,26 @@ export default function Conversas() {
         title="Conversas WhatsApp - Evolution API" 
         description="Central de conversas integrada com Evolution API" 
       />
+      
+      {/* Error Alert */}
+      {error && !showErrorHandler && (
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="w-4 h-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            <div className="flex items-center justify-between">
+              <span>{error.message}</span>
+              <Button 
+                onClick={() => setShowErrorHandler(true)}
+                variant="outline" 
+                size="sm"
+                className="ml-2"
+              >
+                Ver Detalhes
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       
       {/* Status do WhatsApp */}
       <Card>

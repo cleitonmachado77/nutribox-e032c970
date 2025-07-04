@@ -1,231 +1,240 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Settings, 
-  Server, 
-  CheckCircle, 
-  AlertCircle, 
-  Monitor,
-  Shield,
-  Zap
+  ExternalLink,
+  Copy,
+  Check,
+  Info,
+  AlertCircle
 } from "lucide-react";
-import { EVOLUTION_CONFIG, validateEvolutionConfig } from "@/config/evolutionApi";
 
-export const EvolutionApiConfig = () => {
-  const [serverUrl, setServerUrl] = useState(EVOLUTION_CONFIG.API_URL);
-  const [apiToken, setApiToken] = useState(EVOLUTION_CONFIG.API_TOKEN);
-  const [testing, setTesting] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+export const EvolutionAPIConfig = () => {
+  const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const testConnection = async () => {
-    setTesting(true);
-    setConnectionStatus('idle');
-
-    try {
-      // Test basic connectivity
-      const response = await fetch(`${serverUrl}/instance/fetchInstances`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': apiToken
-        }
-      });
-
-      if (response.ok) {
-        setConnectionStatus('success');
-        toast({
-          title: "Conexão bem-sucedida!",
-          description: "Servidor Evolution API conectado com sucesso"
-        });
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (error: any) {
-      setConnectionStatus('error');
-      toast({
-        title: "Erro de conexão",
-        description: `Falha ao conectar: ${error.message}`,
-        variant: "destructive"
-      });
-    } finally {
-      setTesting(false);
-    }
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    toast({
+      title: "Copiado",
+      description: `${label} copiado para a área de transferência`
+    });
+    setTimeout(() => setCopied(null), 2000);
   };
 
-  const { valid, errors, warnings } = validateEvolutionConfig();
+  const configSteps = [
+    {
+      title: "1. Configurar Variáveis de Ambiente",
+      description: "No painel do Supabase, vá em Settings > Edge Functions e configure:",
+      items: [
+        {
+          label: "EVOLUTION_API_URL",
+          value: "http://134.199.202.47:8080",
+          description: "URL do servidor Evolution API"
+        },
+        {
+          label: "EVOLUTION_API_TOKEN", 
+          value: "nutribox-evolution-key-2024",
+          description: "Token de autenticação da API"
+        }
+      ]
+    },
+    {
+      title: "2. Verificar Servidor Evolution API",
+      description: "Confirme se o servidor está rodando e acessível:",
+      items: [
+        {
+          label: "Status do Servidor",
+          value: "http://134.199.202.47:8080",
+          description: "Teste se o servidor responde"
+        }
+      ]
+    },
+    {
+      title: "3. Deploy da Edge Function",
+      description: "Certifique-se de que a edge function está deployada:",
+      items: [
+        {
+          label: "Deploy Command",
+          value: "supabase functions deploy evolution-api-proxy",
+          description: "Comando para fazer deploy"
+        }
+      ]
+    }
+  ];
+
+  const troubleshootingSteps = [
+    {
+      issue: "Erro de Autenticação (401)",
+      solution: "Verifique se o EVOLUTION_API_TOKEN está correto no Supabase"
+    },
+    {
+      issue: "Erro de Rede (503)",
+      solution: "Confirme se o servidor Evolution API está online e acessível"
+    },
+    {
+      issue: "Endpoint não encontrado (404)",
+      solution: "Verifique a versão da Evolution API e os endpoints utilizados"
+    },
+    {
+      issue: "Timeout (408)",
+      solution: "O servidor está demorando para responder. Tente novamente."
+    }
+  ];
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <Server className="w-6 h-6 text-blue-500" />
-          <div>
-            <CardTitle>Configuração Evolution API</CardTitle>
-            <p className="text-sm text-gray-600">
-              Configure a conexão com seu servidor DigitalOcean
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Status da Validação */}
-        <Alert className={valid ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-          <div className="flex items-center gap-2">
-            {valid ? (
-              <CheckCircle className="w-4 h-4 text-green-600" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-red-600" />
-            )}
-            <AlertDescription className={valid ? "text-green-800" : "text-red-800"}>
-              {valid ? (
-                "Configuração válida - pronto para usar!"
-              ) : (
-                <div>
-                  <p className="font-medium mb-1">Configuração incompleta:</p>
-                  <ul className="list-disc list-inside text-sm">
-                    {errors.map((error, index) => (
-                      <li key={index}>{error}</li>
-                    ))}
-                  </ul>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Configuração Evolution API
+          </CardTitle>
+          <CardDescription>
+            Configure a integração com o WhatsApp via Evolution API
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {configSteps.map((step, index) => (
+            <div key={index} className="space-y-3">
+              <h3 className="font-medium text-sm">{step.title}</h3>
+              <p className="text-sm text-gray-600">{step.description}</p>
+              
+              {step.items.map((item, itemIndex) => (
+                <div key={itemIndex} className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                    <Button
+                      onClick={() => copyToClipboard(item.value, item.label)}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      {copied === item.label ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <code className="text-xs bg-white p-2 rounded border block">
+                    {item.value}
+                  </code>
+                  <p className="text-xs text-gray-500 mt-1">{item.description}</p>
                 </div>
-              )}
-            </AlertDescription>
-          </div>
-        </Alert>
+              ))}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-        {/* Warnings de Mixed Content */}
-        {warnings && warnings.length > 0 && (
-          <Alert className="border-yellow-200 bg-yellow-50">
-            <AlertCircle className="w-4 h-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
-              <div>
-                <p className="font-medium mb-1">Aviso de Segurança:</p>
-                <ul className="list-disc list-inside text-sm space-y-1">
-                  {warnings.map((warning, index) => (
-                    <li key={index}>{warning}</li>
-                  ))}
-                </ul>
-                <p className="text-xs mt-2">
-                  Para resolver: Configure HTTPS no seu servidor ou use um proxy HTTPS.
-                </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-orange-500" />
+            Solução de Problemas
+          </CardTitle>
+          <CardDescription>
+            Problemas comuns e suas soluções
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {troubleshootingSteps.map((step, index) => (
+              <div key={index} className="border-l-4 border-orange-200 pl-4">
+                <h4 className="font-medium text-sm text-orange-800">{step.issue}</h4>
+                <p className="text-sm text-gray-600">{step.solution}</p>
               </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="w-5 h-5 text-blue-500" />
+            Informações Técnicas
+          </CardTitle>
+          <CardDescription>
+            Detalhes sobre a integração
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-medium text-sm mb-2">Versão da API</h4>
+              <Badge variant="outline">Evolution API v2.2.3</Badge>
+            </div>
+            <div>
+              <h4 className="font-medium text-sm mb-2">Integração</h4>
+              <Badge variant="outline">WHATSAPP-BAILEYS</Badge>
+            </div>
+            <div>
+              <h4 className="font-medium text-sm mb-2">Multi-Tenant</h4>
+              <Badge variant="outline" className="text-green-600">Ativo</Badge>
+            </div>
+            <div>
+              <h4 className="font-medium text-sm mb-2">Segurança</h4>
+              <Badge variant="outline" className="text-blue-600">Supabase Auth</Badge>
+            </div>
+          </div>
+
+          <Alert>
+            <Info className="w-4 h-4" />
+            <AlertDescription>
+              <p className="text-sm">
+                <strong>Multi-Tenant:</strong> Cada usuário possui sua própria instância isolada do WhatsApp, 
+                garantindo privacidade e segurança dos dados.
+              </p>
             </AlertDescription>
           </Alert>
-        )}
+        </CardContent>
+      </Card>
 
-        {/* Configurações do Servidor */}
-        <div className="grid grid-cols-1 gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ExternalLink className="w-5 h-5" />
+            Links Úteis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-2">
-            <Label htmlFor="serverUrl">URL do Servidor Evolution API</Label>
-            <Input
-              id="serverUrl"
-              value={serverUrl}
-              onChange={(e) => setServerUrl(e.target.value)}
-              placeholder="http://143.198.50.100:8080"
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-gray-500">
-              Ex: http://SEU_IP_DIGITALOCEAN:8080 (sem barra no final)
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="apiToken">Token de Acesso</Label>
-            <Input
-              id="apiToken"
-              value={apiToken}
-              onChange={(e) => setApiToken(e.target.value)}
-              placeholder="seu-token-de-acesso"
-              className="font-mono text-sm"
-              type="password"
-            />
-            <p className="text-xs text-gray-500">
-              Token configurado no seu servidor Evolution API
-            </p>
-          </div>
-        </div>
-
-        {/* Teste de Conexão */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Teste de Conexão</Label>
-            <Badge 
-              variant={
-                connectionStatus === 'success' ? 'default' : 
-                connectionStatus === 'error' ? 'destructive' : 'secondary'
-              }
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => window.open('https://doc.evolution-api.com/', '_blank')}
             >
-              {connectionStatus === 'success' && <CheckCircle className="w-3 h-3 mr-1" />}
-              {connectionStatus === 'error' && <AlertCircle className="w-3 h-3 mr-1" />}
-              {connectionStatus === 'success' ? 'Conectado' : 
-               connectionStatus === 'error' ? 'Erro' : 'Não testado'}
-            </Badge>
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Documentação Evolution API
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => window.open('https://supabase.com/docs/guides/functions', '_blank')}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Documentação Supabase Edge Functions
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => window.open('https://github.com/EvolutionAPI/evolution-api', '_blank')}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Repositório GitHub Evolution API
+            </Button>
           </div>
-          
-          <Button 
-            onClick={testConnection} 
-            disabled={testing || !serverUrl || !apiToken}
-            className="w-full"
-            variant="outline"
-          >
-            {testing ? (
-              <>
-                <div className="w-4 h-4 mr-2 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-                Testando conexão...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4 mr-2" />
-                Testar Conexão
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* Recursos Disponíveis */}
-        <div className="space-y-3">
-          <Label>Recursos Evolution API</Label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-3 border rounded-lg text-center">
-              <Monitor className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-              <p className="text-sm font-medium">Multi-tenant</p>
-              <p className="text-xs text-gray-600">Instância por usuário</p>
-            </div>
-            <div className="p-3 border rounded-lg text-center">
-              <Shield className="w-6 h-6 mx-auto mb-2 text-green-500" />
-              <p className="text-sm font-medium">Seguro</p>
-              <p className="text-xs text-gray-600">Conexão protegida</p>
-            </div>
-            <div className="p-3 border rounded-lg text-center">
-              <Zap className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
-              <p className="text-sm font-medium">Tempo Real</p>
-              <p className="text-xs text-gray-600">Mensagens instantâneas</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Instruções */}
-        <Alert>
-          <Settings className="w-4 h-4" />
-          <AlertDescription>
-            <p className="font-medium mb-2">Para configurar seu servidor:</p>
-            <ol className="list-decimal list-inside text-sm space-y-1">
-              <li>Edite o arquivo <code>src/config/evolutionApi.ts</code></li>
-              <li>Substitua <code>API_URL</code> pela URL do seu servidor</li>
-              <li>Configure o <code>API_TOKEN</code> com seu token</li>
-              <li>Teste a conexão usando o botão acima</li>
-            </ol>
-          </AlertDescription>
-        </Alert>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

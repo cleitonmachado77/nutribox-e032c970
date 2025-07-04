@@ -51,11 +51,6 @@ Deno.serve(async (req) => {
       throw new Error('EVOLUTION_API_TOKEN environment variable is not configured. Please set it in your Supabase project settings.')
     }
 
-    // Validate that the API URL uses HTTPS for security
-    if (!EVOLUTION_API_URL.startsWith('https://')) {
-      throw new Error('Evolution API URL must use HTTPS protocol for security. Please update EVOLUTION_API_URL to use https://')
-    }
-
     // Parse request body
     const requestData: EvolutionAPIRequest = await req.json()
     const { endpoint, method, body, instanceName } = requestData
@@ -75,7 +70,10 @@ Deno.serve(async (req) => {
       'apikey': EVOLUTION_API_TOKEN,
     }
 
-    console.log(`Making request to Evolution API: ${method} ${evolutionUrl}`)
+    console.log(`🔄 Making request to Evolution API: ${method} ${evolutionUrl}`)
+    if (body) {
+      console.log(`📦 Request body:`, JSON.stringify(body, null, 2))
+    }
 
     // Make request to Evolution API with timeout and better error handling
     const controller = new AbortController()
@@ -91,13 +89,32 @@ Deno.serve(async (req) => {
 
       clearTimeout(timeoutId)
 
+      console.log(`📊 Evolution API response status: ${evolutionResponse.status}`)
+
       if (!evolutionResponse.ok) {
         const errorText = await evolutionResponse.text()
-        console.error(`Evolution API error: ${evolutionResponse.status} - ${errorText}`)
-        throw new Error(`Evolution API error: ${evolutionResponse.status} - ${errorText}`)
+        console.error(`❌ Evolution API error: ${evolutionResponse.status} - ${errorText}`)
+        
+        // Provide more specific error messages based on status codes
+        let errorMessage = `Evolution API error: ${evolutionResponse.status}`
+        
+        if (evolutionResponse.status === 404) {
+          errorMessage = 'Endpoint not found. Please check the Evolution API version and endpoint path.'
+        } else if (evolutionResponse.status === 401) {
+          errorMessage = 'Authentication failed. Please check your Evolution API token.'
+        } else if (evolutionResponse.status === 403) {
+          errorMessage = 'Access denied. Please check your Evolution API permissions.'
+        } else if (evolutionResponse.status === 500) {
+          errorMessage = 'Internal server error. Please try again later.'
+        } else {
+          errorMessage = `Evolution API error: ${evolutionResponse.status} - ${errorText}`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const data = await evolutionResponse.json()
+      console.log(`✅ Evolution API response data:`, JSON.stringify(data, null, 2))
 
       // Log the API call for security audit
       await supabaseClient
@@ -111,7 +128,7 @@ Deno.serve(async (req) => {
           timestamp: new Date().toISOString()
         })
         .catch((auditError) => {
-          console.warn('Failed to log API audit:', auditError)
+          console.warn('⚠️ Failed to log API audit:', auditError)
         })
 
       return new Response(JSON.stringify(data), {
@@ -125,12 +142,24 @@ Deno.serve(async (req) => {
         throw new Error('Request to Evolution API timed out after 30 seconds')
       }
       
-      console.error('Network error calling Evolution API:', fetchError)
-      throw new Error(`Network error: Unable to connect to Evolution API. Please check if the API is accessible and the URL is correct.`)
+      console.error('❌ Network error calling Evolution API:', fetchError)
+      
+      // Provide more specific network error messages
+      let errorMessage = 'Network error: Unable to connect to Evolution API.'
+      
+      if (fetchError.message.includes('fetch')) {
+        errorMessage = 'Unable to reach Evolution API server. Please check if the API is running and accessible.'
+      } else if (fetchError.message.includes('DNS')) {
+        errorMessage = 'DNS resolution failed. Please check the Evolution API URL.'
+      } else if (fetchError.message.includes('CORS')) {
+        errorMessage = 'CORS error. Please check Evolution API CORS configuration.'
+      }
+      
+      throw new Error(errorMessage)
     }
 
   } catch (error) {
-    console.error('Evolution API Proxy Error:', error)
+    console.error('❌ Evolution API Proxy Error:', error)
     
     // Provide more specific error messages
     let errorMessage = error.message
@@ -143,12 +172,17 @@ Deno.serve(async (req) => {
     } else if (error.message.includes('environment variable')) {
       statusCode = 500
       errorMessage = 'Server configuration error. Please contact support.'
+    } else if (error.message.includes('timed out')) {
+      statusCode = 408
+    } else if (error.message.includes('Network error')) {
+      statusCode = 503
     }
     
     return new Response(
       JSON.stringify({ 
         error: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       }),
       {
         status: statusCode,

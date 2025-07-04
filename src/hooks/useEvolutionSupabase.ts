@@ -145,14 +145,17 @@ export const useEvolutionSupabase = () => {
   const createInstance = async () => {
     setLoading(true);
     try {
+      console.log('🔄 Iniciando processo de conexão...');
+      
       // Primeiro, verifica se a instância já existe
       const statusData = await callEvolutionAPI(`/instance/connectionState/${INSTANCE_NAME}`);
-      console.log('Status da instância existente:', statusData);
+      console.log('📊 Status da instância existente:', statusData);
       
       // Se a instância existe mas não está conectada, busca o QR code
       if (statusData.instance && statusData.instance.state !== 'open') {
+        console.log('🔗 Instância existe mas não está conectada, buscando QR code...');
         const qrData = await callEvolutionAPI(`/instance/connect/${INSTANCE_NAME}`);
-        console.log('QR Code obtido:', qrData);
+        console.log('📱 QR Code obtido:', qrData);
         
         const sessionData: EvolutionSession = {
           id: INSTANCE_NAME,
@@ -173,6 +176,7 @@ export const useEvolutionSupabase = () => {
       
       // Se já está conectada
       if (statusData.instance && statusData.instance.state === 'open') {
+        console.log('✅ Instância já está conectada');
         const sessionData: EvolutionSession = {
           id: INSTANCE_NAME,
           instanceName: INSTANCE_NAME,
@@ -190,13 +194,14 @@ export const useEvolutionSupabase = () => {
       }
 
       // Se não existe, cria nova instância
+      console.log('🆕 Criando nova instância...');
       const data = await callEvolutionAPI('/instance/create', 'POST', {
         instanceName: INSTANCE_NAME,
         qrcode: true,
         integration: 'WHATSAPP-BAILEYS'
       });
 
-      console.log('Nova instância criada:', data);
+      console.log('✅ Nova instância criada:', data);
       
       const newSession: EvolutionSession = {
         id: INSTANCE_NAME,
@@ -214,7 +219,7 @@ export const useEvolutionSupabase = () => {
       });
 
     } catch (error) {
-      console.error('Erro ao conectar instância:', error);
+      console.error('❌ Erro ao conectar instância:', error);
       
       // Se o erro for que a instância já existe, tenta buscar o QR code
       if (error instanceof Error && error.message.includes('already in use')) {
@@ -260,11 +265,12 @@ export const useEvolutionSupabase = () => {
   // Buscar contatos
   const fetchContacts = async () => {
     if (!session || session.status !== 'connected') {
+      console.log('❌ Sessão não está conectada, não é possível buscar contatos');
       return;
     }
     
     try {
-      console.log('🔍 Tentando buscar contatos com diferentes endpoints...');
+      console.log('🔍 Buscando contatos...');
       
       // Endpoints corretos da Evolution API v2.2.3
       const endpoints = [
@@ -276,7 +282,7 @@ export const useEvolutionSupabase = () => {
 
       for (const endpoint of endpoints) {
         try {
-          console.log(`🔄 Tentando: ${endpoint}`);
+          console.log(`🔄 Tentando endpoint: ${endpoint}`);
           
           data = await callEvolutionAPI(endpoint);
           console.log(`✅ Dados encontrados usando ${endpoint}:`, data);
@@ -327,29 +333,7 @@ export const useEvolutionSupabase = () => {
         }
       } else {
         console.log('❌ Nenhum endpoint de contatos funcional encontrado');
-        
-        // Criar contatos de teste para verificar se a interface está funcionando
-        const testContacts: EvolutionContact[] = [
-          {
-            id: 'test-1',
-            name: 'Teste 1',
-            phone: '5511999999999',
-            lastMessage: 'Mensagem de teste',
-            lastMessageTime: new Date(),
-            unreadCount: 1
-          },
-          {
-            id: 'test-2', 
-            name: 'Teste 2',
-            phone: '5511888888888',
-            lastMessage: 'Outra mensagem de teste',
-            lastMessageTime: new Date(),
-            unreadCount: 0
-          }
-        ];
-        
-        console.log('🧪 Adicionando contatos de teste para verificar interface');
-        setContacts(testContacts);
+        setContacts([]);
       }
     } catch (error) {
       console.error('💥 Erro geral ao buscar contatos:', error);
@@ -360,6 +344,8 @@ export const useEvolutionSupabase = () => {
   // Buscar mensagens de um contato
   const fetchMessages = async (contactPhone: string): Promise<EvolutionMessage[]> => {
     try {
+      console.log(`📨 Buscando mensagens para: ${contactPhone}`);
+      
       // Tentar diferentes formatos de endpoints para mensagens
       const endpoints = [
         `/chat/findMessages/${INSTANCE_NAME}?where[key.remoteJid]=${contactPhone}@s.whatsapp.net`,
@@ -371,7 +357,7 @@ export const useEvolutionSupabase = () => {
       for (const endpoint of endpoints) {
         try {
           const data = await callEvolutionAPI(endpoint);
-          console.log(`Mensagens encontradas usando endpoint: ${endpoint}`, data);
+          console.log(`✅ Mensagens encontradas usando endpoint: ${endpoint}`, data);
           
           let messages = Array.isArray(data) ? data : data.messages || [];
           
@@ -395,15 +381,15 @@ export const useEvolutionSupabase = () => {
             isRead: Boolean(msg.isRead !== false) // Default to true unless explicitly false
           }));
         } catch (error) {
-          console.log(`Erro ao tentar endpoint de mensagens ${endpoint}:`, error);
+          console.log(`❌ Erro ao tentar endpoint de mensagens ${endpoint}:`, error);
           continue;
         }
       }
       
-      console.log('Nenhum endpoint de mensagens funcional encontrado');
+      console.log('❌ Nenhum endpoint de mensagens funcional encontrado');
       return [];
     } catch (error) {
-      console.error('Erro ao buscar mensagens:', error);
+      console.error('❌ Erro ao buscar mensagens:', error);
       return [];
     }
   };
@@ -411,6 +397,8 @@ export const useEvolutionSupabase = () => {
   // Enviar mensagem
   const sendMessage = async (to: string, message: string) => {
     try {
+      console.log(`📤 Enviando mensagem para: ${to}`);
+      
       // Garantir que o número tenha o formato correto
       const phoneNumber = to.includes('@') ? to.split('@')[0] : to;
       
@@ -419,14 +407,14 @@ export const useEvolutionSupabase = () => {
         text: message
       });
 
-      console.log('Mensagem enviada com sucesso:', data);
+      console.log('✅ Mensagem enviada com sucesso:', data);
       toast({
         title: "Mensagem enviada",
         description: "Sua mensagem foi enviada com sucesso"
       });
       return true;
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('❌ Erro ao enviar mensagem:', error);
       toast({
         title: "Erro",
         description: "Falha ao enviar mensagem",
@@ -441,6 +429,8 @@ export const useEvolutionSupabase = () => {
     if (user && !session) {
       const loadSession = async () => {
         try {
+          console.log('🔄 Carregando sessão do Supabase...');
+          
           // Buscar todas as sessões do usuário, ordenadas pela mais recente
           const { data, error } = await supabase
             .from('whatsapp_sessions')
@@ -451,6 +441,8 @@ export const useEvolutionSupabase = () => {
 
           if (data && data.length > 0 && !error) {
             const sessionData = data[0];
+            console.log('📊 Sessão encontrada no Supabase:', sessionData);
+            
             setSession({
               id: sessionData.id || INSTANCE_NAME,
               instanceName: INSTANCE_NAME,
@@ -464,13 +456,14 @@ export const useEvolutionSupabase = () => {
               checkInstanceStatus();
             }, 1000);
           } else {
+            console.log('❌ Nenhuma sessão encontrada no Supabase, criando nova...');
             // Se não há sessão no Supabase, verifica se existe instância na Evolution API
             setTimeout(() => {
               createInstance();
             }, 1000);
           }
         } catch (error) {
-          console.error('Erro ao carregar sessão:', error);
+          console.error('❌ Erro ao carregar sessão:', error);
         }
       };
 
