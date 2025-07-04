@@ -271,46 +271,66 @@ export const useEvolutionSupabase = () => {
     }
     
     try {
-      console.log('🔍 Buscando contatos usando POST /chat/findChats...');
+      console.log('🔍 Tentando buscar contatos com diferentes endpoints...');
       
-      // Usar POST conforme a API Evolution requer
-      const response = await fetch(`${API_URL}/chat/findChats`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          instanceName: INSTANCE_NAME
-        })
-      });
+      // Tentar vários endpoints comuns da Evolution API
+      const endpoints = [
+        {
+          url: `${API_URL}/chat/whatsChats/${INSTANCE_NAME}`,
+          method: 'GET',
+          name: 'GET /chat/whatsChats'
+        },
+        {
+          url: `${API_URL}/chat/whatsChats`,
+          method: 'POST',
+          body: { instanceName: INSTANCE_NAME },
+          name: 'POST /chat/whatsChats'
+        },
+        {
+          url: `${API_URL}/chat/findMessages/${INSTANCE_NAME}/0/100`,
+          method: 'GET',
+          name: 'GET /chat/findMessages (conversas)'
+        },
+        {
+          url: `${API_URL}/chat/findMessages`,
+          method: 'POST',
+          body: { instanceName: INSTANCE_NAME, limit: 100 },
+          name: 'POST /chat/findMessages'
+        },
+        {
+          url: `${API_URL}/message/findMessages/${INSTANCE_NAME}`,
+          method: 'GET',
+          name: 'GET /message/findMessages'
+        }
+      ];
 
       let data = null;
 
-      if (response.ok) {
-        data = await response.json();
-        console.log('✅ Contatos encontrados usando POST /chat/findChats:', data);
-      } else {
-        console.log(`❌ POST /chat/findChats retornou ${response.status}: ${response.statusText}`);
-        
-        // Se POST não funcionar, tentar alguns endpoints GET como fallback
-        const getEndpoints = [
-          `${API_URL}/chat/findChats/${INSTANCE_NAME}`,
-          `${API_URL}/chats/${INSTANCE_NAME}`,
-          `${API_URL}/instance/fetchChats/${INSTANCE_NAME}`
-        ];
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔄 Tentando: ${endpoint.name} - ${endpoint.url}`);
+          
+          const fetchOptions: RequestInit = {
+            method: endpoint.method,
+            headers
+          };
 
-        for (const endpoint of getEndpoints) {
-          try {
-            console.log(`Tentando fallback GET: ${endpoint}`);
-            const getResponse = await fetch(endpoint, { headers });
-            
-            if (getResponse.ok) {
-              data = await getResponse.json();
-              console.log(`✅ Contatos encontrados usando GET: ${endpoint}`, data);
-              break;
-            }
-          } catch (error) {
-            console.log(`💥 Erro no fallback GET ${endpoint}:`, error);
-            continue;
+          if (endpoint.body && endpoint.method === 'POST') {
+            fetchOptions.body = JSON.stringify(endpoint.body);
           }
+
+          const response = await fetch(endpoint.url, fetchOptions);
+          
+          if (response.ok) {
+            data = await response.json();
+            console.log(`✅ Dados encontrados usando ${endpoint.name}:`, data);
+            break;
+          } else {
+            console.log(`❌ ${endpoint.name} retornou ${response.status}: ${response.statusText}`);
+          }
+        } catch (error) {
+          console.log(`💥 Erro no endpoint ${endpoint.name}:`, error);
+          continue;
         }
       }
 
