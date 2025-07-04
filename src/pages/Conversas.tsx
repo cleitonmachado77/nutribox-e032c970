@@ -75,10 +75,11 @@ export default function Conversas() {
   // Fetch contacts when connected
   useEffect(() => {
     if (session?.status === 'connected') {
-      // Delay to ensure instance is fully ready
+      // Delay to ensure instance is fully ready and avoid multiple calls
       const timer = setTimeout(() => {
+        console.log('Iniciando busca de contatos...');
         fetchContacts();
-      }, 5000); // Aumentado o delay para garantir que a instância esteja pronta
+      }, 3000); // Aumentado para 3 segundos
       
       return () => clearTimeout(timer);
     }
@@ -86,8 +87,9 @@ export default function Conversas() {
 
   // Filter contacts based on search
   const filteredContacts = contacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.phone.includes(searchTerm)
+    contact && contact.name && contact.phone &&
+    (contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     contact.phone.includes(searchTerm))
   );
 
   const handleSelectContact = async (contact: EvolutionContact) => {

@@ -271,83 +271,186 @@ export const useEvolutionSupabase = () => {
     }
     
     try {
-      const response = await fetch(`${API_URL}/chat/findContacts/${INSTANCE_NAME}`, {
-        headers
-      });
+      // Tentar diferentes endpoints para buscar chats/contatos
+      const endpoints = [
+        `${API_URL}/chat/findChats/${INSTANCE_NAME}`,
+        `${API_URL}/chat/find/${INSTANCE_NAME}`,
+        `${API_URL}/chats/${INSTANCE_NAME}`,
+        `${API_URL}/instance/fetchChats/${INSTANCE_NAME}`
+      ];
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        const formattedContacts: EvolutionContact[] = data.map((contact: any) => ({
-          id: contact.id || `unknown-${Date.now()}`,
-          name: contact.pushName || contact.id?.split('@')[0] || 'Contato Desconhecido',
-          phone: contact.id?.split('@')[0] || 'unknown',
-          profilePicture: contact.profilePictureUrl || undefined,
-          lastMessage: contact.lastMessage?.message || undefined,
-          lastMessageTime: contact.lastMessage?.messageTimestamp ? 
-            new Date(contact.lastMessage.messageTimestamp * 1000) : undefined,
-          unreadCount: Number(contact.unreadCount) || 0
-        }));
-        
-        setContacts(formattedContacts);
-        await syncContactsWithSupabase(formattedContacts);
-      } else {
-        // Only log if it's not a 404 (which is expected when no contacts exist)
-        if (response.status !== 404) {
-          console.error('Erro na resposta:', response.status, response.statusText);
+      let data = null;
+      let foundEndpoint = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint, { headers });
+          
+          if (response.ok) {
+            data = await response.json();
+            foundEndpoint = endpoint;
+            console.log(`Contatos encontrados usando endpoint: ${endpoint}`, data);
+            break;
+          } else if (response.status === 404) {
+            console.log(`Endpoint ${endpoint} não encontrado (404), tentando próximo...`);
+            continue;
+          } else {
+            console.log(`Endpoint ${endpoint} retornou ${response.status}: ${response.statusText}`);
+          }
+        } catch (error) {
+          console.log(`Erro ao tentar endpoint ${endpoint}:`, error);
+          continue;
         }
+      }
+
+      if (data && foundEndpoint) {
+        console.log('Dados recebidos da API:', data);
+        
+        // Verificar se data é um array ou tem uma propriedade que contém os chats
+        let chats = Array.isArray(data) ? data : 
+                   data.chats || data.conversations || data.contacts || [];
+
+        if (!Array.isArray(chats) && typeof chats === 'object') {
+          chats = Object.values(chats);
+        }
+
+        const formattedContacts: EvolutionContact[] = chats
+          .filter((chat: any) => chat && (chat.id || chat.remoteJid || chat.jid))
+          .map((chat: any) => {
+            // Extrair informações do chat de forma mais robusta
+            const chatId = chat.id || chat.remoteJid || chat.jid || '';
+            const phoneNumber = chatId.includes('@') ? chatId.split('@')[0] : chatId;
+            
+            return {
+              id: chatId || `unknown-${Date.now()}-${Math.random()}`,
+              name: chat.name || 
+                    chat.pushName || 
+                    chat.verifiedName || 
+                    chat.contact?.name ||
+                    phoneNumber ||
+                    'Contato Desconhecido',
+              phone: phoneNumber || 'unknown',
+              profilePicture: chat.profilePictureUrl || 
+                            chat.contact?.profilePictureUrl || 
+                            undefined,
+              lastMessage: chat.lastMessage?.message || 
+                          chat.lastMessage?.text ||
+                          chat.lastMessage?.conversation ||
+                          undefined,
+              lastMessageTime: chat.lastMessage?.messageTimestamp ? 
+                new Date(Number(chat.lastMessage.messageTimestamp) * 1000) : 
+                chat.lastMessage?.timestamp ?
+                new Date(Number(chat.lastMessage.timestamp)) :
+                undefined,
+              unreadCount: Number(chat.unreadCount) || 0
+            };
+          });
+        
+        console.log('Contatos formatados:', formattedContacts);
+        setContacts(formattedContacts);
+        
+        if (formattedContacts.length > 0) {
+          await syncContactsWithSupabase(formattedContacts);
+        }
+      } else {
+        console.log('Nenhum endpoint de contatos funcional encontrado ou nenhum contato disponível');
+        setContacts([]);
       }
     } catch (error) {
       console.error('Erro ao buscar contatos:', error);
+      setContacts([]);
     }
   };
 
   // Buscar mensagens de um contato
   const fetchMessages = async (contactPhone: string): Promise<EvolutionMessage[]> => {
     try {
-      const response = await fetch(
+      // Tentar diferentes formatos de endpoints para mensagens
+      const endpoints = [
         `${API_URL}/chat/findMessages/${INSTANCE_NAME}?where[key.remoteJid]=${contactPhone}@s.whatsapp.net`,
-        { headers }
-      );
+        `${API_URL}/chat/messages/${INSTANCE_NAME}/${contactPhone}@s.whatsapp.net`,
+        `${API_URL}/messages/${INSTANCE_NAME}/${contactPhone}`,
+        `${API_URL}/chat/findMessages/${INSTANCE_NAME}/${contactPhone}`
+      ];
 
-      if (response.ok) {
-        const data = await response.json();
-        return data.map((msg: any) => ({
-          id: msg.key.id,
-          conversationId: contactPhone,
-          from: msg.key.remoteJid,
-          to: msg.key.remoteJid,
-          body: msg.message?.conversation || msg.message?.extendedTextMessage?.text || '',
-          timestamp: new Date(msg.messageTimestamp * 1000),
-          fromMe: msg.key.fromMe,
-          messageType: 'text' as const,
-          isRead: true
-        }));
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint, { headers });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Mensagens encontradas usando endpoint: ${endpoint}`, data);
+            
+            let messages = Array.isArray(data) ? data : data.messages || [];
+            
+            return messages.map((msg: any) => ({
+              id: msg.key?.id || msg.id || `msg-${Date.now()}-${Math.random()}`,
+              conversationId: contactPhone,
+              from: msg.key?.remoteJid || msg.from || contactPhone,
+              to: msg.key?.remoteJid || msg.to || contactPhone,
+              body: msg.message?.conversation || 
+                    msg.message?.extendedTextMessage?.text || 
+                    msg.text || 
+                    msg.body || 
+                    '',
+              timestamp: msg.messageTimestamp ? 
+                new Date(Number(msg.messageTimestamp) * 1000) : 
+                msg.timestamp ?
+                new Date(Number(msg.timestamp)) :
+                new Date(),
+              fromMe: Boolean(msg.key?.fromMe || msg.fromMe),
+              messageType: 'text' as const,
+              isRead: Boolean(msg.isRead !== false) // Default to true unless explicitly false
+            }));
+          } else if (response.status === 404) {
+            console.log(`Endpoint de mensagens ${endpoint} não encontrado (404)`);
+            continue;
+          }
+        } catch (error) {
+          console.log(`Erro ao tentar endpoint de mensagens ${endpoint}:`, error);
+          continue;
+        }
       }
+      
+      console.log('Nenhum endpoint de mensagens funcional encontrado');
+      return [];
     } catch (error) {
       console.error('Erro ao buscar mensagens:', error);
+      return [];
     }
-    return [];
   };
 
   // Enviar mensagem
   const sendMessage = async (to: string, message: string) => {
     try {
+      // Garantir que o número tenha o formato correto
+      const phoneNumber = to.includes('@') ? to.split('@')[0] : to;
+      
       const response = await fetch(`${API_URL}/message/sendText/${INSTANCE_NAME}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          number: to,
+          number: phoneNumber,
           text: message
         })
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('Mensagem enviada com sucesso:', data);
         toast({
           title: "Mensagem enviada",
           description: "Sua mensagem foi enviada com sucesso"
         });
         return true;
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erro ao enviar mensagem:', response.status, errorData);
+        toast({
+          title: "Erro",
+          description: `Falha ao enviar mensagem: ${errorData.message || response.statusText}`,
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
