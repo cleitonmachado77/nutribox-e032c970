@@ -2,8 +2,8 @@
 // Servidor DigitalOcean configurado
 
 export const EVOLUTION_CONFIG = {
-  // URL do servidor DigitalOcean (temporariamente HTTP até configurar SSL na porta 8080)
-  API_URL: 'http://134.199.202.47:8080',
+  // URL do servidor DigitalOcean com HTTPS configurado
+  API_URL: 'https://134.199.202.47:8080',
   
   // Token de acesso da Evolution API
   API_TOKEN: '429683C4C977415CAAFCCE10F7D57E11',
