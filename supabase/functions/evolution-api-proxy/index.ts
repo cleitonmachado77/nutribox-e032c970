@@ -1,6 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -14,7 +11,7 @@ interface EvolutionAPIRequest {
   instanceName?: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -42,12 +39,21 @@ serve(async (req) => {
       throw new Error('Authentication failed')
     }
 
-    // Get Evolution API credentials from Supabase secrets
-    const EVOLUTION_API_URL = Deno.env.get('EVOLUTION_API_URL') || 'http://134.199.202.47:8080'
+    // Get Evolution API credentials from environment variables
+    const EVOLUTION_API_URL = Deno.env.get('EVOLUTION_API_URL')
     const EVOLUTION_API_TOKEN = Deno.env.get('EVOLUTION_API_TOKEN')
     
+    if (!EVOLUTION_API_URL) {
+      throw new Error('EVOLUTION_API_URL environment variable is not configured. Please set it in your Supabase project settings.')
+    }
+    
     if (!EVOLUTION_API_TOKEN) {
-      throw new Error('Evolution API token not configured')
+      throw new Error('EVOLUTION_API_TOKEN environment variable is not configured. Please set it in your Supabase project settings.')
+    }
+
+    // Validate that the API URL uses HTTPS for security
+    if (!EVOLUTION_API_URL.startsWith('https://')) {
+      throw new Error('Evolution API URL must use HTTPS protocol for security. Please update EVOLUTION_API_URL to use https://')
     }
 
     // Parse request body
@@ -69,45 +75,88 @@ serve(async (req) => {
       'apikey': EVOLUTION_API_TOKEN,
     }
 
-    // Make request to Evolution API
-    const evolutionResponse = await fetch(evolutionUrl, {
-      method,
-      headers: evolutionHeaders,
-      body: body ? JSON.stringify(body) : undefined,
-    })
+    console.log(`Making request to Evolution API: ${method} ${evolutionUrl}`)
 
-    if (!evolutionResponse.ok) {
-      const errorText = await evolutionResponse.text()
-      throw new Error(`Evolution API error: ${evolutionResponse.status} - ${errorText}`)
-    }
+    // Make request to Evolution API with timeout and better error handling
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
-    const data = await evolutionResponse.json()
-
-    // Log the API call for security audit
-    await supabaseClient
-      .from('api_audit_logs')
-      .insert({
-        user_id: user.id,
-        endpoint,
+    try {
+      const evolutionResponse = await fetch(evolutionUrl, {
         method,
-        status: evolutionResponse.status,
-        instance_name: instanceName,
-        timestamp: new Date().toISOString()
+        headers: evolutionHeaders,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
       })
-      .catch(() => {}) // Don't fail if audit log fails
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      clearTimeout(timeoutId)
+
+      if (!evolutionResponse.ok) {
+        const errorText = await evolutionResponse.text()
+        console.error(`Evolution API error: ${evolutionResponse.status} - ${errorText}`)
+        throw new Error(`Evolution API error: ${evolutionResponse.status} - ${errorText}`)
+      }
+
+      const data = await evolutionResponse.json()
+
+      // Log the API call for security audit
+      await supabaseClient
+        .from('api_audit_logs')
+        .insert({
+          user_id: user.id,
+          endpoint,
+          method,
+          status: evolutionResponse.status,
+          instance_name: instanceName,
+          timestamp: new Date().toISOString()
+        })
+        .catch((auditError) => {
+          console.warn('Failed to log API audit:', auditError)
+        })
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      
+      if (fetchError.name === 'AbortError') {
+        throw new Error('Request to Evolution API timed out after 30 seconds')
+      }
+      
+      console.error('Network error calling Evolution API:', fetchError)
+      throw new Error(`Network error: Unable to connect to Evolution API. Please check if the API is accessible and the URL is correct.`)
+    }
 
   } catch (error) {
     console.error('Evolution API Proxy Error:', error)
+    
+    // Provide more specific error messages
+    let errorMessage = error.message
+    let statusCode = 400
+    
+    if (error.message.includes('Authentication failed')) {
+      statusCode = 401
+    } else if (error.message.includes('Invalid instance name')) {
+      statusCode = 403
+    } else if (error.message.includes('environment variable')) {
+      statusCode = 500
+      errorMessage = 'Server configuration error. Please contact support.'
+    }
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      }),
       {
-        status: 400,
+        status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   }
 })
+
+// Import createClient at the top level
+import { createClient } from 'npm:@supabase/supabase-js@2'
