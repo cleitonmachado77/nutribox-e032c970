@@ -19,11 +19,11 @@ export const useNutriCoachOperations = (user: any) => {
         .eq('user_id', user?.id);
 
       if (leadsData) {
-        const patientsData: PatientData[] = [];
+        const patientsData = [];
         
         for (const lead of leadsData) {
           const status = lead.status === 'convertido' ? 'active' : 'inactive';
-          const patient: PatientData = {
+          const patient = {
             id: lead.id,
             nome: lead.nome,
             telefone: lead.telefone,
@@ -54,14 +54,14 @@ export const useNutriCoachOperations = (user: any) => {
         .order('created_at', { ascending: false });
 
       if (data) {
-        const formattedResponses: QuestionnaireResponse[] = [];
+        const formattedResponses = [];
         
         for (const response of data) {
           const responseType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
           const score = response.response_score || 0;
           const responseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
           
-          const formattedResponse: QuestionnaireResponse = {
+          const formattedResponse = {
             id: response.id,
             patient_id: response.patient_phone,
             patient_name: response.patient_name,
@@ -91,13 +91,13 @@ export const useNutriCoachOperations = (user: any) => {
         .eq('user_id', user?.id);
 
       if (data) {
-        const scheduled: ScheduledSending[] = [];
+        const scheduled = [];
         
         for (const interaction of data) {
-          const scheduledItem: ScheduledSending = {
+          const scheduledItem = {
             id: interaction.id,
             patient_id: interaction.patient_phone,
-            type: 'daily',
+            type: 'daily' as const,
             is_active: true,
             last_sent: interaction.created_at
           };
