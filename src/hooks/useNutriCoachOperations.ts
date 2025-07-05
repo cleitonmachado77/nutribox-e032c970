@@ -1,4 +1,5 @@
 
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -128,20 +129,19 @@ export const useNutriCoachOperations = (user: any) => {
         .select('id, patient_phone, created_at')
         .eq('user_id', user?.id);
 
-      const data = result.data as InteractionData[] | null;
-
-      if (data) {
+      if (result.data && Array.isArray(result.data)) {
         const scheduled: ScheduledSending[] = [];
         
-        for (const interaction of data) {
+        // Process each interaction without complex type inference
+        result.data.forEach((item: any) => {
           scheduled.push({
-            id: interaction.id,
-            patient_id: interaction.patient_phone,
+            id: item.id,
+            patient_id: item.patient_phone,
             type: 'daily' as const,
             is_active: true,
-            last_sent: interaction.created_at
+            last_sent: item.created_at
           });
-        }
+        });
         
         setScheduledSendings(scheduled);
       }
@@ -256,3 +256,4 @@ export const useNutriCoachOperations = (user: any) => {
     togglePatientSelection
   };
 };
+
