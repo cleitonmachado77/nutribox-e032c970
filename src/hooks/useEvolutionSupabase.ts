@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,38 +49,6 @@ export const useEvolutionSupabase = () => {
   const INSTANCE_NAME = user ? generateInstanceName(user.id) : 'nutribox-temp';
 
   const headers = EVOLUTION_CONFIG.getHeaders();
-
-  // Função auxiliar para fazer requisições com melhor tratamento de erro
-  const fetchWithErrorHandling = async (url: string, options: RequestInit = {}) => {
-    try {
-      console.log(`🔄 Fazendo requisição para: ${url}`);
-      
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          ...headers,
-          ...options.headers
-        }
-      });
-
-      console.log(`📡 Resposta recebida: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Erro desconhecido');
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      return response;
-    } catch (error) {
-      console.error(`❌ Erro na requisição ${url}:`, error);
-      
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        throw new Error('Erro de conectividade - Verifique se o servidor Evolution API está acessível');
-      }
-      
-      throw error;
-    }
-  };
 
   // Sincronizar sessão com Supabase
   const syncSessionWithSupabase = async (sessionData: Partial<EvolutionSession>) => {
@@ -153,42 +122,41 @@ export const useEvolutionSupabase = () => {
   const createInstance = async () => {
     setLoading(true);
     try {
-      console.log('🔄 Iniciando processo de conexão...');
-      
       // Primeiro, verifica se a instância já existe
-      const statusResponse = await fetchWithErrorHandling(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`);
+      const statusResponse = await fetch(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`, {
+        headers
+      });
 
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
-        console.log('✅ Status da instância existente:', statusData);
+        console.log('Status da instância existente:', statusData);
         
         // Se a instância existe mas não está conectada, busca o QR code
         if (statusData.instance && statusData.instance.state !== 'open') {
-          try {
-            const qrResponse = await fetchWithErrorHandling(`${API_URL}/instance/connect/${INSTANCE_NAME}`);
+          const qrResponse = await fetch(`${API_URL}/instance/connect/${INSTANCE_NAME}`, {
+            method: 'GET',
+            headers
+          });
+          
+          if (qrResponse.ok) {
+            const qrData = await qrResponse.json();
+            console.log('QR Code obtido:', qrData);
             
-            if (qrResponse.ok) {
-              const qrData = await qrResponse.json();
-              console.log('📱 QR Code obtido:', qrData);
-              
-              const sessionData: EvolutionSession = {
-                id: INSTANCE_NAME,
-                instanceName: INSTANCE_NAME,
-                status: 'connecting',
-                qrCode: qrData.base64 || qrData.qrcode?.base64
-              };
-              
-              setSession(sessionData);
-              await syncSessionWithSupabase(sessionData);
-              
-              toast({
-                title: "QR Code atualizado",
-                description: "Escaneie o QR Code para conectar"
-              });
-              return;
-            }
-          } catch (qrError) {
-            console.warn('⚠️ Erro ao buscar QR code, tentando criar nova instância:', qrError);
+            const sessionData: EvolutionSession = {
+              id: INSTANCE_NAME,
+              instanceName: INSTANCE_NAME,
+              status: 'connecting',
+              qrCode: qrData.base64 || qrData.qrcode?.base64
+            };
+            
+            setSession(sessionData);
+            await syncSessionWithSupabase(sessionData);
+            
+            toast({
+              title: "QR Code atualizado",
+              description: "Escaneie o QR Code para conectar"
+            });
+            return;
           }
         }
         
@@ -212,9 +180,9 @@ export const useEvolutionSupabase = () => {
       }
 
       // Se não existe, cria nova instância
-      console.log('🆕 Criando nova instância...');
-      const createResponse = await fetchWithErrorHandling(`${API_URL}/instance/create`, {
+      const createResponse = await fetch(`${API_URL}/instance/create`, {
         method: 'POST',
+        headers,
         body: JSON.stringify({
           instanceName: INSTANCE_NAME,
           token: API_TOKEN,
@@ -225,7 +193,7 @@ export const useEvolutionSupabase = () => {
 
       if (createResponse.ok) {
         const data = await createResponse.json();
-        console.log('✅ Nova instância criada:', data);
+        console.log('Nova instância criada:', data);
         
         const newSession: EvolutionSession = {
           id: INSTANCE_NAME,
@@ -241,23 +209,27 @@ export const useEvolutionSupabase = () => {
           title: "Instância criada",
           description: "Escaneie o QR Code para conectar"
         });
+      } else {
+        const errorData = await createResponse.json();
+        console.error('Erro ao criar instância:', errorData);
+        
+        // Se o erro for que a instância já existe (403), tenta buscar o QR code
+        if (createResponse.status === 403 && errorData.response?.message?.[0]?.includes('already in use')) {
+          toast({
+            title: "Reconectando",
+            description: "Instância já existe, buscando QR Code..."
+          });
+          // Chama recursivamente para buscar o QR code
+          setTimeout(() => createInstance(), 1000);
+        } else {
+          throw new Error(`Erro ${createResponse.status}: ${errorData.message || 'Falha na criação'}`);
+        }
       }
-    } catch (error: any) {
-      console.error('❌ Erro ao conectar instância:', error);
-      
-      let errorMessage = 'Falha ao conectar WhatsApp';
-      
-      if (error.message.includes('conectividade')) {
-        errorMessage = 'Servidor Evolution API não está acessível. Verifique a configuração.';
-      } else if (error.message.includes('403')) {
-        errorMessage = 'Acesso negado. Verifique o token da API.';
-      } else if (error.message.includes('404')) {
-        errorMessage = 'Endpoint não encontrado. Verifique a URL da API.';
-      }
-      
+    } catch (error) {
+      console.error('Erro ao conectar instância:', error);
       toast({
-        title: "Erro de conexão",
-        description: errorMessage,
+        title: "Erro",
+        description: "Falha ao conectar WhatsApp. Tente novamente.",
         variant: "destructive"
       });
     } finally {

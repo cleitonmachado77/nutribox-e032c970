@@ -17,6 +17,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [user, loading, navigate]);
 
+  // Security: Always show loading while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -25,7 +26,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // Security: Redirect to auth if no user (prevent bypass)
   if (!user) {
+    navigate('/auth');
     return null;
   }
 
