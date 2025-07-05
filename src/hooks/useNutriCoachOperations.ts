@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +35,13 @@ export interface ScheduledSending {
   type: QuestionnaireType;
   is_active: boolean;
   last_sent?: string;
+}
+
+// Simple interface for the Supabase query result
+interface InteractionData {
+  id: string;
+  patient_phone: string;
+  created_at: string;
 }
 
 export const useNutriCoachOperations = (user: any) => {
@@ -116,15 +122,18 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const { data: interactionData } = await supabase
+      const { data } = await supabase
         .from('whatsapp_coach_interactions')
         .select('id, patient_phone, created_at')
         .eq('user_id', user?.id);
 
-      if (interactionData) {
+      if (data) {
         const scheduled: ScheduledSending[] = [];
         
-        for (const interaction of interactionData) {
+        // Cast the data to our explicit type to avoid type inference issues
+        const interactions = data as InteractionData[];
+        
+        for (const interaction of interactions) {
           scheduled.push({
             id: interaction.id,
             patient_id: interaction.patient_phone,
