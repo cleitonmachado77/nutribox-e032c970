@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,13 +125,15 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .eq('user_id', user?.id);
 
       if (leadsData) {
-        const patientsData = leadsData.map(lead => ({
-          id: lead.id,
-          nome: lead.nome,
-          telefone: lead.telefone,
-          planStatus: lead.status === 'convertido' ? 'active' as const : 'inactive' as const,
-          isSelected: false
-        }));
+        const patientsData: PatientData[] = leadsData.map((lead) => {
+          return {
+            id: lead.id,
+            nome: lead.nome,
+            telefone: lead.telefone,
+            planStatus: (lead.status === 'convertido' ? 'active' : 'inactive') as 'active' | 'inactive',
+            isSelected: false
+          };
+        });
         setPatients(patientsData);
       }
     } catch (error) {
@@ -154,17 +155,22 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .order('created_at', { ascending: false });
 
       if (data) {
-        const formattedResponses = data.map(response => ({
-          id: response.id,
-          patient_id: response.patient_phone,
-          patient_name: response.patient_name,
-          type: response.question_category === 'bem_estar' ? 'weekly' as const : 'daily' as const,
-          responses: [response.response_text],
-          score: response.response_score || 0,
-          feedback: 'Feedback gerado automaticamente baseado nas respostas',
-          status: response.response_score > 0.7 ? 'success' as const : response.response_score > 0.4 ? 'warning' as const : 'alert' as const,
-          created_at: response.created_at
-        }));
+        const formattedResponses: QuestionnaireResponse[] = data.map((response) => {
+          const responseType: 'daily' | 'weekly' = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
+          const responseStatus: 'alert' | 'warning' | 'success' = response.response_score > 0.7 ? 'success' : response.response_score > 0.4 ? 'warning' : 'alert';
+          
+          return {
+            id: response.id,
+            patient_id: response.patient_phone,
+            patient_name: response.patient_name,
+            type: responseType,
+            responses: [response.response_text],
+            score: response.response_score || 0,
+            feedback: 'Feedback gerado automaticamente baseado nas respostas',
+            status: responseStatus,
+            created_at: response.created_at
+          };
+        });
         setResponses(formattedResponses);
       }
     } catch (error) {
@@ -180,13 +186,15 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .eq('user_id', user?.id);
 
       if (data) {
-        const scheduled = data.map(interaction => ({
-          id: interaction.id,
-          patient_id: interaction.patient_phone,
-          type: 'daily' as const,
-          is_active: true,
-          last_sent: interaction.created_at
-        }));
+        const scheduled: ScheduledSending[] = data.map((interaction) => {
+          return {
+            id: interaction.id,
+            patient_id: interaction.patient_phone,
+            type: 'daily' as const,
+            is_active: true,
+            last_sent: interaction.created_at
+          };
+        });
         setScheduledSendings(scheduled);
       }
     } catch (error) {
