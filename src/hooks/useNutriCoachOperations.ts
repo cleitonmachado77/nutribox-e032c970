@@ -39,13 +39,6 @@ export interface ScheduledSending {
   last_sent?: string;
 }
 
-// Simple interface for the Supabase query result
-interface InteractionData {
-  id: string;
-  patient_phone: string;
-  created_at: string;
-}
-
 export const useNutriCoachOperations = (user: any) => {
   const { toast } = useToast();
   const [patients, setPatients] = useState<PatientData[]>([]);
@@ -124,24 +117,24 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const result = await supabase
+      const { data, error } = await supabase
         .from('whatsapp_coach_interactions')
         .select('id, patient_phone, created_at')
         .eq('user_id', user?.id);
 
-      if (result.data && Array.isArray(result.data)) {
-        const scheduled: ScheduledSending[] = [];
-        
-        // Process each interaction without complex type inference
-        result.data.forEach((item: any) => {
-          scheduled.push({
-            id: item.id,
-            patient_id: item.patient_phone,
-            type: 'daily' as const,
-            is_active: true,
-            last_sent: item.created_at
-          });
-        });
+      if (error) {
+        console.error('Supabase error:', error);
+        return;
+      }
+
+      if (data) {
+        const scheduled: ScheduledSending[] = data.map(item => ({
+          id: String(item.id),
+          patient_id: String(item.patient_phone),
+          type: 'daily' as const,
+          is_active: true,
+          last_sent: String(item.created_at)
+        }));
         
         setScheduledSendings(scheduled);
       }
