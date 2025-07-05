@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,30 +38,6 @@ export interface ScheduledSending {
   last_sent?: string;
 }
 
-// Simple types for Supabase responses to avoid circular references
-interface LeadRecord {
-  id: string;
-  nome: string;
-  telefone: string;
-  status: string;
-}
-
-interface CoachResponseRecord {
-  id: string;
-  patient_phone: string;
-  patient_name: string;
-  question_category: string;
-  response_score: number;
-  response_text: string;
-  created_at: string;
-}
-
-interface WhatsAppInteractionRecord {
-  id: string;
-  patient_phone: string;
-  created_at: string;
-}
-
 export const useNutriCoachOperations = (user: any) => {
   const { toast } = useToast();
   const [patients, setPatients] = useState<PatientData[]>([]);
@@ -70,15 +47,15 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadPatients = async () => {
     try {
-      const { data } = await supabase
+      const result = await supabase
         .from('leads')
         .select('id, nome, telefone, status')
-        .eq('user_id', user?.id) as { data: LeadRecord[] | null };
+        .eq('user_id', user?.id);
 
-      if (data) {
+      if (result.data) {
         const patientsData: PatientData[] = [];
         
-        for (const lead of data) {
+        for (const lead of result.data) {
           const planStatus: PlanStatus = lead.status === 'convertido' ? 'active' : 'inactive';
           patientsData.push({
             id: lead.id,
@@ -103,16 +80,16 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadResponses = async () => {
     try {
-      const { data } = await supabase
+      const result = await supabase
         .from('coach_responses')
         .select('*')
         .eq('user_id', user?.id)
-        .order('created_at', { ascending: false }) as { data: CoachResponseRecord[] | null };
+        .order('created_at', { ascending: false });
 
-      if (data) {
+      if (result.data) {
         const formattedResponses: QuestionnaireResponse[] = [];
         
-        for (const response of data) {
+        for (const response of result.data) {
           const type: QuestionnaireType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
           const score = response.response_score || 0;
           const status: ResponseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
@@ -139,15 +116,15 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const { data } = await supabase
+      const result = await supabase
         .from('whatsapp_coach_interactions')
         .select('*')
-        .eq('user_id', user?.id) as { data: WhatsAppInteractionRecord[] | null };
+        .eq('user_id', user?.id);
 
-      if (data) {
+      if (result.data) {
         const scheduled: ScheduledSending[] = [];
         
-        for (const interaction of data) {
+        for (const interaction of result.data) {
           scheduled.push({
             id: interaction.id,
             patient_id: interaction.patient_phone,
