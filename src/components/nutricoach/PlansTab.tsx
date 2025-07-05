@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { TrendingUp, FileText } from 'lucide-react';
-import { PatientData, QuestionnaireResponse } from '@/types/nutricoach';
+import { PatientData, QuestionnaireResponse } from '@/hooks/useNutriCoachOperations';
 
 interface PlansTabProps {
   patients: PatientData[];

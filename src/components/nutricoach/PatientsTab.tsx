@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Users, Filter } from 'lucide-react';
-import { PatientData } from '@/types/nutricoach';
+import { PatientData } from '@/hooks/useNutriCoachOperations';
 
 interface PatientsTabProps {
   patients: PatientData[];

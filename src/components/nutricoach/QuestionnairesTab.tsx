@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Send } from 'lucide-react';
-import { QuestionnaireType, PatientData } from '@/types/nutricoach';
+import { QuestionnaireType, PatientData } from '@/hooks/useNutriCoachOperations';
 
 interface QuestionnairesTabProps {
   patients: PatientData[];

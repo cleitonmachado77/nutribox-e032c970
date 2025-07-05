@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Target, MessageSquare, CheckCircle } from 'lucide-react';
-import { PatientData, QuestionnaireResponse } from '@/types/nutricoach';
+import { PatientData, QuestionnaireResponse } from '@/hooks/useNutriCoachOperations';
 
 interface StatsCardsProps {
   patients: PatientData[];

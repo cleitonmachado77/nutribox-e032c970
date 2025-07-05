@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, CheckCircle, AlertTriangle, Clock, Brain } from 'lucide-react';
-import { QuestionnaireResponse } from '@/types/nutricoach';
+import { QuestionnaireResponse } from '@/hooks/useNutriCoachOperations';
 
 interface ResponsesTabProps {
   responses: QuestionnaireResponse[];
