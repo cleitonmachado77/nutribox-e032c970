@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_audit_logs: {
+        Row: {
+          endpoint: string
+          id: string
+          instance_name: string | null
+          method: string
+          status: number
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          endpoint: string
+          id?: string
+          instance_name?: string | null
+          method: string
+          status: number
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          endpoint?: string
+          id?: string
+          instance_name?: string | null
+          method?: string
+          status?: number
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       Chat: {
         Row: {
           createdAt: string | null
