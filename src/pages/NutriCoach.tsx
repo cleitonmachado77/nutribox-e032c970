@@ -125,15 +125,19 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .eq('user_id', user?.id);
 
       if (leadsData) {
-        const patientsData: PatientData[] = leadsData.map((lead) => {
-          return {
+        const patientsData: PatientData[] = [];
+        
+        for (const lead of leadsData) {
+          const patient: PatientData = {
             id: lead.id,
             nome: lead.nome,
             telefone: lead.telefone,
-            planStatus: (lead.status === 'convertido' ? 'active' : 'inactive') as 'active' | 'inactive',
+            planStatus: lead.status === 'convertido' ? 'active' : 'inactive',
             isSelected: false
           };
-        });
+          patientsData.push(patient);
+        }
+        
         setPatients(patientsData);
       }
     } catch (error) {
@@ -155,22 +159,28 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .order('created_at', { ascending: false });
 
       if (data) {
-        const formattedResponses: QuestionnaireResponse[] = data.map((response) => {
-          const responseType: 'daily' | 'weekly' = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
-          const responseStatus: 'alert' | 'warning' | 'success' = response.response_score > 0.7 ? 'success' : response.response_score > 0.4 ? 'warning' : 'alert';
+        const formattedResponses: QuestionnaireResponse[] = [];
+        
+        for (const response of data) {
+          const responseType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
+          const score = response.response_score || 0;
+          const responseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
           
-          return {
+          const formattedResponse: QuestionnaireResponse = {
             id: response.id,
             patient_id: response.patient_phone,
             patient_name: response.patient_name,
             type: responseType,
             responses: [response.response_text],
-            score: response.response_score || 0,
+            score: score,
             feedback: 'Feedback gerado automaticamente baseado nas respostas',
             status: responseStatus,
             created_at: response.created_at
           };
-        });
+          
+          formattedResponses.push(formattedResponse);
+        }
+        
         setResponses(formattedResponses);
       }
     } catch (error) {
@@ -186,15 +196,19 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .eq('user_id', user?.id);
 
       if (data) {
-        const scheduled: ScheduledSending[] = data.map((interaction) => {
-          return {
+        const scheduled: ScheduledSending[] = [];
+        
+        for (const interaction of data) {
+          const scheduledItem: ScheduledSending = {
             id: interaction.id,
             patient_id: interaction.patient_phone,
-            type: 'daily' as const,
+            type: 'daily',
             is_active: true,
             last_sent: interaction.created_at
           };
-        });
+          scheduled.push(scheduledItem);
+        }
+        
         setScheduledSendings(scheduled);
       }
     } catch (error) {
