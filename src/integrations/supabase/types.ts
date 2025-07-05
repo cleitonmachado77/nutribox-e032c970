@@ -1132,6 +1132,212 @@ export type Database = {
         }
         Relationships: []
       }
+      nutricoach_patients: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          plan_active: boolean | null
+          telephone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          plan_active?: boolean | null
+          telephone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          plan_active?: boolean | null
+          telephone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nutricoach_planos_personalizados: {
+        Row: {
+          created_at: string | null
+          id: string
+          mes: string
+          nota_nutricionista: string | null
+          patient_id: string
+          recomendacao_gpt: string | null
+          score_medio: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mes: string
+          nota_nutricionista?: string | null
+          patient_id: string
+          recomendacao_gpt?: string | null
+          score_medio?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mes?: string
+          nota_nutricionista?: string | null
+          patient_id?: string
+          recomendacao_gpt?: string | null
+          score_medio?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutricoach_planos_personalizados_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "nutricoach_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutricoach_programmed_shipping: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          patient_id: string
+          shipping_diario: boolean | null
+          shipping_semanal: boolean | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          patient_id: string
+          shipping_diario?: boolean | null
+          shipping_semanal?: boolean | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          patient_id?: string
+          shipping_diario?: boolean | null
+          shipping_semanal?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutricoach_programmed_shipping_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "nutricoach_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutricoach_respostas_diarias: {
+        Row: {
+          atividade: number | null
+          consistencia: number | null
+          created_at: string | null
+          data_resposta: string
+          energia: number | null
+          feedback_gpt: string | null
+          horario_refeicao: number | null
+          id: string
+          liquido: number | null
+          patient_id: string
+          refeicoes: number | null
+          sono: number | null
+          user_id: string
+          vegetais_frutas: number | null
+        }
+        Insert: {
+          atividade?: number | null
+          consistencia?: number | null
+          created_at?: string | null
+          data_resposta: string
+          energia?: number | null
+          feedback_gpt?: string | null
+          horario_refeicao?: number | null
+          id?: string
+          liquido?: number | null
+          patient_id: string
+          refeicoes?: number | null
+          sono?: number | null
+          user_id: string
+          vegetais_frutas?: number | null
+        }
+        Update: {
+          atividade?: number | null
+          consistencia?: number | null
+          created_at?: string | null
+          data_resposta?: string
+          energia?: number | null
+          feedback_gpt?: string | null
+          horario_refeicao?: number | null
+          id?: string
+          liquido?: number | null
+          patient_id?: string
+          refeicoes?: number | null
+          sono?: number | null
+          user_id?: string
+          vegetais_frutas?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutricoach_respostas_diarias_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "nutricoach_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutricoach_respostas_semanais: {
+        Row: {
+          confianca: number | null
+          created_at: string | null
+          data_resposta: string
+          feedback_gpt: string | null
+          id: string
+          patient_id: string
+          satisfacao: number | null
+          user_id: string
+        }
+        Insert: {
+          confianca?: number | null
+          created_at?: string | null
+          data_resposta: string
+          feedback_gpt?: string | null
+          id?: string
+          patient_id: string
+          satisfacao?: number | null
+          user_id: string
+        }
+        Update: {
+          confianca?: number | null
+          created_at?: string | null
+          data_resposta?: string
+          feedback_gpt?: string | null
+          id?: string
+          patient_id?: string
+          satisfacao?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutricoach_respostas_semanais_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "nutricoach_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       objetivo_tags: {
         Row: {
           cor: string

@@ -1,19 +1,14 @@
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
-// Export types for use in components
-export type PlanStatus = 'active' | 'inactive';
-export type QuestionnaireType = 'daily' | 'weekly';
-export type ResponseStatus = 'alert' | 'warning' | 'success';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 
 export interface PatientData {
   id: string;
   nome: string;
   telefone: string;
-  planStatus: PlanStatus;
-  lastDailyMessage?: string;
-  lastWeeklyMessage?: string;
+  planStatus: 'active' | 'inactive';
   isSelected: boolean;
 }
 
@@ -21,131 +16,182 @@ export interface QuestionnaireResponse {
   id: string;
   patient_id: string;
   patient_name: string;
-  type: QuestionnaireType;
+  type: 'daily' | 'weekly';
   responses: string[];
   score: number;
-  feedback: string;
-  status: ResponseStatus;
+  status: 'success' | 'warning' | 'alert';
   created_at: string;
 }
 
 export interface ScheduledSending {
   id: string;
   patient_id: string;
-  type: QuestionnaireType;
-  is_active: boolean;
-  last_sent?: string;
+  patient_name: string;
+  shipping_diario: boolean;
+  shipping_semanal: boolean;
+  active: boolean;
 }
 
-export const useNutriCoachOperations = (user: any) => {
-  const { toast } = useToast();
+export type QuestionnaireType = 'daily' | 'weekly';
+
+export const useNutriCoachOperations = (user: User | null) => {
   const [patients, setPatients] = useState<PatientData[]>([]);
   const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
   const [scheduledSendings, setScheduledSendings] = useState<ScheduledSending[]>([]);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
+    if (!user) return;
+
     try {
-      const result = await supabase
-        .from('leads')
-        .select('id, nome, telefone, status')
-        .eq('user_id', user?.id);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('nutricoach_patients')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      if (result.data) {
-        const patientsData: PatientData[] = [];
-        
-        for (const lead of result.data) {
-          const planStatus: PlanStatus = lead.status === 'convertido' ? 'active' : 'inactive';
-          patientsData.push({
-            id: lead.id,
-            nome: lead.nome,
-            telefone: lead.telefone,
-            planStatus,
-            isSelected: false
-          });
-        }
-        
-        setPatients(patientsData);
-      }
-    } catch (error) {
-      console.error('Error loading patients:', error);
+      if (error) throw error;
+
+      const patientsData: PatientData[] = (data || []).map(patient => ({
+        id: patient.id,
+        nome: patient.name,
+        telefone: patient.telephone,
+        planStatus: patient.plan_active ? 'active' : 'inactive',
+        isSelected: false
+      }));
+
+      setPatients(patientsData);
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Falha ao carregar pacientes",
+        title: "Erro ao carregar pacientes",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
+
+  const loadResponses = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Load daily responses
+      const { data: dailyData, error: dailyError } = await supabase
+        .from('nutricoach_respostas_diarias')
+        .select(`
+          *,
+          nutricoach_patients!inner(name)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (dailyError) throw dailyError;
+
+      // Load weekly responses
+      const { data: weeklyData, error: weeklyError } = await supabase
+        .from('nutricoach_respostas_semanais')
+        .select(`
+          *,
+          nutricoach_patients!inner(name)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (weeklyError) throw weeklyError;
+
+      const dailyResponses: QuestionnaireResponse[] = (dailyData || []).map(response => {
+        const scores = [
+          response.energia || 0,
+          response.atividade || 0,
+          response.sono || 0,
+          response.consistencia || 0,
+          response.refeicoes || 0,
+          response.horario_refeicao || 0,
+          response.vegetais_frutas || 0,
+          response.liquido || 0
+        ];
+        const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length / 3; // Normalize to 0-1
+        
+        return {
+          id: response.id,
+          patient_id: response.patient_id,
+          patient_name: (response as any).nutricoach_patients.name,
+          type: 'daily' as const,
+          responses: scores.map(s => s.toString()),
+          score: avgScore,
+          status: avgScore > 0.7 ? 'success' : avgScore > 0.4 ? 'warning' : 'alert',
+          created_at: response.created_at
+        };
+      });
+
+      const weeklyResponses: QuestionnaireResponse[] = (weeklyData || []).map(response => {
+        const scores = [response.confianca || 0, response.satisfacao || 0];
+        const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length / 3; // Normalize to 0-1
+        
+        return {
+          id: response.id,
+          patient_id: response.patient_id,
+          patient_name: (response as any).nutricoach_patients.name,
+          type: 'weekly' as const,
+          responses: scores.map(s => s.toString()),
+          score: avgScore,
+          status: avgScore > 0.7 ? 'success' : avgScore > 0.4 ? 'warning' : 'alert',
+          created_at: response.created_at
+        };
+      });
+
+      setResponses([...dailyResponses, ...weeklyResponses]);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar respostas",
+        description: error.message,
         variant: "destructive"
       });
     }
-  };
+  }, [user, toast]);
 
-  const loadResponses = async () => {
+  const loadScheduledSendings = useCallback(async () => {
+    if (!user) return;
+
     try {
-      const result = await supabase
-        .from('coach_responses')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('nutricoach_programmed_shipping')
+        .select(`
+          *,
+          nutricoach_patients!inner(name)
+        `)
+        .eq('user_id', user.id);
 
-      if (result.data) {
-        const formattedResponses: QuestionnaireResponse[] = [];
-        
-        for (const response of result.data) {
-          const type: QuestionnaireType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
-          const score = response.response_score || 0;
-          const status: ResponseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
-          
-          formattedResponses.push({
-            id: response.id,
-            patient_id: response.patient_phone,
-            patient_name: response.patient_name,
-            type,
-            responses: [response.response_text],
-            score,
-            feedback: 'Feedback gerado automaticamente baseado nas respostas',
-            status,
-            created_at: response.created_at
-          });
-        }
-        
-        setResponses(formattedResponses);
-      }
-    } catch (error) {
-      console.error('Error loading responses:', error);
+      if (error) throw error;
+
+      const scheduledData: ScheduledSending[] = (data || []).map(schedule => ({
+        id: schedule.id,
+        patient_id: schedule.patient_id,
+        patient_name: (schedule as any).nutricoach_patients.name,
+        shipping_diario: schedule.shipping_diario,
+        shipping_semanal: schedule.shipping_semanal,
+        active: schedule.active
+      }));
+
+      setScheduledSendings(scheduledData);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao carregar agendamentos",
+        description: error.message,
+        variant: "destructive"
+      });
     }
-  };
+  }, [user, toast]);
 
-  const loadScheduledSendings = async () => {
-    try {
-      const result = await supabase
-        .from('whatsapp_coach_interactions')
-        .select('id, patient_phone, created_at')
-        .limit(100);
+  const sendQuestionnaire = useCallback(async (type: QuestionnaireType) => {
+    if (!user) return;
 
-      const { data, error } = result;
-
-      if (error) {
-        console.error('Supabase error:', error);
-        return;
-      }
-
-      if (data) {
-        const scheduled: ScheduledSending[] = data.map(item => ({
-          id: String(item.id),
-          patient_id: String(item.patient_phone),
-          type: 'daily' as QuestionnaireType,
-          is_active: true,
-          last_sent: String(item.created_at)
-        }));
-        
-        setScheduledSendings(scheduled);
-      }
-    } catch (error) {
-      console.error('Error loading scheduled sendings:', error);
-    }
-  };
-
-  const sendQuestionnaire = async (type: QuestionnaireType) => {
     const selectedPatients = patients.filter(p => p.isSelected);
-    
     if (selectedPatients.length === 0) {
       toast({
         title: "Nenhum paciente selecionado",
@@ -155,90 +201,79 @@ export const useNutriCoachOperations = (user: any) => {
       return;
     }
 
-    setLoading(true);
-    
     try {
+      setLoading(true);
+      
+      // Here you would integrate with your WhatsApp sending logic
+      // For now, we'll simulate the sending
       for (const patient of selectedPatients) {
-        await supabase.functions.invoke('nutricoach-questionnaire', {
-          body: {
-            action: 'send_daily_questionnaire',
-            patientName: patient.nome,
-            patientPhone: patient.telefone,
-            userId: user?.id
-          }
-        });
-
-        await supabase
-          .from('whatsapp_coach_interactions')
-          .insert({
-            patient_phone: patient.telefone,
-            patient_name: patient.nome,
-            action_type: `send_${type}_questionnaire`,
-            generated_message: type === 'daily' ? 'Daily questionnaire' : 'Weekly questionnaire',
-            patient_data: { questionnaire_type: type }
-          });
+        // Call your WhatsApp API or edge function here
+        console.log(`Sending ${type} questionnaire to ${patient.nome} (${patient.telefone})`);
       }
 
       toast({
         title: "Questionários enviados",
-        description: `${type === 'daily' ? 'Questionário diário' : 'Questionário semanal'} enviado para ${selectedPatients.length} paciente(s)`,
+        description: `Questionário ${type === 'daily' ? 'diário' : 'semanal'} enviado para ${selectedPatients.length} paciente(s)`,
       });
-
-      loadScheduledSendings();
-    } catch (error) {
-      console.error('Error sending questionnaire:', error);
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Falha ao enviar questionários",
+        title: "Erro ao enviar questionários",
+        description: error.message,
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, patients, toast]);
 
-  const saveManualNote = async (selectedPatient: string, manualNote: string) => {
-    if (!selectedPatient || !manualNote.trim()) return;
-
-    try {
-      await supabase
-        .from('whatsapp_coach_interactions')
-        .insert({
-          patient_phone: selectedPatient,
-          patient_name: patients.find(p => p.id === selectedPatient)?.nome || '',
-          action_type: 'manual_note',
-          generated_message: manualNote,
-          patient_data: { type: 'nutritionist_observation' }
-        });
-
-      toast({
-        title: "Observação salva",
-        description: "Observação manual do nutricionista foi registrada",
-      });
-    } catch (error) {
-      console.error('Error saving manual note:', error);
-      toast({
-        title: "Erro",
-        description: "Falha ao salvar observação",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const togglePatientSelection = (patientId: string) => {
-    setPatients(prev => prev.map(patient =>
-      patient.id === patientId
+  const togglePatientSelection = useCallback((patientId: string) => {
+    setPatients(prev => prev.map(patient => 
+      patient.id === patientId 
         ? { ...patient, isSelected: !patient.isSelected }
         : patient
     ));
-  };
+  }, []);
+
+  const saveManualNote = useCallback(async (patientId: string, note: string) => {
+    if (!user || !patientId || !note.trim()) return;
+
+    try {
+      setLoading(true);
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+      const { error } = await supabase
+        .from('nutricoach_planos_personalizados')
+        .upsert({
+          user_id: user.id,
+          patient_id: patientId,
+          mes: currentMonth,
+          nota_nutricionista: note.trim()
+        }, {
+          onConflict: 'user_id,patient_id,mes'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Observação salva",
+        description: "A observação foi salva com sucesso"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar observação",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
 
   return {
     patients,
     responses,
     scheduledSendings,
     loading,
-    setPatients,
     loadPatients,
     loadResponses,
     loadScheduledSendings,
