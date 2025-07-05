@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Simplified type definitions to avoid deep instantiation
+type PlanStatus = 'active' | 'inactive';
+type QuestionnaireType = 'daily' | 'weekly';
+type ResponseStatus = 'alert' | 'warning' | 'success';
+
 interface PatientData {
   id: string;
   nome: string;
   telefone: string;
-  planStatus: 'active' | 'inactive';
+  planStatus: PlanStatus;
   lastDailyMessage?: string;
   lastWeeklyMessage?: string;
   isSelected: boolean;
@@ -39,18 +45,18 @@ interface QuestionnaireResponse {
   id: string;
   patient_id: string;
   patient_name: string;
-  type: 'daily' | 'weekly';
+  type: QuestionnaireType;
   responses: string[];
   score: number;
   feedback: string;
-  status: 'alert' | 'warning' | 'success';
+  status: ResponseStatus;
   created_at: string;
 }
 
 interface ScheduledSending {
   id: string;
   patient_id: string;
-  type: 'daily' | 'weekly';
+  type: QuestionnaireType;
   is_active: boolean;
   last_sent?: string;
 }
@@ -128,11 +134,12 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         const patientsData: PatientData[] = [];
         
         for (const lead of leadsData) {
+          const status: PlanStatus = lead.status === 'convertido' ? 'active' : 'inactive';
           const patient: PatientData = {
             id: lead.id,
             nome: lead.nome,
             telefone: lead.telefone,
-            planStatus: lead.status === 'convertido' ? 'active' : 'inactive',
+            planStatus: status,
             isSelected: false
           };
           patientsData.push(patient);
@@ -162,9 +169,9 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         const formattedResponses: QuestionnaireResponse[] = [];
         
         for (const response of data) {
-          const responseType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
+          const responseType: QuestionnaireType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
           const score = response.response_score || 0;
-          const responseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
+          const responseStatus: ResponseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
           
           const formattedResponse: QuestionnaireResponse = {
             id: response.id,
@@ -224,7 +231,7 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
     ));
   };
 
-  const sendQuestionnaire = async (type: 'daily' | 'weekly') => {
+  const sendQuestionnaire = async (type: QuestionnaireType) => {
     const selectedPatients = patients.filter(p => p.isSelected);
     
     if (selectedPatients.length === 0) {
