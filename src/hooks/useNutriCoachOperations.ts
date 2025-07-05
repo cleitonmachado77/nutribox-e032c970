@@ -115,10 +115,12 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const { data, error } = await supabase
+      const result = await supabase
         .from('whatsapp_coach_interactions')
         .select('id, patient_phone, created_at')
-        .eq('user_id', user?.id);
+        .limit(100);
+
+      const { data, error } = result;
 
       if (error) {
         console.error('Supabase error:', error);
@@ -126,17 +128,13 @@ export const useNutriCoachOperations = (user: any) => {
       }
 
       if (data) {
-        const scheduled: ScheduledSending[] = [];
-        
-        for (const item of data) {
-          scheduled.push({
-            id: String(item.id),
-            patient_id: String(item.patient_phone),
-            type: 'daily',
-            is_active: true,
-            last_sent: String(item.created_at)
-          });
-        }
+        const scheduled: ScheduledSending[] = data.map(item => ({
+          id: String(item.id),
+          patient_id: String(item.patient_phone),
+          type: 'daily' as QuestionnaireType,
+          is_active: true,
+          last_sent: String(item.created_at)
+        }));
         
         setScheduledSendings(scheduled);
       }
@@ -177,7 +175,6 @@ export const useNutriCoachOperations = (user: any) => {
             patient_name: patient.nome,
             action_type: `send_${type}_questionnaire`,
             generated_message: type === 'daily' ? 'Daily questionnaire' : 'Weekly questionnaire',
-            user_id: user?.id,
             patient_data: { questionnaire_type: type }
           });
       }
@@ -211,7 +208,6 @@ export const useNutriCoachOperations = (user: any) => {
           patient_name: patients.find(p => p.id === selectedPatient)?.nome || '',
           action_type: 'manual_note',
           generated_message: manualNote,
-          user_id: user?.id,
           patient_data: { type: 'nutritionist_observation' }
         });
 
