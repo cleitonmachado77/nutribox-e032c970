@@ -115,28 +115,20 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const result = await supabase
+      const { data, error } = await supabase
         .from('whatsapp_coach_interactions')
         .select('id, patient_phone, created_at')
         .eq('user_id', user?.id);
 
-      // Check for error first
-      if (result.error) {
-        console.error('Supabase error:', result.error);
+      if (error) {
+        console.error('Supabase error:', error);
         return;
       }
 
-      // Handle data with explicit typing
-      const data = result.data as Array<{
-        id: number;
-        patient_phone: string;
-        created_at: string;
-      }> | null;
-
-      if (data) {
+      if (data && Array.isArray(data)) {
         const scheduled: ScheduledSending[] = [];
         
-        data.forEach(item => {
+        for (const item of data) {
           scheduled.push({
             id: String(item.id),
             patient_id: String(item.patient_phone),
@@ -144,7 +136,7 @@ export const useNutriCoachOperations = (user: any) => {
             is_active: true,
             last_sent: String(item.created_at)
           });
-        });
+        }
         
         setScheduledSendings(scheduled);
       }
