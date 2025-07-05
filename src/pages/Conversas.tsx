@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/Header";
 import { useEvolutionSupabase } from "@/hooks/useEvolutionSupabase";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
+import { MixedContentWarning } from "@/components/MixedContentWarning";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,6 +225,8 @@ export default function Conversas() {
         description="Central de conversas integrada com Evolution API" 
       />
       
+      <MixedContentWarning />
+      
       {/* Status do WhatsApp */}
       <Card>
         <CardContent className="p-4">
@@ -282,28 +285,6 @@ export default function Conversas() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Aviso de Mixed Content - só mostra se for HTTPS tentando acessar HTTP */}
-      {window.location.protocol === 'https:' && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <AlertCircle className="w-4 h-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
-            <div>
-              <p className="font-medium mb-1">⚠️ Aviso de Segurança (Mixed Content):</p>
-              <p className="text-sm mb-2">
-                Sua aplicação roda em HTTPS mas o servidor Evolution API está em HTTP. 
-                Isso pode causar bloqueios de segurança no navegador.
-              </p>
-              <div className="text-xs space-y-1">
-                <p><strong>Soluções:</strong></p>
-                <p>• Configure HTTPS no servidor: <code>https://134.199.202.47</code></p>
-                <p>• Use um proxy HTTPS (Cloudflare, Nginx)</p>
-                <p>• Configure um domínio com certificado SSL</p>
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Interface de Chat */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
