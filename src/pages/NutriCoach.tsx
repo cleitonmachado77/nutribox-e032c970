@@ -43,7 +43,7 @@ export default function NutriCoach() {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-background min-h-screen">
+    <div className="p-6 space-y-6 min-h-screen">
       <Header 
         title="NutriCoach IA" 
         description="Acompanhamento nutricional inteligente de pacientes"

@@ -37,7 +37,7 @@ const App = () => <QueryClientProvider client={queryClient}>
                   <SidebarProvider>
                     <div className="min-h-screen flex w-full">
                       <AppSidebar />
-                      <div className="flex-1 bg-indigo-950">
+                      <div className="flex-1">
                         <Routes>
                           <Route index element={<Dashboard />} />
                           <Route path="leads" element={<Leads />} />
