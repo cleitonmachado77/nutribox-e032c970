@@ -41,7 +41,7 @@ interface QuestionnaireResponse {
   patient_id: string;
   patient_name: string;
   type: 'daily' | 'weekly';
-  responses: any[];
+  responses: string[];
   score: number;
   feedback: string;
   status: 'alert' | 'warning' | 'success';
@@ -120,18 +120,17 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
 
   const loadPatients = async () => {
     try {
-      // Get patients from leads table
       const { data: leadsData } = await supabase
         .from('leads')
         .select('id, nome, telefone, status')
         .eq('user_id', user?.id);
 
       if (leadsData) {
-        const patientsData: PatientData[] = leadsData.map(lead => ({
+        const patientsData = leadsData.map(lead => ({
           id: lead.id,
           nome: lead.nome,
           telefone: lead.telefone,
-          planStatus: lead.status === 'convertido' ? 'active' : 'inactive',
+          planStatus: lead.status === 'convertido' ? 'active' as const : 'inactive' as const,
           isSelected: false
         }));
         setPatients(patientsData);
@@ -155,15 +154,15 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .order('created_at', { ascending: false });
 
       if (data) {
-        const formattedResponses: QuestionnaireResponse[] = data.map(response => ({
+        const formattedResponses = data.map(response => ({
           id: response.id,
           patient_id: response.patient_phone,
           patient_name: response.patient_name,
-          type: response.question_category === 'bem_estar' ? 'weekly' : 'daily',
+          type: response.question_category === 'bem_estar' ? 'weekly' as const : 'daily' as const,
           responses: [response.response_text],
           score: response.response_score || 0,
           feedback: 'Feedback gerado automaticamente baseado nas respostas',
-          status: response.response_score > 0.7 ? 'success' : response.response_score > 0.4 ? 'warning' : 'alert',
+          status: response.response_score > 0.7 ? 'success' as const : response.response_score > 0.4 ? 'warning' as const : 'alert' as const,
           created_at: response.created_at
         }));
         setResponses(formattedResponses);
@@ -181,7 +180,6 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
         .eq('user_id', user?.id);
 
       if (data) {
-        // Transform existing data to match our interface
         const scheduled = data.map(interaction => ({
           id: interaction.id,
           patient_id: interaction.patient_phone,
@@ -222,7 +220,6 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
       const message = type === 'daily' ? DAILY_QUESTIONNAIRE : WEEKLY_QUESTIONNAIRE;
       
       for (const patient of selectedPatients) {
-        // Send via Supabase function (using existing nutricoach-questionnaire)
         await supabase.functions.invoke('nutricoach-questionnaire', {
           body: {
             action: 'send_daily_questionnaire',
@@ -232,7 +229,6 @@ Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
           }
         });
 
-        // Register in scheduled sendings
         await supabase
           .from('whatsapp_coach_interactions')
           .insert({
