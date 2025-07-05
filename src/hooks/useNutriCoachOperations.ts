@@ -116,15 +116,15 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const result = await supabase
+      const { data: interactionData } = await supabase
         .from('whatsapp_coach_interactions')
-        .select('*')
+        .select('id, patient_phone, created_at')
         .eq('user_id', user?.id);
 
-      if (result.data) {
+      if (interactionData) {
         const scheduled: ScheduledSending[] = [];
         
-        for (const interaction of result.data) {
+        for (const interaction of interactionData) {
           scheduled.push({
             id: interaction.id,
             patient_id: interaction.patient_phone,
