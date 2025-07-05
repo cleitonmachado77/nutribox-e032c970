@@ -1,8 +1,7 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-
-// Import supabase client with type workaround
-const { supabase } = require('@/integrations/supabase/client');
+import { supabase } from '@/integrations/supabase/client';
 
 // Export types for use in components
 export type PlanStatus = 'active' | 'inactive';
@@ -48,7 +47,7 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadPatients = async () => {
     try {
-      const result: any = await supabase
+      const result = await supabase
         .from('leads')
         .select('id, nome, telefone, status')
         .eq('user_id', user?.id);
@@ -81,7 +80,7 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadResponses = async () => {
     try {
-      const result: any = await supabase
+      const result = await supabase
         .from('coach_responses')
         .select('*')
         .eq('user_id', user?.id)
@@ -117,7 +116,7 @@ export const useNutriCoachOperations = (user: any) => {
 
   const loadScheduledSendings = async () => {
     try {
-      const result: any = await supabase
+      const result = await supabase
         .from('whatsapp_coach_interactions')
         .select('*')
         .eq('user_id', user?.id);
@@ -129,7 +128,7 @@ export const useNutriCoachOperations = (user: any) => {
           scheduled.push({
             id: interaction.id,
             patient_id: interaction.patient_phone,
-            type: 'daily',
+            type: 'daily' as const,
             is_active: true,
             last_sent: interaction.created_at
           });
