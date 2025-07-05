@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,19 +18,13 @@ export const useNutriCoachOperations = (user: any) => {
         .eq('user_id', user?.id);
 
       if (leadsData) {
-        const patientsData = [];
-        
-        for (const lead of leadsData) {
-          const status = lead.status === 'convertido' ? 'active' : 'inactive';
-          const patient = {
-            id: lead.id,
-            nome: lead.nome,
-            telefone: lead.telefone,
-            planStatus: status,
-            isSelected: false
-          };
-          patientsData.push(patient);
-        }
+        const patientsData = leadsData.map(lead => ({
+          id: lead.id,
+          nome: lead.nome,
+          telefone: lead.telefone,
+          planStatus: lead.status === 'convertido' ? 'active' as const : 'inactive' as const,
+          isSelected: false
+        }));
         
         setPatients(patientsData);
       }
@@ -54,27 +47,18 @@ export const useNutriCoachOperations = (user: any) => {
         .order('created_at', { ascending: false });
 
       if (data) {
-        const formattedResponses = [];
-        
-        for (const response of data) {
-          const responseType = response.question_category === 'bem_estar' ? 'weekly' : 'daily';
-          const score = response.response_score || 0;
-          const responseStatus = score > 0.7 ? 'success' : score > 0.4 ? 'warning' : 'alert';
-          
-          const formattedResponse = {
-            id: response.id,
-            patient_id: response.patient_phone,
-            patient_name: response.patient_name,
-            type: responseType,
-            responses: [response.response_text],
-            score: score,
-            feedback: 'Feedback gerado automaticamente baseado nas respostas',
-            status: responseStatus,
-            created_at: response.created_at
-          };
-          
-          formattedResponses.push(formattedResponse);
-        }
+        const formattedResponses = data.map(response => ({
+          id: response.id,
+          patient_id: response.patient_phone,
+          patient_name: response.patient_name,
+          type: response.question_category === 'bem_estar' ? 'weekly' as const : 'daily' as const,
+          responses: [response.response_text],
+          score: response.response_score || 0,
+          feedback: 'Feedback gerado automaticamente baseado nas respostas',
+          status: (response.response_score || 0) > 0.7 ? 'success' as const : 
+                 (response.response_score || 0) > 0.4 ? 'warning' as const : 'alert' as const,
+          created_at: response.created_at
+        }));
         
         setResponses(formattedResponses);
       }
@@ -91,18 +75,13 @@ export const useNutriCoachOperations = (user: any) => {
         .eq('user_id', user?.id);
 
       if (data) {
-        const scheduled = [];
-        
-        for (const interaction of data) {
-          const scheduledItem = {
-            id: interaction.id,
-            patient_id: interaction.patient_phone,
-            type: 'daily' as const,
-            is_active: true,
-            last_sent: interaction.created_at
-          };
-          scheduled.push(scheduledItem);
-        }
+        const scheduled = data.map(interaction => ({
+          id: interaction.id,
+          patient_id: interaction.patient_phone,
+          type: 'daily' as const,
+          is_active: true,
+          last_sent: interaction.created_at
+        }));
         
         setScheduledSendings(scheduled);
       }
