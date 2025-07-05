@@ -2,221 +2,331 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { Header } from '@/components/Header';
-import { QuestionnaireManager } from '@/components/coach/QuestionnaireManager';
 import { 
-  Send, 
   Users, 
-  MessageSquare, 
-  Brain, 
+  Send, 
+  Calendar,
+  MessageSquare,
   TrendingUp,
-  ChartBar,
-  Settings2,
-  UserCheck,
-  Phone,
+  AlertTriangle,
   CheckCircle,
-  AlertCircle
+  Clock,
+  Brain,
+  Target,
+  Filter,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNutriCoachQuestionnaire } from '@/hooks/useNutriCoachQuestionnaire';
-import { useNutriCoachStats } from '@/hooks/useNutriCoachStats';
-import { usePacientesList } from '@/hooks/usePacientesList';
-import { useTwilioAPI } from '@/hooks/useTwilioAPI';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface PatientData {
+  id: string;
+  nome: string;
+  telefone: string;
+  planStatus: 'active' | 'inactive';
+  lastDailyMessage?: string;
+  lastWeeklyMessage?: string;
+  isSelected: boolean;
+}
+
+interface QuestionnaireResponse {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  type: 'daily' | 'weekly';
+  responses: any[];
+  score: number;
+  feedback: string;
+  status: 'alert' | 'warning' | 'success';
+  created_at: string;
+}
+
+interface ScheduledSending {
+  id: string;
+  patient_id: string;
+  type: 'daily' | 'weekly';
+  is_active: boolean;
+  last_sent?: string;
+}
 
 export default function NutriCoach() {
   const { user } = useAuth();
-  const { loading, sendDailyQuestionnaire, getPatientInsights } = useNutriCoachQuestionnaire();
-  const { stats, loading: statsLoading } = useNutriCoachStats();
-  const { pacientes, loading: pacientesLoading } = usePacientesList();
-  const { 
-    userSubaccount, 
-    loading: twilioLoading, 
-    createSubaccount, 
-    provisionWhatsAppNumber,
-    sendNutriCoachMessage
-  } = useTwilioAPI();
+  const { toast } = useToast();
   
+  const [patients, setPatients] = useState<PatientData[]>([]);
+  const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
+  const [scheduledSendings, setScheduledSendings] = useState<ScheduledSending[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<string>('');
-  const [insights, setInsights] = useState<any>(null);
-  const [loadingInsights, setLoadingInsights] = useState(false);
-  const [consultorioNome, setConsultorioNome] = useState('');
-  const [cidade, setCidade] = useState('');
+  const [filter, setFilter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [manualNote, setManualNote] = useState('');
 
-  const handleSendQuestionnaire = async () => {
-    if (!selectedPatient || !user || !userSubaccount) return;
-    
-    const paciente = pacientes.find(p => p.id === selectedPatient);
-    if (!paciente) return;
-    
-    // Send via Twilio WhatsApp with ChatGPT integration
-    await sendNutriCoachMessage(
-      paciente.telefone, 
-      paciente.nome, 
-      'questionnaire',
-      { objetivo: paciente.objetivo, status: paciente.status }
-    );
-  };
+  // Fixed questionnaire content
+  const DAILY_QUESTIONNAIRE = `🌟 Olá! Como foi seu dia nutricional hoje?
 
-  const handleSendMotivationalMessage = async () => {
-    if (!selectedPatient || !user || !userSubaccount) return;
-    
-    const paciente = pacientes.find(p => p.id === selectedPatient);
-    if (!paciente) return;
-    
-    await sendNutriCoachMessage(
-      paciente.telefone, 
-      paciente.nome, 
-      'motivational',
-      { objetivo: paciente.objetivo, peso: paciente.peso, altura: paciente.altura }
-    );
-  };
+1. Como você avalia sua alimentação hoje?
+❌ Não segui o plano
+⚠️ Segui parcialmente
+✅ Segui completamente
 
-  const handleGetInsights = async () => {
-    if (!selectedPatient || !user) return;
-    
-    const paciente = pacientes.find(p => p.id === selectedPatient);
-    if (!paciente) return;
-    
-    setLoadingInsights(true);
+2. Como está se sentindo em relação aos seus objetivos?
+❌ Desmotivado(a)
+⚠️ Neutro
+✅ Motivado(a)
+
+3. Consumiu a quantidade de água recomendada?
+❌ Menos que o necessário
+⚠️ Quase o suficiente
+✅ Quantidade ideal
+
+Responda com os números e suas escolhas. Ex: "1-✅, 2-✅, 3-⚠️"`;
+
+  const WEEKLY_QUESTIONNAIRE = `📊 Avaliação Semanal - Como foi sua semana?
+
+1. No geral, como avalia sua semana nutricional?
+❌ Muito difícil, não consegui seguir
+⚠️ Alguns dias bons, outros difíceis
+✅ Consegui manter o foco na maioria dos dias
+
+2. Seu nível de energia durante a semana:
+❌ Muito baixo
+⚠️ Variável
+✅ Consistentemente bom
+
+3. Como está sua motivação para continuar?
+❌ Preciso de mais apoio
+⚠️ Algumas dúvidas
+✅ Confiante e motivado(a)
+
+4. Algum desafio específico esta semana?
+(Responda livremente)
+
+Responda com os números e suas escolhas + sua resposta da pergunta 4.`;
+
+  useEffect(() => {
+    if (user) {
+      loadPatients();
+      loadResponses();
+      loadScheduledSendings();
+    }
+  }, [user]);
+
+  const loadPatients = async () => {
     try {
-      const result = await getPatientInsights(paciente.telefone, user.id);
-      setInsights(result);
+      // Get patients from leads table
+      const { data: leadsData } = await supabase
+        .from('leads')
+        .select('id, nome, telefone, status')
+        .eq('user_id', user?.id);
+
+      if (leadsData) {
+        const patientsData: PatientData[] = leadsData.map(lead => ({
+          id: lead.id,
+          nome: lead.nome,
+          telefone: lead.telefone,
+          planStatus: lead.status === 'convertido' ? 'active' : 'inactive',
+          isSelected: false
+        }));
+        setPatients(patientsData);
+      }
     } catch (error) {
-      console.error('Erro ao obter insights:', error);
-    } finally {
-      setLoadingInsights(false);
+      console.error('Error loading patients:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar pacientes",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleCreateSubaccount = async () => {
-    if (!consultorioNome.trim()) return;
-    await createSubaccount(consultorioNome, cidade);
+  const loadResponses = async () => {
+    try {
+      const { data } = await supabase
+        .from('coach_responses')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        const formattedResponses: QuestionnaireResponse[] = data.map(response => ({
+          id: response.id,
+          patient_id: response.patient_phone,
+          patient_name: response.patient_name,
+          type: response.question_category === 'bem_estar' ? 'weekly' : 'daily',
+          responses: [response.response_text],
+          score: response.response_score || 0,
+          feedback: 'Feedback gerado automaticamente baseado nas respostas',
+          status: response.response_score > 0.7 ? 'success' : response.response_score > 0.4 ? 'warning' : 'alert',
+          created_at: response.created_at
+        }));
+        setResponses(formattedResponses);
+      }
+    } catch (error) {
+      console.error('Error loading responses:', error);
+    }
   };
 
-  const handleProvisionWhatsApp = async () => {
-    await provisionWhatsAppNumber();
+  const loadScheduledSendings = async () => {
+    try {
+      const { data } = await supabase
+        .from('whatsapp_coach_interactions')
+        .select('*')
+        .eq('user_id', user?.id);
+
+      if (data) {
+        // Transform existing data to match our interface
+        const scheduled = data.map(interaction => ({
+          id: interaction.id,
+          patient_id: interaction.patient_phone,
+          type: 'daily' as const,
+          is_active: true,
+          last_sent: interaction.created_at
+        }));
+        setScheduledSendings(scheduled);
+      }
+    } catch (error) {
+      console.error('Error loading scheduled sendings:', error);
+    }
+  };
+
+  const togglePatientSelection = (patientId: string) => {
+    setPatients(prev => prev.map(patient =>
+      patient.id === patientId
+        ? { ...patient, isSelected: !patient.isSelected }
+        : patient
+    ));
+  };
+
+  const sendQuestionnaire = async (type: 'daily' | 'weekly') => {
+    const selectedPatients = patients.filter(p => p.isSelected);
+    
+    if (selectedPatients.length === 0) {
+      toast({
+        title: "Nenhum paciente selecionado",
+        description: "Selecione pelo menos um paciente para enviar o questionário",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const message = type === 'daily' ? DAILY_QUESTIONNAIRE : WEEKLY_QUESTIONNAIRE;
+      
+      for (const patient of selectedPatients) {
+        // Send via Supabase function (using existing nutricoach-questionnaire)
+        await supabase.functions.invoke('nutricoach-questionnaire', {
+          body: {
+            action: 'send_daily_questionnaire',
+            patientName: patient.nome,
+            patientPhone: patient.telefone,
+            userId: user?.id
+          }
+        });
+
+        // Register in scheduled sendings
+        await supabase
+          .from('whatsapp_coach_interactions')
+          .insert({
+            patient_phone: patient.telefone,
+            patient_name: patient.nome,
+            action_type: `send_${type}_questionnaire`,
+            generated_message: message,
+            user_id: user?.id,
+            patient_data: { questionnaire_type: type }
+          });
+      }
+
+      toast({
+        title: "Questionários enviados",
+        description: `${type === 'daily' ? 'Questionário diário' : 'Questionário semanal'} enviado para ${selectedPatients.length} paciente(s)`,
+      });
+
+      loadScheduledSendings();
+    } catch (error) {
+      console.error('Error sending questionnaire:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao enviar questionários",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveManualNote = async () => {
+    if (!selectedPatient || !manualNote.trim()) return;
+
+    try {
+      await supabase
+        .from('whatsapp_coach_interactions')
+        .insert({
+          patient_phone: selectedPatient,
+          patient_name: patients.find(p => p.id === selectedPatient)?.nome || '',
+          action_type: 'manual_note',
+          generated_message: manualNote,
+          user_id: user?.id,
+          patient_data: { type: 'nutritionist_observation' }
+        });
+
+      toast({
+        title: "Observação salva",
+        description: "Observação manual do nutricionista foi registrada",
+      });
+
+      setManualNote('');
+    } catch (error) {
+      console.error('Error saving manual note:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar observação",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const filteredPatients = patients.filter(patient =>
+    patient.nome.toLowerCase().includes(filter.toLowerCase()) ||
+    patient.telefone.includes(filter)
+  );
+
+  const getPatientResponses = (patientId: string) => {
+    return responses.filter(r => r.patient_id.includes(patientId));
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'warning': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      case 'alert': return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      default: return <Clock className="w-4 h-4 text-gray-500" />;
+    }
   };
 
   return (
     <div className="p-6 space-y-6 bg-background min-h-screen">
       <Header 
         title="NutriCoach IA" 
-        description="Sistema inteligente de coaching nutricional via WhatsApp"
+        description="Acompanhamento nutricional inteligente de pacientes"
       />
 
-      {/* Twilio WhatsApp Setup */}
-      {!userSubaccount && (
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Phone className="w-5 h-5 text-primary" />
-              Configuração WhatsApp Business
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Configure uma subconta Twilio para enviar mensagens do NutriCoach via WhatsApp Business.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nome do Consultório *</label>
-                <Input
-                  value={consultorioNome}
-                  onChange={(e) => setConsultorioNome(e.target.value)}
-                  placeholder="Ex: Clínica NutriSaúde"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Cidade</label>
-                <Input
-                  value={cidade}
-                  onChange={(e) => setCidade(e.target.value)}
-                  placeholder="Ex: São Paulo"
-                />
-              </div>
-            </div>
-
-            <Button 
-              onClick={handleCreateSubaccount}
-              disabled={twilioLoading || !consultorioNome.trim()}
-              className="w-full"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              {twilioLoading ? 'Criando subconta...' : 'Criar Subconta WhatsApp'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* WhatsApp Number Setup */}
-      {userSubaccount && !userSubaccount.user_twilio_numbers?.[0] && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              Subconta Criada - Provisionar Número WhatsApp
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="outline">{userSubaccount.friendly_name}</Badge>
-              <span>Subconta ID: {userSubaccount.subaccount_sid}</span>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">
-              Agora você precisa provisionar um número WhatsApp Business para enviar mensagens.
-            </p>
-
-            <Button 
-              onClick={handleProvisionWhatsApp}
-              disabled={twilioLoading}
-              className="w-full"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              {twilioLoading ? 'Provisionando número...' : 'Provisionar Número WhatsApp'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* WhatsApp Ready Status */}
-      {userSubaccount?.user_twilio_numbers?.[0] && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              WhatsApp Business Configurado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{userSubaccount.friendly_name}</p>
-                <p className="text-sm text-muted-foreground">
-                  Número: {userSubaccount.user_twilio_numbers[0].twilio_phone_number}
-                </p>
-              </div>
-              <Badge variant="default">Ativo</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Pacientes</p>
-                <p className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats.totalPacientes}
-                </p>
+                <p className="text-2xl font-bold">{patients.length}</p>
               </div>
               <Users className="w-8 h-8 text-primary" />
             </div>
@@ -224,229 +334,321 @@ export default function NutriCoach() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pacientes Ativos</p>
+                <p className="text-sm text-muted-foreground">Planos Ativos</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats.pacientesAtivos}
+                  {patients.filter(p => p.planStatus === 'active').length}
                 </p>
               </div>
-              <UserCheck className="w-8 h-8 text-primary" />
+              <Target className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Questionários Hoje</p>
+                <p className="text-sm text-muted-foreground">Respostas Hoje</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? '...' : stats.questionariosHoje}
+                  {responses.filter(r => {
+                    const today = new Date().toDateString();
+                    const responseDate = new Date(r.created_at).toDateString();
+                    return today === responseDate;
+                  }).length}
                 </p>
               </div>
-              <Brain className="w-8 h-8 text-primary" />
+              <MessageSquare className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Engajamento</p>
+                <p className="text-sm text-muted-foreground">Selecionados</p>
                 <p className="text-2xl font-bold">
-                  {statsLoading ? '...' : `${stats.engajamentoMedio}%`}
+                  {patients.filter(p => p.isSelected).length}
                 </p>
               </div>
-              <TrendingUp className="w-8 h-8 text-primary" />
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="enviar" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="enviar">Enviar Questionários</TabsTrigger>
-          <TabsTrigger value="questionarios">Gerenciar Questionários</TabsTrigger>
-          <TabsTrigger value="insights">Insights dos Pacientes</TabsTrigger>
+      <Tabs defaultValue="patients" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="patients">Pacientes</TabsTrigger>
+          <TabsTrigger value="questionnaires">Questionários</TabsTrigger>
+          <TabsTrigger value="responses">Respostas</TabsTrigger>
+          <TabsTrigger value="plans">Planos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="enviar" className="space-y-6">
+        <TabsContent value="patients" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Send className="w-5 h-5 text-primary" />
-                Enviar Questionário para Paciente
+                <Users className="w-5 h-5" />
+                Seleção de Pacientes
               </CardTitle>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                <Input
+                  placeholder="Filtrar por nome ou telefone..."
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um paciente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pacientes.map((paciente) => (
-                    <SelectItem key={paciente.id} value={paciente.id}>
-                      {paciente.nome} - {paciente.telefone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredPatients.map((patient) => (
+                  <Card key={patient.id} className={`cursor-pointer transition-colors ${
+                    patient.isSelected ? 'ring-2 ring-primary' : ''
+                  }`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={patient.isSelected}
+                          onCheckedChange={() => togglePatientSelection(patient.id)}
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-medium">{patient.nome}</h4>
+                          <p className="text-sm text-muted-foreground">{patient.telefone}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant={patient.planStatus === 'active' ? 'default' : 'secondary'}>
+                              {patient.planStatus === 'active' ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TabsContent value="questionnaires" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Questionário Diário
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-muted rounded-lg">
+                  <pre className="text-sm whitespace-pre-wrap">{DAILY_QUESTIONNAIRE}</pre>
+                </div>
                 <Button 
-                  onClick={handleSendQuestionnaire}
-                  disabled={loading || !selectedPatient || pacientesLoading || !userSubaccount?.user_twilio_numbers?.[0]}
+                  onClick={() => sendQuestionnaire('daily')} 
+                  disabled={loading || patients.filter(p => p.isSelected).length === 0}
                   className="w-full"
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  {loading ? 'Enviando...' : 'Enviar Questionário do Dia'}
+                  Enviar Questionário Diário
                 </Button>
+                <p className="text-xs text-muted-foreground">
+                  Enviado automaticamente em dias úteis para pacientes selecionados
+                </p>
+              </CardContent>
+            </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Questionário Semanal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-muted rounded-lg">
+                  <pre className="text-sm whitespace-pre-wrap">{WEEKLY_QUESTIONNAIRE}</pre>
+                </div>
                 <Button 
-                  onClick={handleSendMotivationalMessage}
-                  disabled={loading || !selectedPatient || pacientesLoading || !userSubaccount?.user_twilio_numbers?.[0]}
-                  variant="outline"
+                  onClick={() => sendQuestionnaire('weekly')} 
+                  disabled={loading || patients.filter(p => p.isSelected).length === 0}
                   className="w-full"
+                  variant="outline"
                 >
-                  <Brain className="w-4 h-4 mr-2" />
-                  {loading ? 'Enviando...' : 'Enviar Mensagem Motivacional'}
+                  <Send className="w-4 h-4 mr-2" />
+                  Enviar Questionário Semanal
                 </Button>
-              </div>
-
-              {!userSubaccount?.user_twilio_numbers?.[0] && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    Configure uma subconta WhatsApp Business acima para enviar mensagens via NutriCoach IA.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Lista de Pacientes */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pacientes Cadastrados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {pacientesLoading ? (
-                <p>Carregando pacientes...</p>
-              ) : pacientes.length === 0 ? (
-                <p className="text-muted-foreground">Nenhum paciente encontrado. Cadastre pacientes primeiro.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pacientes.map((paciente) => (
-                    <Card key={paciente.id} className="relative">
-                      <CardContent className="p-4">
-                        <div className="space-y-2">
-                          <h4 className="font-medium">{paciente.nome}</h4>
-                          <p className="text-sm text-muted-foreground">{paciente.telefone}</p>
-                          <Badge variant="outline">{paciente.objetivo || 'Sem objetivo'}</Badge>
-                          <Button 
-                            size="sm" 
-                            onClick={() => setSelectedPatient(paciente.id)}
-                            variant={selectedPatient === paciente.id ? "default" : "outline"}
-                            className="w-full"
-                          >
-                            {selectedPatient === paciente.id ? 'Selecionado' : 'Selecionar'}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                <p className="text-xs text-muted-foreground">
+                  Enviado semanalmente (segundas-feiras) para pacientes selecionados
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="questionarios">
-          <QuestionnaireManager />
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-6">
+        <TabsContent value="responses" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ChartBar className="w-5 h-5 text-primary" />
-                Insights do Paciente
+                <MessageSquare className="w-5 h-5" />
+                Histórico de Respostas
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Select value={selectedPatient} onValueChange={setSelectedPatient}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um paciente para ver insights" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pacientes.map((paciente) => (
-                    <SelectItem key={paciente.id} value={paciente.id}>
-                      {paciente.nome} - {paciente.telefone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button 
-                onClick={handleGetInsights}
-                disabled={loadingInsights || !selectedPatient}
-                className="w-full"
-              >
-                <Brain className="w-4 h-4 mr-2" />
-                {loadingInsights ? 'Analisando...' : 'Gerar Insights'}
-              </Button>
-
-              {insights && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Relatório de Insights</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">{insights.total_responses}</p>
-                        <p className="text-sm text-muted-foreground">Total Respostas</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">{Math.round(insights.avg_score * 50)}%</p>
-                        <p className="text-sm text-muted-foreground">Score Médio</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">{Object.keys(insights.categories).length}</p>
-                        <p className="text-sm text-muted-foreground">Categorias</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold">
-                          {insights.total_responses > 0 ? 'Ativo' : 'Inativo'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                      </div>
-                    </div>
-
-                    {Object.keys(insights.categories).length > 0 && (
-                      <div>
-                        <h4 className="font-medium mb-2">Desempenho por Categoria:</h4>
-                        <div className="space-y-2">
-                          {Object.entries(insights.categories).map(([category, data]: [string, any]) => (
-                            <div key={category} className="flex items-center justify-between p-2 bg-muted rounded">
-                              <span className="capitalize">{category}</span>
-                              <div className="text-right">
-                                <span className="font-medium">{Math.round(data.avg_score * 50)}%</span>
-                                <span className="text-sm text-muted-foreground ml-2">({data.count} respostas)</span>
-                              </div>
+            <CardContent>
+              <div className="space-y-4">
+                {responses.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhuma resposta registrada ainda
+                  </p>
+                ) : (
+                  responses.map((response) => (
+                    <Card key={response.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium">{response.patient_name}</h4>
+                              <Badge variant="outline">
+                                {response.type === 'daily' ? 'Diário' : 'Semanal'}
+                              </Badge>
+                              {getStatusIcon(response.status)}
                             </div>
-                          ))}
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {new Date(response.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                            <div className="mt-2">
+                              <p className="text-sm">{response.responses.join(', ')}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Score: {Math.round(response.score * 100)}%
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1">
+                              <Brain className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">IA</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="plans" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Análise de Progresso
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedPatient ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">
+                        {patients.find(p => p.id === selectedPatient)?.nome}
+                      </h4>
+                      {getPatientResponses(selectedPatient).length > 0 ? (
+                        <div className="space-y-2">
+                          <p className="text-sm">
+                            Score médio mensal: {Math.round(
+                              getPatientResponses(selectedPatient)
+                                .reduce((acc, r) => acc + r.score, 0) / 
+                              getPatientResponses(selectedPatient).length * 100
+                            )}%
+                          </p>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="p-2 bg-green-50 rounded">
+                              <div className="text-lg font-bold text-green-600">
+                                {getPatientResponses(selectedPatient).filter(r => r.status === 'success').length}
+                              </div>
+                              <div className="text-xs text-green-600">Sucessos</div>
+                            </div>
+                            <div className="p-2 bg-yellow-50 rounded">
+                              <div className="text-lg font-bold text-yellow-600">
+                                {getPatientResponses(selectedPatient).filter(r => r.status === 'warning').length}
+                              </div>
+                              <div className="text-xs text-yellow-600">Atenção</div>
+                            </div>
+                            <div className="p-2 bg-red-50 rounded">
+                              <div className="text-lg font-bold text-red-600">
+                                {getPatientResponses(selectedPatient).filter(r => r.status === 'alert').length}
+                              </div>
+                              <div className="text-xs text-red-600">Alerta</div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Nenhuma resposta ainda registrada
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Selecione um paciente na lista ao lado para ver a análise
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Observações do Nutricionista
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Selecionar Paciente:</label>
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={selectedPatient}
+                    onChange={(e) => setSelectedPatient(e.target.value)}
+                  >
+                    <option value="">Selecione um paciente...</option>
+                    {patients.map(patient => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Observação Manual:</label>
+                  <Textarea
+                    placeholder="Digite suas observações e recomendações para o paciente..."
+                    value={manualNote}
+                    onChange={(e) => setManualNote(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                
+                <Button 
+                  onClick={saveManualNote}
+                  disabled={!selectedPatient || !manualNote.trim()}
+                  className="w-full"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Salvar Observação
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
