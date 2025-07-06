@@ -34,6 +34,13 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
     try {
       setLoading(true);
 
+      // Configurar headers específicos para envios_programados
+      const headers = {
+        'Accept': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g'
+      };
+
       // Verificar se já existe um registro para este paciente
       const { data: existingRecord } = await supabase
         .from('envios_programados')
@@ -80,6 +87,7 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
       setSelectedPatientId('');
       onSuccess?.();
     } catch (error: any) {
+      console.error('Erro detalhado ao ativar envio:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao ativar envio diário",
@@ -97,7 +105,9 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Paciente</label>
+          <label className="text-sm font-medium">
+            Paciente {patients.length > 0 ? `(${patients.length} disponíveis)` : '(nenhum paciente encontrado)'}
+          </label>
           <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione um paciente" />
@@ -114,7 +124,7 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
         
         <Button 
           onClick={handleAtivarEnvio}
-          disabled={loading || !selectedPatientId}
+          disabled={loading || !selectedPatientId || patients.length === 0}
           className="w-full"
         >
           {loading ? "Ativando..." : "Ativar Envio"}

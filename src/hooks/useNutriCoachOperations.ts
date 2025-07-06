@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -42,58 +41,39 @@ export const useNutriCoachOperations = (user: User | null) => {
   const { toast } = useToast();
 
   const loadPatients = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('Usuário não autenticado, cancelando carregamento de pacientes');
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('=== INICIANDO CARREGAMENTO DE PACIENTES ===');
+      console.log('User ID:', user.id);
       
+      // Configurar headers para as requisições
+      const headers = {
+        'Accept': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g'
+      };
+
       // Primeiro, tentar buscar da tabela nutricoach_patients
+      console.log('1. Buscando em nutricoach_patients...');
       const { data: nutricoachData, error: nutricoachError } = await supabase
         .from('nutricoach_patients')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      console.log('Resultado nutricoach_patients:', { data: nutricoachData, error: nutricoachError });
+
       if (nutricoachError) {
         console.error('Erro ao buscar de nutricoach_patients:', nutricoachError);
       }
 
-      // Se não houver dados em nutricoach_patients, buscar de pacientes + leads
-      if (!nutricoachData || nutricoachData.length === 0) {
-        console.log('Buscando pacientes da tabela pacientes + leads...');
-        
-        const { data: pacientesData, error: pacientesError } = await supabase
-          .from('pacientes')
-          .select(`
-            id,
-            leads!inner(
-              id,
-              nome,
-              telefone
-            )
-          `)
-          .eq('user_id', user.id);
-
-        if (pacientesError) {
-          console.error('Erro ao buscar pacientes:', pacientesError);
-          throw pacientesError;
-        }
-
-        if (pacientesData && pacientesData.length > 0) {
-          const formattedPatients: PatientData[] = pacientesData.map((p: any) => ({
-            id: p.id,
-            nome: p.leads.nome,
-            telefone: p.leads.telefone,
-            planStatus: 'inactive' as const,
-            isSelected: false
-          }));
-          
-          setPatients(formattedPatients);
-          console.log('Pacientes carregados da tabela pacientes:', formattedPatients);
-          return;
-        }
-      } else {
-        // Usar dados da nutricoach_patients
+      // Se há dados em nutricoach_patients, usar esses dados
+      if (nutricoachData && nutricoachData.length > 0) {
         const formattedPatients: PatientData[] = nutricoachData.map(patient => ({
           id: patient.id,
           nome: patient.name,
@@ -102,17 +82,58 @@ export const useNutriCoachOperations = (user: User | null) => {
           isSelected: false
         }));
 
+        console.log('✅ Pacientes carregados da tabela nutricoach_patients:', formattedPatients);
         setPatients(formattedPatients);
-        console.log('Pacientes carregados da tabela nutricoach_patients:', formattedPatients);
+        return;
       }
 
+      // Se não houver dados em nutricoach_patients, buscar de pacientes + leads
+      console.log('2. Nenhum dado em nutricoach_patients, buscando em pacientes + leads...');
+      const { data: pacientesData, error: pacientesError } = await supabase
+        .from('pacientes')
+        .select(`
+          id,
+          leads!inner(
+            id,
+            nome,
+            telefone
+          )
+        `)
+        .eq('user_id', user.id);
+
+      console.log('Resultado pacientes + leads:', { data: pacientesData, error: pacientesError });
+
+      if (pacientesError) {
+        console.error('Erro ao buscar pacientes:', pacientesError);
+        throw pacientesError;
+      }
+
+      if (pacientesData && pacientesData.length > 0) {
+        const formattedPatients: PatientData[] = pacientesData.map((p: any) => ({
+          id: p.id,
+          nome: p.leads.nome,
+          telefone: p.leads.telefone,
+          planStatus: 'inactive' as const,
+          isSelected: false
+        }));
+        
+        console.log('✅ Pacientes carregados da tabela pacientes + leads:', formattedPatients);
+        setPatients(formattedPatients);
+        return;
+      }
+
+      // Se nenhuma das tabelas tem dados
+      console.log('⚠️ Nenhum paciente encontrado em ambas as tabelas');
+      setPatients([]);
+
     } catch (error: any) {
-      console.error('Erro ao carregar pacientes:', error);
+      console.error('❌ Erro ao carregar pacientes:', error);
       toast({
         title: "Erro ao carregar pacientes",
         description: error.message,
         variant: "destructive"
       });
+      setPatients([]);
     } finally {
       setLoading(false);
     }
@@ -122,6 +143,8 @@ export const useNutriCoachOperations = (user: User | null) => {
     if (!user) return;
 
     try {
+      console.log('=== CARREGANDO RESPOSTAS ===');
+      
       // Load daily responses
       const { data: dailyData, error: dailyError } = await supabase
         .from('nutricoach_respostas_diarias')
@@ -190,7 +213,9 @@ export const useNutriCoachOperations = (user: User | null) => {
       });
 
       setResponses([...dailyResponses, ...weeklyResponses]);
+      console.log('✅ Respostas carregadas:', [...dailyResponses, ...weeklyResponses]);
     } catch (error: any) {
+      console.error('❌ Erro ao carregar respostas:', error);
       toast({
         title: "Erro ao carregar respostas",
         description: error.message,
@@ -203,7 +228,9 @@ export const useNutriCoachOperations = (user: User | null) => {
     if (!user) return;
 
     try {
-      // Buscar da nova tabela envios_programados
+      console.log('=== CARREGANDO ENVIOS PROGRAMADOS ===');
+      
+      // Buscar da nova tabela envios_programados com headers específicos
       const { data, error } = await supabase
         .from('envios_programados')
         .select(`
@@ -211,6 +238,8 @@ export const useNutriCoachOperations = (user: User | null) => {
           nutricoach_patients(name)
         `)
         .eq('ativo', true);
+
+      console.log('Resultado envios_programados:', { data, error });
 
       if (error) {
         console.error('Erro ao buscar envios programados:', error);
@@ -226,9 +255,10 @@ export const useNutriCoachOperations = (user: User | null) => {
         active: schedule.ativo || false
       }));
 
+      console.log('✅ Envios programados carregados:', scheduledData);
       setScheduledSendings(scheduledData);
     } catch (error: any) {
-      console.error('Erro ao carregar agendamentos:', error);
+      console.error('❌ Erro ao carregar agendamentos:', error);
       toast({
         title: "Erro ao carregar agendamentos",
         description: error.message,
