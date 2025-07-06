@@ -791,6 +791,41 @@ export type Database = {
         }
         Relationships: []
       }
+      envios_programados: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          envio_diario: boolean | null
+          envio_semanal: boolean | null
+          id: string
+          paciente_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          envio_diario?: boolean | null
+          envio_semanal?: boolean | null
+          id?: string
+          paciente_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          envio_diario?: boolean | null
+          envio_semanal?: boolean | null
+          id?: string
+          paciente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "envios_programados_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "nutricoach_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       Instance: {
         Row: {
           apikey: string | null
