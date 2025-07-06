@@ -60,7 +60,7 @@ export default function NutriCoach() {
       {/* Formulário de Ativar Envio Diário */}
       <div className="max-w-md">
         <AtivarEnvioDiarioForm 
-          patients={patients.map(p => ({ id: p.id, name: p.name }))}
+          patients={patients.map(p => ({ id: p.id, name: p.nome }))}
           onSuccess={handleEnvioSuccess}
         />
       </div>
