@@ -32,11 +32,17 @@ export default function NutriCoach() {
 
   useEffect(() => {
     if (user) {
+      console.log('Carregando dados do NutriCoach para usuário:', user.id);
       loadPatients();
       loadResponses();
       loadScheduledSendings();
     }
   }, [user]);
+
+  // Debug dos pacientes carregados
+  useEffect(() => {
+    console.log('Pacientes carregados no componente:', patients);
+  }, [patients]);
 
   const handleSaveManualNote = async () => {
     await saveManualNote(selectedPatient, manualNote);
@@ -64,6 +70,14 @@ export default function NutriCoach() {
           onSuccess={handleEnvioSuccess}
         />
       </div>
+
+      {/* Debug info - remover em produção */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-gray-100 p-4 rounded text-sm">
+          <p><strong>Debug:</strong> Total de pacientes carregados: {patients.length}</p>
+          <p><strong>Usuário ID:</strong> {user?.id}</p>
+        </div>
+      )}
 
       <Tabs defaultValue="patients" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">

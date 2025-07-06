@@ -46,24 +46,68 @@ export const useNutriCoachOperations = (user: User | null) => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Primeiro, tentar buscar da tabela nutricoach_patients
+      const { data: nutricoachData, error: nutricoachError } = await supabase
         .from('nutricoach_patients')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (nutricoachError) {
+        console.error('Erro ao buscar de nutricoach_patients:', nutricoachError);
+      }
 
-      const patientsData: PatientData[] = (data || []).map(patient => ({
-        id: patient.id,
-        nome: patient.name,
-        telefone: patient.telephone,
-        planStatus: patient.plan_active ? 'active' : 'inactive',
-        isSelected: false
-      }));
+      // Se não houver dados em nutricoach_patients, buscar de pacientes + leads
+      if (!nutricoachData || nutricoachData.length === 0) {
+        console.log('Buscando pacientes da tabela pacientes + leads...');
+        
+        const { data: pacientesData, error: pacientesError } = await supabase
+          .from('pacientes')
+          .select(`
+            id,
+            leads!inner(
+              id,
+              nome,
+              telefone
+            )
+          `)
+          .eq('user_id', user.id);
 
-      setPatients(patientsData);
+        if (pacientesError) {
+          console.error('Erro ao buscar pacientes:', pacientesError);
+          throw pacientesError;
+        }
+
+        if (pacientesData && pacientesData.length > 0) {
+          const formattedPatients: PatientData[] = pacientesData.map((p: any) => ({
+            id: p.id,
+            nome: p.leads.nome,
+            telefone: p.leads.telefone,
+            planStatus: 'inactive' as const,
+            isSelected: false
+          }));
+          
+          setPatients(formattedPatients);
+          console.log('Pacientes carregados da tabela pacientes:', formattedPatients);
+          return;
+        }
+      } else {
+        // Usar dados da nutricoach_patients
+        const formattedPatients: PatientData[] = nutricoachData.map(patient => ({
+          id: patient.id,
+          nome: patient.name,
+          telefone: patient.telephone,
+          planStatus: patient.plan_active ? 'active' : 'inactive',
+          isSelected: false
+        }));
+
+        setPatients(formattedPatients);
+        console.log('Pacientes carregados da tabela nutricoach_patients:', formattedPatients);
+      }
+
     } catch (error: any) {
+      console.error('Erro ao carregar pacientes:', error);
       toast({
         title: "Erro ao carregar pacientes",
         description: error.message,
@@ -159,27 +203,32 @@ export const useNutriCoachOperations = (user: User | null) => {
     if (!user) return;
 
     try {
+      // Buscar da nova tabela envios_programados
       const { data, error } = await supabase
-        .from('nutricoach_programmed_shipping')
+        .from('envios_programados')
         .select(`
           *,
-          nutricoach_patients!inner(name)
+          nutricoach_patients(name)
         `)
-        .eq('user_id', user.id);
+        .eq('ativo', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar envios programados:', error);
+        return;
+      }
 
       const scheduledData: ScheduledSending[] = (data || []).map(schedule => ({
         id: schedule.id,
-        patient_id: schedule.patient_id,
-        patient_name: (schedule as any).nutricoach_patients.name,
-        shipping_diario: schedule.shipping_diario,
-        shipping_semanal: schedule.shipping_semanal,
-        active: schedule.active
+        patient_id: schedule.paciente_id,
+        patient_name: (schedule as any).nutricoach_patients?.name || 'Paciente não encontrado',
+        shipping_diario: schedule.envio_diario || false,
+        shipping_semanal: schedule.envio_semanal || false,
+        active: schedule.ativo || false
       }));
 
       setScheduledSendings(scheduledData);
     } catch (error: any) {
+      console.error('Erro ao carregar agendamentos:', error);
       toast({
         title: "Erro ao carregar agendamentos",
         description: error.message,
