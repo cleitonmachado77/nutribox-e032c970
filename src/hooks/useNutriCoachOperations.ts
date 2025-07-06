@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -50,13 +51,6 @@ export const useNutriCoachOperations = (user: User | null) => {
       setLoading(true);
       console.log('=== INICIANDO CARREGAMENTO DE PACIENTES ===');
       console.log('User ID:', user.id);
-      
-      // Configurar headers para as requisições
-      const headers = {
-        'Accept': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g'
-      };
 
       // Primeiro, tentar buscar da tabela nutricoach_patients
       console.log('1. Buscando em nutricoach_patients...');
@@ -230,7 +224,7 @@ export const useNutriCoachOperations = (user: User | null) => {
     try {
       console.log('=== CARREGANDO ENVIOS PROGRAMADOS ===');
       
-      // Buscar da nova tabela envios_programados com headers específicos
+      // Buscar da tabela envios_programados
       const { data, error } = await supabase
         .from('envios_programados')
         .select(`

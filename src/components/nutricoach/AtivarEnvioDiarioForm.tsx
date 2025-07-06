@@ -34,13 +34,6 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
     try {
       setLoading(true);
 
-      // Configurar headers específicos para envios_programados
-      const headers = {
-        'Accept': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g'
-      };
-
       // Verificar se já existe um registro para este paciente
       const { data: existingRecord } = await supabase
         .from('envios_programados')
@@ -66,15 +59,17 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
           description: "Envio diário atualizado com sucesso"
         });
       } else {
-        // Criar novo registro
+        // Criar novo registro - garantindo que paciente_id está presente
+        const insertData = {
+          paciente_id: selectedPatientId, // Campo obrigatório UUID
+          envio_diario: true,
+          envio_semanal: false,
+          ativo: true
+        };
+
         const { error } = await supabase
           .from('envios_programados')
-          .insert({
-            paciente_id: selectedPatientId,
-            envio_diario: true,
-            envio_semanal: false,
-            ativo: true
-          });
+          .insert(insertData);
 
         if (error) throw error;
 
