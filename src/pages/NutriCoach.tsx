@@ -9,6 +9,7 @@ import { PatientsTab } from '@/components/nutricoach/PatientsTab';
 import { QuestionnairesTab } from '@/components/nutricoach/QuestionnairesTab';
 import { ResponsesTab } from '@/components/nutricoach/ResponsesTab';
 import { PlansTab } from '@/components/nutricoach/PlansTab';
+import { AtivarEnvioDiarioForm } from '@/components/nutricoach/AtivarEnvioDiarioForm';
 
 export default function NutriCoach() {
   const { user } = useAuth();
@@ -42,6 +43,11 @@ export default function NutriCoach() {
     setManualNote('');
   };
 
+  const handleEnvioSuccess = () => {
+    // Recarregar dados se necessário
+    loadScheduledSendings();
+  };
+
   return (
     <div className="p-6 space-y-6 min-h-screen">
       <Header 
@@ -50,6 +56,14 @@ export default function NutriCoach() {
       />
 
       <StatsCards patients={patients} responses={responses} />
+
+      {/* Formulário de Ativar Envio Diário */}
+      <div className="max-w-md">
+        <AtivarEnvioDiarioForm 
+          patients={patients.map(p => ({ id: p.id, name: p.name }))}
+          onSuccess={handleEnvioSuccess}
+        />
+      </div>
 
       <Tabs defaultValue="patients" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
