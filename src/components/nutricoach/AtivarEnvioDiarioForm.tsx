@@ -51,40 +51,51 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
     try {
       setLoading(true);
 
-      // Verificar se já existe um registro para este paciente
-      const { data: existingRecord, error: selectError } = await supabase
+      // PASSO 1: Verificar se já existe um registro para este paciente
+      console.log('1. Verificando registro existente para paciente:', selectedPatientId);
+      
+      const { data: existingRecords, error: selectError } = await supabase
         .from('envios_programados')
-        .select('id')
-        .eq('paciente_id', selectedPatientId)
-        .maybeSingle()
-        .setHeader('Accept', 'application/json');
+        .select('*')
+        .eq('paciente_id', selectedPatientId);
 
       if (selectError) {
         console.error('Erro ao verificar registro existente:', selectError);
         throw selectError;
       }
 
-      if (existingRecord) {
-        // Atualizar registro existente
-        const { error } = await supabase
+      console.log('Registros encontrados:', existingRecords);
+
+      // PASSO 2: Se existe registro (array com ao menos 1 item), fazer PATCH
+      if (existingRecords && existingRecords.length > 0) {
+        console.log('2. Registro encontrado, fazendo PATCH para atualizar');
+        
+        const updateData = {
+          envio_diario: true,
+          envio_semanal: false,
+          ativo: true
+        };
+
+        const { error: updateError } = await supabase
           .from('envios_programados')
-          .update({
-            envio_diario: true,
-            envio_semanal: false,
-            ativo: true
-          })
-          .eq('paciente_id', selectedPatientId)
-          .setHeader('Accept', 'application/json')
-          .setHeader('Content-Type', 'application/json');
+          .update(updateData)
+          .eq('paciente_id', selectedPatientId);
 
-        if (error) throw error;
+        if (updateError) {
+          console.error('Erro ao atualizar registro:', updateError);
+          throw updateError;
+        }
 
+        console.log('✅ Registro atualizado com sucesso');
         toast({
           title: "Sucesso",
           description: "Envio diário atualizado com sucesso"
         });
+
       } else {
-        // Criar novo registro com validação obrigatória
+        // PASSO 3: Se array vazio, fazer POST (inserção normal)
+        console.log('3. Nenhum registro encontrado, fazendo POST para inserir');
+        
         const insertData = {
           paciente_id: selectedPatientId,
           envio_diario: true,
@@ -92,19 +103,18 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
           ativo: true
         };
 
-        console.log('Enviando dados para inserção:', insertData);
+        console.log('Dados para inserção:', insertData);
 
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('envios_programados')
-          .insert(insertData)
-          .setHeader('Accept', 'application/json')
-          .setHeader('Content-Type', 'application/json');
+          .insert(insertData);
 
-        if (error) {
-          console.error('Erro ao inserir registro:', error);
-          throw error;
+        if (insertError) {
+          console.error('Erro ao inserir registro:', insertError);
+          throw insertError;
         }
 
+        console.log('✅ Registro inserido com sucesso');
         toast({
           title: "Sucesso",
           description: "Envio diário ativado com sucesso"
