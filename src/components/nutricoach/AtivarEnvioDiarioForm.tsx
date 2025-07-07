@@ -51,50 +51,38 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
     try {
       setLoading(true);
 
-      // PASSO 1: Verificar se já existe um registro para este paciente
-      console.log('1. Verificando registro existente para paciente:', selectedPatientId);
+      // PASSO 1: Sempre tentar PATCH primeiro
+      console.log('1. Tentando PATCH para paciente:', selectedPatientId);
       
-      const { data: existingRecords, error: selectError } = await supabase
-        .from('envios_programados')
-        .select('*')
-        .eq('paciente_id', selectedPatientId);
+      const updateData = {
+        envio_diario: true,
+        envio_semanal: false,
+        ativo: true
+      };
 
-      if (selectError) {
-        console.error('Erro ao verificar registro existente:', selectError);
-        throw selectError;
+      const { data: patchResult, error: patchError, count } = await supabase
+        .from('envios_programados')
+        .update(updateData)
+        .eq('paciente_id', selectedPatientId)
+        .select();
+
+      if (patchError) {
+        console.error('Erro no PATCH:', patchError);
+        throw patchError;
       }
 
-      console.log('Registros encontrados:', existingRecords);
+      console.log('Resultado do PATCH:', { patchResult, count });
 
-      // PASSO 2: Se existe registro (array com ao menos 1 item), fazer PATCH
-      if (existingRecords && existingRecords.length > 0) {
-        console.log('2. Registro encontrado, fazendo PATCH para atualizar');
-        
-        const updateData = {
-          envio_diario: true,
-          envio_semanal: false,
-          ativo: true
-        };
-
-        const { error: updateError } = await supabase
-          .from('envios_programados')
-          .update(updateData)
-          .eq('paciente_id', selectedPatientId);
-
-        if (updateError) {
-          console.error('Erro ao atualizar registro:', updateError);
-          throw updateError;
-        }
-
-        console.log('✅ Registro atualizado com sucesso');
+      // PASSO 2: Se PATCH afetou registros, sucesso
+      if (patchResult && patchResult.length > 0) {
+        console.log('✅ PATCH bem-sucedido - registro atualizado');
         toast({
           title: "Sucesso",
           description: "Envio diário atualizado com sucesso"
         });
-
       } else {
-        // PASSO 3: Se array vazio, fazer POST (inserção normal)
-        console.log('3. Nenhum registro encontrado, fazendo POST para inserir');
+        // PASSO 3: Se PATCH não afetou nenhuma linha, fazer POST
+        console.log('2. PATCH não afetou registros, fazendo POST para inserir');
         
         const insertData = {
           paciente_id: selectedPatientId,
@@ -114,7 +102,7 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
           throw insertError;
         }
 
-        console.log('✅ Registro inserido com sucesso');
+        console.log('✅ POST bem-sucedido - registro inserido');
         toast({
           title: "Sucesso",
           description: "Envio diário ativado com sucesso"
