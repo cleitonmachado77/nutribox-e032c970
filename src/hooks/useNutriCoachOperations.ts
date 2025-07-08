@@ -229,7 +229,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         .from('envios_programados')
         .select(`
           *,
-          nutricoach_patients(name)
+          pacientes(name)
         `)
         .eq('ativo', true);
 
