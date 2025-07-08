@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { enviosProgramadosRest } from '@/lib/supabase-rest';
 
 interface Patient {
   id: string;
@@ -27,6 +28,10 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
     return uuidRegex.test(uuid);
   };
 
+  // Método usando Supabase JavaScript Client (recomendado)
+  // O cliente já configura automaticamente os headers corretos:
+  // - apikey: chave anon
+  // - Authorization: Bearer chave anon
   const handleAtivarEnvio = async () => {
     // Validação: paciente deve estar selecionado
     if (!selectedPatientId) {
@@ -116,6 +121,71 @@ export const AtivarEnvioDiarioForm = ({ patients, onSuccess }: AtivarEnvioDiario
       toast({
         title: "Erro",
         description: error.message || "Erro ao ativar envio diário",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Método alternativo usando REST API direta (caso necessário)
+  // Headers configurados corretamente com chave anon para role 'anon'
+  const handleAtivarEnvioRest = async () => {
+    if (!selectedPatientId || !isValidUUID(selectedPatientId)) return;
+
+    try {
+      setLoading(true);
+      
+      const updateData = {
+        envio_diario: true,
+        envio_semanal: false,
+        ativo: true
+      };
+
+      // Tentar PATCH primeiro
+      try {
+        const patchResult = await enviosProgramadosRest.patch(
+          { paciente_id: selectedPatientId },
+          updateData
+        );
+        
+        if (patchResult.length > 0) {
+          console.log('✅ PATCH REST bem-sucedido');
+          toast({
+            title: "Sucesso",
+            description: "Envio diário atualizado com sucesso (REST)"
+          });
+          setSelectedPatientId('');
+          onSuccess?.();
+          return;
+        }
+      } catch (patchError) {
+        console.log('PATCH REST falhou, tentando POST:', patchError);
+      }
+
+      // Se PATCH não funcionou, fazer POST
+      const insertData = {
+        paciente_id: selectedPatientId,
+        envio_diario: true,
+        envio_semanal: false,
+        ativo: true
+      };
+
+      await enviosProgramadosRest.post(insertData);
+      
+      console.log('✅ POST REST bem-sucedido');
+      toast({
+        title: "Sucesso",
+        description: "Envio diário ativado com sucesso (REST)"
+      });
+
+      setSelectedPatientId('');
+      onSuccess?.();
+    } catch (error: any) {
+      console.error('Erro REST detalhado:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao ativar envio diário (REST)",
         variant: "destructive"
       });
     } finally {
