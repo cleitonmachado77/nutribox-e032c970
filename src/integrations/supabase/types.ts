@@ -826,7 +826,7 @@ export type Database = {
             foreignKeyName: "envios_programados_paciente_id_fkey"
             columns: ["paciente_id"]
             isOneToOne: false
-            referencedRelation: "nutricoach_patients"
+            referencedRelation: "pacientes"
             referencedColumns: ["id"]
           },
         ]

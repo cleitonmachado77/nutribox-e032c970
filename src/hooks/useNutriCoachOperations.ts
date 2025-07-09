@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -52,45 +51,18 @@ export const useNutriCoachOperations = (user: User | null) => {
       console.log('=== INICIANDO CARREGAMENTO DE PACIENTES ===');
       console.log('User ID:', user.id);
 
-      // Primeiro, tentar buscar da tabela nutricoach_patients
-      console.log('1. Buscando em nutricoach_patients...');
-      const { data: nutricoachData, error: nutricoachError } = await supabase
-        .from('nutricoach_patients')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      console.log('Resultado nutricoach_patients:', { data: nutricoachData, error: nutricoachError });
-
-      if (nutricoachError) {
-        console.error('Erro ao buscar de nutricoach_patients:', nutricoachError);
-      }
-
-      // Se há dados em nutricoach_patients, usar esses dados
-      if (nutricoachData && nutricoachData.length > 0) {
-        const formattedPatients: PatientData[] = nutricoachData.map(patient => ({
-          id: patient.id,
-          nome: patient.name,
-          telefone: patient.telephone,
-          planStatus: patient.plan_active ? 'active' : 'inactive',
-          isSelected: false
-        }));
-
-        console.log('✅ Pacientes carregados da tabela nutricoach_patients:', formattedPatients);
-        setPatients(formattedPatients);
-        return;
-      }
-
-      // Se não houver dados em nutricoach_patients, buscar de pacientes + leads
-      console.log('2. Nenhum dado em nutricoach_patients, buscando em pacientes + leads...');
+      // Buscar pacientes com seus dados dos leads
       const { data: pacientesData, error: pacientesError } = await supabase
         .from('pacientes')
         .select(`
           id,
-          leads!inner(
+          data_primeira_consulta,
+          status_tratamento,
+          lead:leads!inner(
             id,
             nome,
-            telefone
+            telefone,
+            email
           )
         `)
         .eq('user_id', user.id);
@@ -105,19 +77,19 @@ export const useNutriCoachOperations = (user: User | null) => {
       if (pacientesData && pacientesData.length > 0) {
         const formattedPatients: PatientData[] = pacientesData.map((p: any) => ({
           id: p.id,
-          nome: p.leads.nome,
-          telefone: p.leads.telefone,
-          planStatus: 'inactive' as const,
+          nome: p.lead.nome,
+          telefone: p.lead.telefone,
+          planStatus: p.status_tratamento === 'ativo' ? 'active' : 'inactive',
           isSelected: false
         }));
         
-        console.log('✅ Pacientes carregados da tabela pacientes + leads:', formattedPatients);
+        console.log('✅ Pacientes carregados:', formattedPatients);
         setPatients(formattedPatients);
         return;
       }
 
-      // Se nenhuma das tabelas tem dados
-      console.log('⚠️ Nenhum paciente encontrado em ambas as tabelas');
+      // Se nenhum paciente encontrado
+      console.log('⚠️ Nenhum paciente encontrado');
       setPatients([]);
 
     } catch (error: any) {
@@ -144,7 +116,10 @@ export const useNutriCoachOperations = (user: User | null) => {
         .from('nutricoach_respostas_diarias')
         .select(`
           *,
-          nutricoach_patients!inner(name)
+          pacientes!inner(
+            id,
+            leads!inner(nome)
+          )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -157,7 +132,10 @@ export const useNutriCoachOperations = (user: User | null) => {
         .from('nutricoach_respostas_semanais')
         .select(`
           *,
-          nutricoach_patients!inner(name)
+          pacientes!inner(
+            id,
+            leads!inner(nome)
+          )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -181,7 +159,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         return {
           id: response.id,
           patient_id: response.patient_id,
-          patient_name: (response as any).nutricoach_patients.name,
+          patient_name: (response as any).pacientes?.leads?.nome || 'Nome não encontrado',
           type: 'daily' as const,
           responses: scores.map(s => s.toString()),
           score: avgScore,
@@ -197,7 +175,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         return {
           id: response.id,
           patient_id: response.patient_id,
-          patient_name: (response as any).nutricoach_patients.name,
+          patient_name: (response as any).pacientes?.leads?.nome || 'Nome não encontrado',
           type: 'weekly' as const,
           responses: scores.map(s => s.toString()),
           score: avgScore,
@@ -224,12 +202,15 @@ export const useNutriCoachOperations = (user: User | null) => {
     try {
       console.log('=== CARREGANDO ENVIOS PROGRAMADOS ===');
       
-      // Buscar da tabela envios_programados
+      // Buscar da tabela envios_programados com JOIN para pacientes
       const { data, error } = await supabase
         .from('envios_programados')
         .select(`
           *,
-          pacientes(name)
+          pacientes!inner(
+            id,
+            leads!inner(nome)
+          )
         `)
         .eq('ativo', true);
 
@@ -243,7 +224,7 @@ export const useNutriCoachOperations = (user: User | null) => {
       const scheduledData: ScheduledSending[] = (data || []).map(schedule => ({
         id: schedule.id,
         patient_id: schedule.paciente_id,
-        patient_name: (schedule as any).nutricoach_patients?.name || 'Paciente não encontrado',
+        patient_name: (schedule as any).pacientes?.leads?.nome || 'Paciente não encontrado',
         shipping_diario: schedule.envio_diario || false,
         shipping_semanal: schedule.envio_semanal || false,
         active: schedule.ativo || false
