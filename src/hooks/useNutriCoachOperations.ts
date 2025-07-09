@@ -111,37 +111,53 @@ export const useNutriCoachOperations = (user: User | null) => {
     try {
       console.log('=== CARREGANDO RESPOSTAS ===');
       
-      // Load daily responses
+      // Load daily responses with correct JOIN structure
       const { data: dailyData, error: dailyError } = await supabase
         .from('nutricoach_respostas_diarias')
         .select(`
           *,
           pacientes!inner(
             id,
-            leads!inner(nome)
+            lead_id,
+            leads!inner(
+              nome
+            )
           )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (dailyError) throw dailyError;
+      console.log('Resultado respostas diárias:', { data: dailyData, error: dailyError });
 
-      // Load weekly responses
+      if (dailyError) {
+        console.error('Erro ao buscar respostas diárias:', dailyError);
+        throw dailyError;
+      }
+
+      // Load weekly responses with correct JOIN structure
       const { data: weeklyData, error: weeklyError } = await supabase
         .from('nutricoach_respostas_semanais')
         .select(`
           *,
           pacientes!inner(
             id,
-            leads!inner(nome)
+            lead_id,
+            leads!inner(
+              nome
+            )
           )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (weeklyError) throw weeklyError;
+      console.log('Resultado respostas semanais:', { data: weeklyData, error: weeklyError });
+
+      if (weeklyError) {
+        console.error('Erro ao buscar respostas semanais:', weeklyError);
+        throw weeklyError;
+      }
 
       const dailyResponses: QuestionnaireResponse[] = (dailyData || []).map(response => {
         const scores = [
