@@ -81,6 +81,13 @@ serve(async (req) => {
       throw new Error(`Evolution API error: ${evolutionResponse.status} - ${errorText}`)
     }
 
+    // Check if response is JSON before parsing
+    const contentType = evolutionResponse.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      const responseText = await evolutionResponse.text()
+      throw new Error(`Evolution API returned non-JSON response (${contentType}): ${responseText.substring(0, 200)}...`)
+    }
+
     const data = await evolutionResponse.json()
 
     // Log the API call for security audit
