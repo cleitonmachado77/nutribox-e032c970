@@ -245,12 +245,44 @@ export const useEvolutionSupabase = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const isConnected = data.instance?.state === 'open';
-        
+        // Verificar se a resposta é JSON válido
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          const isConnected = data.instance?.state === 'open';
+          
+          const updatedSession = session ? {
+            ...session,
+            status: isConnected ? 'connected' as const : 'disconnected' as const
+          } : null;
+          
+          setSession(updatedSession);
+          
+          if (updatedSession) {
+            await syncSessionWithSupabase(updatedSession);
+          }
+        } else {
+          // Se não é JSON, ler como texto para debug
+          const textResponse = await response.text();
+          console.error('API retornou HTML ao invés de JSON:', textResponse.substring(0, 200));
+          
+          // Definir como desconectado se não conseguir obter status válido
+          const updatedSession = session ? {
+            ...session,
+            status: 'disconnected' as const
+          } : null;
+          
+          setSession(updatedSession);
+          
+          if (updatedSession) {
+            await syncSessionWithSupabase(updatedSession);
+          }
+        }
+      } else {
+        // Se a resposta não é ok, definir como desconectado
         const updatedSession = session ? {
           ...session,
-          status: isConnected ? 'connected' as const : 'disconnected' as const
+          status: 'disconnected' as const
         } : null;
         
         setSession(updatedSession);
@@ -261,6 +293,18 @@ export const useEvolutionSupabase = () => {
       }
     } catch (error) {
       console.error('Erro ao verificar status:', error);
+      
+      // Em caso de erro, definir como desconectado
+      const updatedSession = session ? {
+        ...session,
+        status: 'disconnected' as const
+      } : null;
+      
+      setSession(updatedSession);
+      
+      if (updatedSession) {
+        await syncSessionWithSupabase(updatedSession);
+      }
     }
   };
 
