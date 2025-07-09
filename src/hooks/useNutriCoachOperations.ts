@@ -111,18 +111,13 @@ export const useNutriCoachOperations = (user: User | null) => {
     try {
       console.log('=== CARREGANDO RESPOSTAS ===');
       
-      // Load daily responses with correct JOIN structure
+      // Load daily responses with separate JOINs
       const { data: dailyData, error: dailyError } = await supabase
         .from('nutricoach_respostas_diarias')
         .select(`
           *,
-          pacientes!inner(
-            id,
-            lead_id,
-            leads!inner(
-              nome
-            )
-          )
+          pacientes(id, lead_id),
+          leads(nome)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -135,18 +130,13 @@ export const useNutriCoachOperations = (user: User | null) => {
         throw dailyError;
       }
 
-      // Load weekly responses with correct JOIN structure
+      // Load weekly responses with separate JOINs
       const { data: weeklyData, error: weeklyError } = await supabase
         .from('nutricoach_respostas_semanais')
         .select(`
           *,
-          pacientes!inner(
-            id,
-            lead_id,
-            leads!inner(
-              nome
-            )
-          )
+          pacientes(id, lead_id),
+          leads(nome)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -175,7 +165,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         return {
           id: response.id,
           patient_id: response.patient_id,
-          patient_name: (response as any).pacientes?.leads?.nome || 'Nome não encontrado',
+          patient_name: (response as any).leads?.nome || 'Nome não encontrado',
           type: 'daily' as const,
           responses: scores.map(s => s.toString()),
           score: avgScore,
@@ -191,7 +181,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         return {
           id: response.id,
           patient_id: response.patient_id,
-          patient_name: (response as any).pacientes?.leads?.nome || 'Nome não encontrado',
+          patient_name: (response as any).leads?.nome || 'Nome não encontrado',
           type: 'weekly' as const,
           responses: scores.map(s => s.toString()),
           score: avgScore,

@@ -1332,7 +1332,7 @@ export type Database = {
             foreignKeyName: "nutricoach_respostas_diarias_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "nutricoach_patients"
+            referencedRelation: "pacientes"
             referencedColumns: ["id"]
           },
         ]
