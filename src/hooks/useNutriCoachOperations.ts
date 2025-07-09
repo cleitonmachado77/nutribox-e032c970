@@ -116,8 +116,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         .from('nutricoach_respostas_diarias')
         .select(`
           *,
-          pacientes(id, lead_id),
-          leads(nome)
+          pacientes(id, lead_id, leads(nome))
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -135,8 +134,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         .from('nutricoach_respostas_semanais')
         .select(`
           *,
-          pacientes(id, lead_id),
-          leads(nome)
+          pacientes(id, lead_id, leads(nome))
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -165,7 +163,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         return {
           id: response.id,
           patient_id: response.patient_id,
-          patient_name: (response as any).leads?.nome || 'Nome não encontrado',
+          patient_name: (response as any).pacientes?.leads?.nome || 'Nome não encontrado',
           type: 'daily' as const,
           responses: scores.map(s => s.toString()),
           score: avgScore,
@@ -181,7 +179,7 @@ export const useNutriCoachOperations = (user: User | null) => {
         return {
           id: response.id,
           patient_id: response.patient_id,
-          patient_name: (response as any).leads?.nome || 'Nome não encontrado',
+          patient_name: (response as any).pacientes?.leads?.nome || 'Nome não encontrado',
           type: 'weekly' as const,
           responses: scores.map(s => s.toString()),
           score: avgScore,
