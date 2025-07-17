@@ -1,0 +1,275 @@
+{
+  "name": "Salvar",
+  "nodes": [
+    {
+      "parameters": {
+        "functionCode": "const input = $input.first().json;\n\n// Construir o JSON diretamente a partir da entrada\nconst normalizedData = {\n  patient_id: input.paciente_id || '',\n  data_resposta: input.data_resposta || '',\n  energia: parseInt(input.energia || '0'),\n  atividade: parseInt(input.atividade || '0'),\n  sono: parseInt(input.sono || '0'),\n  feedback: input.feedback || ''\n};\n\n// Validar campos obrigatórios\nif (!normalizedData.patient_id || !normalizedData.data_resposta || !normalizedData.feedback) {\n  throw new Error('Campos obrigatórios ausentes: patient_id, data_resposta ou feedback');\n}\n\nconsole.log('JSON gerado no Dados:', JSON.stringify(normalizedData, null, 2));\n\nreturn [{ json: normalizedData }];"
+      },
+      "id": "de760337-aea8-4043-8cf2-2b58be2da98a",
+      "name": "Dados Function ",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        760,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://wubohcrfydjtzphnoyqu.supabase.co/rest/v1/nutricoach_respostas_diarias",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g\",\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "contentType": "raw",
+        "body": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        160
+      ],
+      "id": "893452de-cd7e-4f9d-b1fe-be2d2276afa5",
+      "name": "Salvar no Supabase"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resposta-paciente",
+        "options": {}
+      },
+      "id": "4eec080e-ccc4-4da8-9e72-9db5a8a0b5a2",
+      "name": "Webhook - Receber Resposta",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        -20
+      ],
+      "webhookId": "f6003984-1be4-4f07-87d9-c901b53e846a"
+    },
+    {
+      "parameters": {
+        "functionCode": "const resposta = $node[\"Webhook - Receber Resposta\"].json.body?.data?.message?.conversation;\n\nif (!resposta) {\n  return [{\n    erro: \"Mensagem do paciente ausente\",\n    debug: $node[\"Webhook - Receber Resposta\"].json\n  }];\n}\n\nconst valores = resposta.trim().split(',').map(v => parseInt(v));\n\n// Extrair a data do webhook (usando body.date_time)\nconst dateTime = $node[\"Webhook - Receber Resposta\"].json.body?.date_time;\nconst dataResposta = dateTime ? new Date(dateTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];\n\nreturn [{\n  energia: valores[0] || null,\n  atividade: valores[1] || null,\n  sono: valores[2] || null,\n  data_resposta: dataResposta\n}];"
+      },
+      "id": "f77ac83c-e88b-421e-8bf5-a07a1b07549e",
+      "name": "Extrair Respostas",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "https://api.mistral.ai/v1/chat/completions",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n  \"model\": \"mistral-medium\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Você é um nutricionista que dá feedbacks curtos e positivos com base em dados de saúde.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Energia: {{ $json.energia }}, Atividade: {{ $json.atividade }}, Sono: {{ $json.sono }}. Gere um feedback curto e motivacional.\"\n    }\n  ],\n  \"temperature\": 0.7\n}\n",
+        "headerParametersJson": "{\n  \"Authorization\": \"Bearer bQr22W1f6fiht9jeQNo3fDDzT2ATM7pT\",\n  \"Content-Type\": \"application/json\"\n}",
+        "queryParametersJson": "="
+      },
+      "id": "6d3f63f3-994e-418a-953f-8270d09190d8",
+      "name": "Agente IA1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    paciente_id: $node[\"Buscar Paciente\"].json.paciente_id,\n    nome: $node[\"Buscar Paciente\"].json.name,\n    telefone: $node[\"Buscar Paciente\"].json.telephone,\n    energia: $node[\"Extrair Respostas\"].json.energia,\n    atividade: $node[\"Extrair Respostas\"].json.atividade,\n    sono: $node[\"Extrair Respostas\"].json.sono,\n    feedback: $json.choices[0].message.content,\n    data_resposta: $node[\"Extrair Respostas\"].json.data_resposta\n  }\n}];"
+      },
+      "id": "c270ce3b-918e-45c7-954a-b56a20edd23d",
+      "name": "Formatar Feedback1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        140,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        560,
+        160
+      ],
+      "id": "97ba0b52-6e4f-48d0-a0bc-f22cd6eb9256",
+      "name": "Unificar Dados Paciente1",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "functionCode": "return [\n  {\n    json: {\n      paciente_id: \"8402223e-6c7c-4169-887b-f5c02041532c\",\n      name: \"Cleiton Machado\"\n    }\n  }\n];\n"
+      },
+      "id": "8138742a-fe65-4590-aaf5-9aa03a621c3d",
+      "name": "Corrigir Paciente1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        340,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [\n  {\n    energia: $json.energia,\n    atividade: $json.atividade,\n    sono: $json.sono,\n    feedback: $json.feedback,\n    data_resposta: $json.data_resposta\n  }\n];"
+      },
+      "id": "f7a36e6a-d6a2-4f13-a66c-06983e11e7bd",
+      "name": "Corrigir Feedback1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        340,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://wubohcrfydjtzphnoyqu.supabase.co/rest/v1/nutricoach_patients?telephone=eq.{{$json.body.sender.replace('@s.whatsapp.net','')}}&select=paciente_id,name",
+        "jsonParameters": true,
+        "options": {},
+        "headerParametersJson": "{\n\"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g\",\n\"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g\",\n\"Content-Type\": \"application/json\"\n}"
+      },
+      "id": "953579dd-e3c8-40e2-b1b4-869d5533c5ab",
+      "name": "Buscar Paciente1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        -20
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Dados Function ": {
+      "main": [
+        [
+          {
+            "node": "Salvar no Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Receber Resposta": {
+      "main": [
+        [
+          {
+            "node": "Buscar Paciente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Respostas": {
+      "main": [
+        [
+          {
+            "node": "Agente IA1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente IA1": {
+      "main": [
+        [
+          {
+            "node": "Formatar Feedback1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Feedback1": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Feedback1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unificar Dados Paciente1": {
+      "main": [
+        [
+          {
+            "node": "Dados Function ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Corrigir Paciente1": {
+      "main": [
+        [
+          {
+            "node": "Unificar Dados Paciente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Corrigir Feedback1": {
+      "main": [
+        [
+          {
+            "node": "Unificar Dados Paciente1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Buscar Paciente1": {
+      "main": [
+        [
+          {
+            "node": "Extrair Respostas",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Corrigir Paciente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "34fd5bcb-6885-446d-9999-a478127c0f38",
+  "meta": {
+    "instanceId": "a1e38e4e629b776e5c973c473700f88c1ab01cb0324d427dda678bdef6859478"
+  },
+  "id": "F36E39rIK8iaYDan",
+  "tags": []
+}

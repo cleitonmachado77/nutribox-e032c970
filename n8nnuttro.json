@@ -1,0 +1,275 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c2840fb6-98e8-4a24-9dff-45f9813101d0",
+      "name": "Início (Schedule)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -640
+      ],
+      "cron": {
+        "minute": "0,5,10,15,20,25,30,35,40,45,50,55"
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Calcula parâmetros fixos para busca de questionários agendados\nconst now = new Date();\nconst diaSemana = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'][now.getDay()];\nconst diaMes = now.getDate();\n\nreturn [{\n  json: {\n    horaDiario: '09:00',\n    horaFinalDoDia: '20:00',\n    horaSemanal: '13:00',\n    horaMensal: '13:00',\n    diaSemana,\n    diaMes\n  }\n}];"
+      },
+      "id": "1bbd0782-5746-4cb5-8e4a-e5b9e8d18728",
+      "name": "Calcular Parâmetros",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        120,
+        -640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://wubohcrfydjtzphnoyqu.supabase.co/rest/v1/coach_questionnaires?envio_ativo=eq.true&or=(\n  and(envio_frequencia.eq.diario,envio_horario.eq.{{$('Calcular Parâmetros').item.json.horaDiario}}),\n  and(envio_frequencia.eq.final_do_dia,envio_horario.eq.{{$('Calcular Parâmetros').item.json.horaFinalDoDia}}),\n  and(envio_frequencia.eq.semanal,envio_horario.eq.{{$('Calcular Parâmetros').item.json.horaSemanal}},envio_dia_semana.eq.{{$('Calcular Parâmetros').item.json.diaSemana}}),\n  and(envio_frequencia.eq.mensal,envio_horario.eq.{{$('Calcular Parâmetros').item.json.horaMensal}},envio_dia_mes.eq.{{$json.diaMes}})\n)",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "e4e0746d-7ded-4491-89d0-e8b41732cd51",
+      "name": "Buscar Questionários",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        500,
+        -640
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "74e3895d-4813-40d4-957d-d8d4f27e0976",
+      "name": "Loop - Questionários",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [
+        700,
+        -640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://wubohcrfydjtzphnoyqu.supabase.co/rest/v1/nutricoach_patients?paciente_id=eq.{{$json[0].patient_id}}&select=name,telephone",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1Ym9oY3JmeWRqdHpwaG5veXF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MTYzNTIsImV4cCI6MjA2NDI5MjM1Mn0.4o_2Qe3sewkScLaZ78EDBNZCKuiSrS-YD3FnkbpkX6g"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "id": "b52412da-281e-412d-94b2-763a8b58d874",
+      "name": "Buscar Paciente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        940,
+        -640
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d11d7705-b1a3-437f-8feb-3a1d03d1cffc",
+              "name": "diaMes",
+              "value": "={{$json.diaMes}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        -640
+      ],
+      "id": "4781384b-5e6f-4fc0-a4ab-48a967bee1c9",
+      "name": "dados"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://d02jfheh-evolution.cloudfy.host/message/sendText/Nuttro",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "627A3AD5D485-46AE-9BDB-A583AEE09C71"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telephone }}\",\n  \"text\": \"{{ $json.question_text }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        -640
+      ],
+      "id": "deaa2374-17aa-4ead-917c-840b647c150e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d11d7705-b1a3-437f-8feb-3a1d03d1cffc",
+              "name": "telephone",
+              "value": "={{$json[0].telephone}}",
+              "type": "string"
+            },
+            {
+              "id": "51b39b37-433f-4924-977e-89fcd50f3b14",
+              "name": "question_text",
+              "value": "={{ $('Loop - Questionários').item.json[0].question_text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1160,
+        -640
+      ],
+      "id": "81006364-b62a-484a-9cfa-8dc1faf6a2ad",
+      "name": "dados2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Início (Schedule)": {
+      "main": [
+        [
+          {
+            "node": "Calcular Parâmetros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Parâmetros": {
+      "main": [
+        [
+          {
+            "node": "dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Questionários": {
+      "main": [
+        [
+          {
+            "node": "Loop - Questionários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop - Questionários": {
+      "main": [
+        [
+          {
+            "node": "Buscar Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Paciente": {
+      "main": [
+        [
+          {
+            "node": "dados2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dados": {
+      "main": [
+        [
+          {
+            "node": "Buscar Questionários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dados2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c4496a95-9308-4b2c-afb9-e6c7c79295ea",
+  "meta": {
+    "instanceId": "a1e38e4e629b776e5c973c473700f88c1ab01cb0324d427dda678bdef6859478"
+  },
+  "id": "HKZkjyjCZmYlm3sA",
+  "tags": []
+}
