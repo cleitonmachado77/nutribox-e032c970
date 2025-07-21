@@ -176,21 +176,19 @@ export const PatientSelectionCard = ({ patients, onSuccess }: PatientSelectionCa
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Seção de Seleção de Pacientes */}
-      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 shadow-xl">
+      <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg text-white">
-            <div className="bg-violet-500/20 p-2 rounded-xl">
-              <Clock className="w-5 h-5 text-violet-400" />
-            </div>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Clock className="w-5 h-5 text-primary" />
             Ativar Acompanhamento
           </CardTitle>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-muted-foreground">
             Selecione os pacientes para ativar o envio diário de questionários
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {availablePatients.length === 0 ? (
-            <div className="text-center py-8 text-slate-300">
+            <div className="text-center py-8 text-muted-foreground">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">
                 {patients.length === 0 
@@ -205,15 +203,14 @@ export const PatientSelectionCard = ({ patients, onSuccess }: PatientSelectionCa
                 {availablePatients.map((patient) => (
                   <div 
                     key={patient.id} 
-                    className="flex items-center gap-3 p-4 border border-slate-600/50 rounded-xl hover:bg-slate-700/50 transition-colors bg-slate-800/30"
+                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <Checkbox
                       checked={selectedPatients.includes(patient.id)}
                       onCheckedChange={() => handlePatientToggle(patient.id)}
-                      className="border-slate-500 data-[state=checked]:bg-violet-500 data-[state=checked]:border-violet-500"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-sm text-white">{patient.name}</p>
+                      <p className="font-medium text-sm">{patient.name}</p>
                     </div>
                     <Badge variant={patient.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                       {patient.status === 'active' ? 'Ativo' : 'Inativo'}
@@ -222,15 +219,15 @@ export const PatientSelectionCard = ({ patients, onSuccess }: PatientSelectionCa
                 ))}
               </div>
               
-              <div className="flex items-center justify-between pt-4 border-t border-slate-600/50">
-                <p className="text-sm text-slate-300">
+              <div className="flex items-center justify-between pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
                   {selectedPatients.length} de {availablePatients.length} selecionados
                 </p>
                 <Button 
                   onClick={handleActivateCoaching}
                   disabled={loading || selectedPatients.length === 0}
                   size="sm"
-                  className="min-w-32 bg-violet-600 hover:bg-violet-700 text-white"
+                  className="min-w-32"
                 >
                   {loading ? "Ativando..." : "Ativar"}
                 </Button>
@@ -241,25 +238,23 @@ export const PatientSelectionCard = ({ patients, onSuccess }: PatientSelectionCa
       </Card>
 
       {/* Seção de Pacientes em Acompanhamento */}
-      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 shadow-xl">
+      <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg text-white">
-            <div className="bg-emerald-500/20 p-2 rounded-xl">
-              <UserCheck className="w-5 h-5 text-emerald-400" />
-            </div>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <UserCheck className="w-5 h-5 text-green-600" />
             Em Acompanhamento
           </CardTitle>
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-muted-foreground">
             Pacientes com envio diário ativo ({monitoredPatients.length})
           </p>
         </CardHeader>
         <CardContent>
           {loadingMonitored ? (
-            <div className="text-center py-8 text-slate-300">
+            <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">Carregando...</p>
             </div>
           ) : monitoredPatients.length === 0 ? (
-            <div className="text-center py-8 text-slate-300">
+            <div className="text-center py-8 text-muted-foreground">
               <Settings className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">Nenhum paciente em acompanhamento</p>
             </div>
@@ -268,18 +263,18 @@ export const PatientSelectionCard = ({ patients, onSuccess }: PatientSelectionCa
               {monitoredPatients.map((patient) => (
                 <div 
                   key={patient.id}
-                  className="flex items-center justify-between p-4 border border-emerald-500/30 rounded-xl bg-emerald-500/10"
+                  className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200"
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-sm text-white">{patient.patient_name}</p>
-                    <div className="flex gap-2 mt-2">
+                    <p className="font-medium text-sm">{patient.patient_name}</p>
+                    <div className="flex gap-2 mt-1">
                       {patient.envio_diario && (
-                        <Badge variant="default" className="text-xs bg-emerald-600 hover:bg-emerald-700">
+                        <Badge variant="default" className="text-xs bg-green-600">
                           Diário
                         </Badge>
                       )}
                       {patient.envio_semanal && (
-                        <Badge variant="secondary" className="text-xs bg-slate-600 text-white">
+                        <Badge variant="secondary" className="text-xs">
                           Semanal
                         </Badge>
                       )}
@@ -289,7 +284,7 @@ export const PatientSelectionCard = ({ patients, onSuccess }: PatientSelectionCa
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeactivatePatient(patient.id)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     Desativar
                   </Button>

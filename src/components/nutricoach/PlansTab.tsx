@@ -31,12 +31,10 @@ export function PlansTab({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 shadow-xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <div className="bg-emerald-500/20 p-2 rounded-xl">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
-              </div>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
               Análise de Progresso
             </CardTitle>
           </CardHeader>
@@ -44,12 +42,12 @@ export function PlansTab({
             {selectedPatient ? (
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium mb-2 text-white">
+                  <h4 className="font-medium mb-2">
                     {patients.find(p => p.id === selectedPatient)?.nome}
                   </h4>
                   {getPatientResponses(selectedPatient).length > 0 ? (
                     <div className="space-y-2">
-                      <p className="text-sm text-slate-300">
+                      <p className="text-sm">
                         Score médio mensal: {Math.round(
                           getPatientResponses(selectedPatient)
                             .reduce((acc, r) => acc + r.score, 0) / 
@@ -57,55 +55,53 @@ export function PlansTab({
                         )}%
                       </p>
                       <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
-                          <div className="text-lg font-bold text-emerald-400">
+                        <div className="p-2 bg-green-50 rounded">
+                          <div className="text-lg font-bold text-green-600">
                             {getPatientResponses(selectedPatient).filter(r => r.status === 'success').length}
                           </div>
-                          <div className="text-xs text-emerald-300">Sucessos</div>
+                          <div className="text-xs text-green-600">Sucessos</div>
                         </div>
-                        <div className="p-3 bg-yellow-500/20 rounded-xl border border-yellow-500/30">
-                          <div className="text-lg font-bold text-yellow-400">
+                        <div className="p-2 bg-yellow-50 rounded">
+                          <div className="text-lg font-bold text-yellow-600">
                             {getPatientResponses(selectedPatient).filter(r => r.status === 'warning').length}
                           </div>
-                          <div className="text-xs text-yellow-300">Atenção</div>
+                          <div className="text-xs text-yellow-600">Atenção</div>
                         </div>
-                        <div className="p-3 bg-red-500/20 rounded-xl border border-red-500/30">
-                          <div className="text-lg font-bold text-red-400">
+                        <div className="p-2 bg-red-50 rounded">
+                          <div className="text-lg font-bold text-red-600">
                             {getPatientResponses(selectedPatient).filter(r => r.status === 'alert').length}
                           </div>
-                          <div className="text-xs text-red-300">Alerta</div>
+                          <div className="text-xs text-red-600">Alerta</div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-muted-foreground">
                       Nenhuma resposta ainda registrada
                     </p>
                   )}
                 </div>
               </div>
             ) : (
-              <p className="text-slate-300">
+              <p className="text-muted-foreground">
                 Selecione um paciente na lista ao lado para ver a análise
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 shadow-xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <div className="bg-blue-500/20 p-2 rounded-xl">
-                <FileText className="w-5 h-5 text-blue-400" />
-              </div>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
               Observações do Nutricionista
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Selecionar Paciente:</label>
+              <label className="text-sm font-medium">Selecionar Paciente:</label>
               <select
-                className="w-full p-3 border border-slate-600/50 rounded-xl bg-slate-800/50 text-white"
+                className="w-full p-2 border rounded-md"
                 value={selectedPatient}
                 onChange={(e) => setSelectedPatient(e.target.value)}
               >
@@ -119,20 +115,19 @@ export function PlansTab({
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Observação Manual:</label>
+              <label className="text-sm font-medium">Observação Manual:</label>
               <Textarea
                 placeholder="Digite suas observações e recomendações para o paciente..."
                 value={manualNote}
                 onChange={(e) => setManualNote(e.target.value)}
                 rows={4}
-                className="bg-slate-800/50 border-slate-600/50 text-white placeholder:text-slate-400"
               />
             </div>
             
             <Button 
               onClick={saveManualNote}
               disabled={!selectedPatient || !manualNote.trim()}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+              className="w-full"
             >
               <FileText className="w-4 h-4 mr-2" />
               Salvar Observação

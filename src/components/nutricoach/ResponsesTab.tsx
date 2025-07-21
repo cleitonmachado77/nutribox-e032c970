@@ -41,77 +41,59 @@ export function ResponsesTab({ responses, questions }: ResponsesTabProps) {
 
   return (
     <div className="space-y-4">
-      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 shadow-xl">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <div className="bg-blue-500/20 p-2 rounded-xl">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
-            </div>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
             Histórico de Respostas
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
-              <div className="font-semibold mb-2 text-white">Distribuição dos Scores</div>
+              <div className="font-semibold mb-2">Distribuição dos Scores</div>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={scoreDist} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="score" stroke="#94a3b8" />
-                  <YAxis allowDecimals={false} stroke="#94a3b8" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #475569',
-                      borderRadius: '12px',
-                      color: '#ffffff'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  <XAxis dataKey="score" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <div>
-              <div className="font-semibold mb-2 text-white">Evolução do Score</div>
+              <div className="font-semibold mb-2">Evolução do Score</div>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={scoreTimeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                  <XAxis dataKey="name" stroke="#94a3b8" />
-                  <YAxis domain={[0, 3]} allowDecimals={false} stroke="#94a3b8" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #475569',
-                      borderRadius: '12px',
-                      color: '#ffffff'
-                    }}
-                  />
-                  <Line type="monotone" dataKey="score" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3, fill: '#8b5cf6' }} />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis domain={[0, 3]} allowDecimals={false} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="score" stroke="#4f46e5" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
           <div className="space-y-4">
             {responses.length === 0 ? (
-              <p className="text-slate-300 text-center py-8">
+              <p className="text-muted-foreground text-center py-8">
                 Nenhuma resposta registrada ainda
               </p>
             ) : (
               responses.slice(0, 20).map((r) => {
                 const optionsText = getOptionsText(r.questionnaire_id);
                 return (
-                  <Card key={r.id} className="bg-slate-800/50 border-slate-600/50">
-                    <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between">
+                  <Card key={r.id}>
+                    <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between bg-gray-50">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">{r.patient_name}</span>
-                          <Badge variant="outline" className="border-slate-500 text-slate-300">
-                            {r.question_type}
-                          </Badge>
+                          <span className="font-medium">{r.patient_name}</span>
+                          <Badge variant="outline">{r.question_type}</Badge>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {new Date(r.created_at).toLocaleDateString('pt-BR')}
                         </p>
-                        <div className="mt-2 text-xs text-slate-300">
+                        <div className="mt-2 text-xs">
                           <b>Pergunta:</b> {r.question_text} <br />
                           {optionsText && <span><b>Opções:</b> {optionsText} <br /></span>}
                           <b>Resposta:</b> {r.response_text} <br />
