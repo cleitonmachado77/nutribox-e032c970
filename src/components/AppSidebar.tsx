@@ -75,7 +75,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-6 bg-gradient-to-t from-[#5c14eb] to-[#3a206b] rounded-b-2xl border-none">
+      <SidebarFooter className="p-6 bg-gradient-to-t from-[#5c14eb] to-[#3a206b] border-none">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
