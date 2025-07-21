@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PatientData } from '@/hooks/useNutriCoachOperations';
-import { useCoachResponses } from '@/hooks/useCoachResponses';
+import { useCoachResponses, CoachResponse } from '@/hooks/useCoachResponses';
 import { CoachQuestion } from '@/hooks/useCoachQuestions';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 
@@ -166,4 +166,4 @@ export function PatientDetailPanel({ patient, responses: _unused, questions }: P
       </Card>
     </div>
   );
-} 
+}

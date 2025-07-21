@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,14 +26,48 @@ interface MultiStepConsultationFormProps {
   selectedPatient: Paciente;
 }
 
-const steps = [
-  { step: 1, title: "Histórico Clínico", required: true },
-  { step: 2, title: "Avaliações", required: true },
-  { step: 3, title: "Plano Alimentar", required: true },
-  { step: 4, title: "Metas", required: false },
-  { step: 5, title: "Impressões/Relatórios", required: false },
-  { step: 6, title: "Resumo do Paciente", required: false },
-  { step: 7, title: "Comparativo de Consultas", required: false },
+interface StepInfo {
+  step: number;
+  title: string;
+  required: boolean;
+  description?: string;
+  subSteps?: Array<{ id: string; title: string }>;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  message?: string;
+}
+
+const steps: StepInfo[] = [
+  { step: 1, title: "Histórico Clínico", required: true, description: "Colete informações sobre o histórico médico do paciente" },
+  { 
+    step: 2, 
+    title: "Avaliações", 
+    required: true, 
+    description: "Realize avaliações físicas, emocionais e comportamentais",
+    subSteps: [
+      { id: "2a", title: "Física" },
+      { id: "2b", title: "Emocional" },
+      { id: "2c", title: "Comportamental" },
+      { id: "2d", title: "Bem-estar" }
+    ]
+  },
+  { 
+    step: 3, 
+    title: "Plano Alimentar", 
+    required: true, 
+    description: "Estruture e personalize o plano nutricional",
+    subSteps: [
+      { id: "3a", title: "Estrutura" },
+      { id: "3b", title: "Personalização" },
+      { id: "3c", title: "Plano Final" }
+    ]
+  },
+  { step: 4, title: "Metas", required: false, description: "Defina objetivos e metas para o tratamento" },
+  { step: 5, title: "Impressões/Relatórios", required: false, description: "Gere relatórios e documentos da consulta" },
+  { step: 6, title: "Resumo do Paciente", required: false, description: "Visualize um resumo completo do paciente" },
+  { step: 7, title: "Comparativo de Consultas", required: false, description: "Compare dados entre consultas anteriores" },
 ];
 
 export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsultationFormProps) => {
@@ -54,7 +89,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   // Função de validação obrigatória para cada etapa
-  function validateCurrentStep() {
+  function validateCurrentStep(): ValidationResult {
     // Exemplo de validação (deve ser expandido para cada etapa real)
     if (currentStep === 1) {
       // Exemplo: validar que o campo "histórico clínico" foi preenchido
@@ -193,7 +228,7 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
   };
 
   // Corrigir getCurrentStepInfo para não depender de description/subSteps
-  const getCurrentStepInfo = () => {
+  const getCurrentStepInfo = (): StepInfo => {
     const step = steps.find(s => s.step === currentStep);
     return step || { step: currentStep, title: '', required: false };
   };
@@ -436,15 +471,15 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             {/* Substeps da Avaliação */}
             {currentStep === 2 && typeof handleSubStepClick === 'function' && (
               <div className="flex flex-wrap gap-2 justify-center pt-2 border-t border-gray-200">
-                {["2a", "2b", "2c", "2d"].map((subStep) => (
+                {steps[1].subSteps?.map((subStep) => (
                   <Button
-                    key={subStep}
-                    variant={currentSubStep === subStep ? "default" : "outline"}
+                    key={subStep.id}
+                    variant={currentSubStep === subStep.id ? "default" : "outline"}
                     size="sm"
-                    onClick={() => handleSubStepClick(subStep)}
-                    className={`text-xs ${currentSubStep === subStep ? "bg-purple-500 hover:bg-purple-600 text-white" : "hover:bg-purple-50 text-purple-700 border-purple-200"}`}
+                    onClick={() => handleSubStepClick(subStep.id)}
+                    className={`text-xs ${currentSubStep === subStep.id ? "bg-purple-500 hover:bg-purple-600 text-white" : "hover:bg-purple-50 text-purple-700 border-purple-200"}`}
                   >
-                    {subStep}
+                    {subStep.title}
                   </Button>
                 ))}
               </div>
@@ -453,15 +488,15 @@ export const MultiStepConsultationForm = ({ selectedPatient }: MultiStepConsulta
             {/* Substeps do Plano Alimentar */}
             {currentStep === 3 && typeof handleSubStepClick === 'function' && (
               <div className="flex flex-wrap gap-2 justify-center pt-2 border-t border-gray-200">
-                {["3a", "3b", "3c"].map((subStep) => (
+                {steps[2].subSteps?.map((subStep) => (
                   <Button
-                    key={subStep}
-                    variant={currentSubStep === subStep ? "default" : "outline"}
+                    key={subStep.id}
+                    variant={currentSubStep === subStep.id ? "default" : "outline"}
                     size="sm"
-                    onClick={() => handleSubStepClick(subStep)}
-                    className={`text-xs ${currentSubStep === subStep ? "bg-purple-500 hover:bg-purple-600 text-white" : "hover:bg-purple-50 text-purple-700 border-purple-200"}`}
+                    onClick={() => handleSubStepClick(subStep.id)}
+                    className={`text-xs ${currentSubStep === subStep.id ? "bg-purple-500 hover:bg-purple-600 text-white" : "hover:bg-purple-50 text-purple-700 border-purple-200"}`}
                   >
-                    {subStep}
+                    {subStep.title}
                   </Button>
                 ))}
               </div>

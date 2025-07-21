@@ -95,11 +95,7 @@ export default function NutriCoach() {
         </TabsContent>
 
         <TabsContent value="questionnaires">
-          <QuestionnairesTab
-            patients={patients}
-            loading={loading}
-            sendQuestionnaire={sendQuestionnaire}
-          />
+          <QuestionnairesTab />
         </TabsContent>
 
         <TabsContent value="responses">
