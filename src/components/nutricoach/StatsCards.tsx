@@ -18,55 +18,63 @@ export function StatsCards({ patients, responses }: StatsCardsProps) {
   }).length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-        <CardContent className="p-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/80">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Total Pacientes</p>
-              <p className="text-2xl font-bold text-white">{patients.length}</p>
+              <p className="text-sm text-slate-300 font-medium">Total Pacientes</p>
+              <p className="text-3xl font-bold text-white mt-2">{patients.length}</p>
             </div>
-            <Users className="w-8 h-8 text-purple-300" />
+            <div className="bg-violet-500/20 p-3 rounded-2xl">
+              <Users className="w-8 h-8 text-violet-400" />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/80">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Planos Ativos</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-sm text-slate-300 font-medium">Planos Ativos</p>
+              <p className="text-3xl font-bold text-white mt-2">
                 {patients.filter(p => p.planStatus === 'active').length}
               </p>
             </div>
-            <Target className="w-8 h-8 text-purple-300" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-white/70">Respostas Hoje</p>
-              <p className="text-2xl font-bold text-white">{responsesToday}</p>
+            <div className="bg-emerald-500/20 p-3 rounded-2xl">
+              <Target className="w-8 h-8 text-emerald-400" />
             </div>
-            <MessageSquare className="w-8 h-8 text-purple-300" />
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
-        <CardContent className="p-4">
+      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/80">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Selecionados</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-sm text-slate-300 font-medium">Respostas Hoje</p>
+              <p className="text-3xl font-bold text-white mt-2">{responsesToday}</p>
+            </div>
+            <div className="bg-blue-500/20 p-3 rounded-2xl">
+              <MessageSquare className="w-8 h-8 text-blue-400" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-slate-900/80 backdrop-blur-lg border-slate-700/50 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:bg-slate-800/80">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-300 font-medium">Selecionados</p>
+              <p className="text-3xl font-bold text-white mt-2">
                 {patients.filter(p => p.isSelected).length}
               </p>
             </div>
-            <CheckCircle className="w-8 h-8 text-purple-300" />
+            <div className="bg-orange-500/20 p-3 rounded-2xl">
+              <CheckCircle className="w-8 h-8 text-orange-400" />
+            </div>
           </div>
         </CardContent>
       </Card>
