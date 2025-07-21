@@ -19,54 +19,54 @@ export function StatsCards({ patients, responses }: StatsCardsProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+      <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Total Pacientes</p>
-              <p className="text-2xl font-bold text-white">{patients.length}</p>
+              <p className="text-sm text-muted-foreground">Total Pacientes</p>
+              <p className="text-2xl font-bold">{patients.length}</p>
             </div>
-            <Users className="w-8 h-8 text-purple-300" />
+            <Users className="w-8 h-8 text-primary" />
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+      <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Planos Ativos</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-sm text-muted-foreground">Planos Ativos</p>
+              <p className="text-2xl font-bold">
                 {patients.filter(p => p.planStatus === 'active').length}
               </p>
             </div>
-            <Target className="w-8 h-8 text-purple-300" />
+            <Target className="w-8 h-8 text-primary" />
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+      <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Respostas Hoje</p>
-              <p className="text-2xl font-bold text-white">{responsesToday}</p>
+              <p className="text-sm text-muted-foreground">Respostas Hoje</p>
+              <p className="text-2xl font-bold">{responsesToday}</p>
             </div>
-            <MessageSquare className="w-8 h-8 text-purple-300" />
+            <MessageSquare className="w-8 h-8 text-primary" />
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white">
+      <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">Selecionados</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-sm text-muted-foreground">Selecionados</p>
+              <p className="text-2xl font-bold">
                 {patients.filter(p => p.isSelected).length}
               </p>
             </div>
-            <CheckCircle className="w-8 h-8 text-purple-300" />
+            <CheckCircle className="w-8 h-8 text-primary" />
           </div>
         </CardContent>
       </Card>
