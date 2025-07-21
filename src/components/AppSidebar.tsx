@@ -42,7 +42,7 @@ export function AppSidebar() {
   const { signOut } = useAuth();
   return (
     <Sidebar className="w-60 min-h-screen bg-gradient-to-b from-[#2a174d] via-[#3a206b] to-[#1a102b] rounded-r-2xl shadow-2xl border-none">
-      <SidebarHeader className="p-6 bg-gradient-to-b from-[#5c14eb] to-[#3a206b] rounded-t-2xl border-none">
+      <SidebarHeader className="p-6 bg-gradient-to-b from-[#5c14eb] to-[#3a206b] border-none">
         <div className="flex items-center justify-center h-24">
           <img
             alt="Nuttro Logo"
